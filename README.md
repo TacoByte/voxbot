@@ -8,15 +8,15 @@ guidelines.
 [![Open in GitHub Codespaces](https://img.shields.io/badge/Open_in-GitHub_Codespaces-238636?style=for-the-badge&logo=github&logoColor=white)](https://codespaces.new/cryptovoxels/retro)
 
 * `pnpm install`
+* `psql voxels < db/import.sql`
 * `pnpm run dev`
 * Open port 9000
 
 # Installing locally
 
 * Clone repo
-* `brew install postgres@18`
+* Install postgres@14 and node@24 and pnpm
 * `createdb voxels && psql voxels < db/import.sql`
-* Install node@25 and pnpm
 * `pnpm install`
 * `pnpm run dev`
 
