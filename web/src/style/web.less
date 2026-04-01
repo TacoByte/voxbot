@@ -6,8 +6,8 @@
 @pc: ~'only screen and (min-width: 800px)';
 
 :root {
-  --border: 1px solid #555;
-  --softborder: 1px solid #888;
+  --border: 1px solid #aaa;
+  --softborder: 1px solid #aaa;
   --soft: #888;
 }
 
@@ -514,6 +514,8 @@ small {
   top: -0.5rem;
   display: inline-block;
   --size: 1rem;
+  --fore: #aaa;
+  --back: #555;
   --half: calc(var(--size) / 2);
   min-width: calc(7 * var(--size));
   min-height: calc(3 * var(--size));
@@ -546,23 +548,23 @@ small {
 
   .face-F {
     transform: rotateY(0deg) translateZ(var(--half));
-    background: #f0a;
+    background: var(--fore);
   }
   .face-B {
     transform: rotateY(180deg) translateZ(var(--half));
-    background: #508;
+    background: var(--back);
   }
   .face-E {
     transform: rotateY(90deg) translateZ(var(--half));
-    background: linear-gradient(to right, #c08, #508);
+    background: linear-gradient(to right, var(--fore), var(--back));
   }
   .face-W {
     transform: rotateY(-90deg) translateZ(var(--half));
-    background: linear-gradient(to left, #c08, #508);
+    background: linear-gradient(to left, var(--fore), var(--back));
   }
   .face-N {
     transform: rotateX(90deg) translateZ(var(--half));
-    background: linear-gradient(to top, #c08, #508);
+    background: linear-gradient(to top, var(--fore), var(--back));
   }
   .face-S {
     transform: rotateX(-90deg) translateZ(var(--half));
