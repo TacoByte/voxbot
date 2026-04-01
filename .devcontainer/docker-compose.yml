@@ -5,6 +5,10 @@ services:
     build:
       context: .
       dockerfile: Dockerfile 
+    
+    command: /bin/sh -c "while sleep 600; do :; done"
+    tty: true
+
     # Removed manual volume mapping; DevContainers handles this automatically.
     # Removed network_mode; we will rely on Docker's default internal network.
     depends_on:
