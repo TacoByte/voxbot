@@ -94,7 +94,8 @@ const LandworksConsumerChangedEventFilter = () => ({
 })
 
 export const EthereumListener = () => {
-  ;(ethAlchemy as any).ws.on(parcelTransferEventFilter(), handleParcelTransferEvent)
-  ;(ethAlchemy as any).ws.on(LandworksConsumerChangedEventFilter(), handleLandworksConsumerChangedEvent)
-  logger.info(`Listening for parcel transfer events`)
+  // todo fixme
+  // ;(ethAlchemy as any).ws.on(parcelTransferEventFilter(), handleParcelTransferEvent)
+  // ;(ethAlchemy as any).ws.on(LandworksConsumerChangedEventFilter(), handleLandworksConsumerChangedEvent)
+  logger.info(`todo: not listening for parcel transfer events`)
 }
