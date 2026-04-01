@@ -98,12 +98,69 @@ WITH (
     OIDS = FALSE
 );
 
+  CREATE TABLE collections (
+    id SERIAL PRIMARY KEY,
+    name text,
+    description text,
+    image_url text,
+    owner text,
+    address text,
+    slug text,
+    type text,
+    chainid integer DEFAULT 1,
+    collectibles_type text,
+    settings json,
+    custom_attributes_names json[],
+    suppressed boolean DEFAULT false,
+    discontinued boolean DEFAULT false,
+    rejected_at timestamp,
+    logo bytea,
+    created_at timestamp DEFAULT NOW()
+  );
+
+  CREATE TABLE wearables (
+    id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+    name text,
+    description text,
+    author text,
+    issues integer DEFAULT 1,
+    data bytea,
+    collection_id integer REFERENCES collections(id),
+    token_id integer,
+    hash text,
+    custom_attributes json,
+    category text,
+    suppressed boolean DEFAULT false,
+    offer_prices numeric[],
+    rejected_at timestamp,
+    default_settings json,
+    created_at timestamp DEFAULT NOW(),
+    updated_at timestamp DEFAULT NOW()
+  );
+
+  CREATE TABLE costumes (
+    id SERIAL PRIMARY KEY,
+    wallet text,
+    name text,
+    attachments json,
+    skin text,
+    default_color text DEFAULT '#f3f3f3'
+  );
+
   CREATE TABLE avatars (
     id SERIAL PRIMARY KEY,
     owner text,
     name text,
     settings json,
-    moderator boolean
+    moderator boolean,
+    costume_id integer REFERENCES costumes(id),
+    type text,
+    description text,
+    social_link_1 text,
+    social_link_2 text,
+    names text[],
+    created_at timestamp DEFAULT NOW(),
+    last_online timestamp
   );
 
     CREATE TABLE parcel_events (
