@@ -9,42 +9,11 @@ services:
       - ..:/workspaces/retro:cached
     working_dir: /workspaces/retro
     environment:
-      DATABASE_URL: postgres://voxels:voxels@db:5432/voxels
-    networks:
-      - voxels-net
+      # Use localhost now!
+      DATABASE_URL: postgres://localhost:5432/voxels
     ports:
       - "9000:9000"
       - "9100:9100"
       - "9200:9200"
       - "3780:3780"
-    depends_on:
-      db:
-        condition: service_healthy
-
-  db:
-    image: postgres:18-bookworm
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: voxels
-      POSTGRES_PASSWORD: voxels
-      POSTGRES_DB: voxels
-    volumes:
-      - voxels-pg18:/var/lib/postgresql/data
-    ports:
       - "5432:5432"
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U voxels -d voxels"]
-      interval: 2s
-      timeout: 5s
-      retries: 15
-    networks:
-      - voxels-net
-
-volumes:
-  voxels-pg18:
-
-
-networks:
-  voxels-net:
-    driver: bridge
-    

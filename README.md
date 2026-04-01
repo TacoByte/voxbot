@@ -9,19 +9,18 @@ guidelines.
 
 # Getting started
 
-    * `pnpm install`
-    * `cp .env.example .env`
-    * `pnpm run dev`
-    * `open port 9000`
+* `pnpm install`
+* `pnpm run dev`
+* Open port 9000
 
 # Installing locally
 
-    * Clone repo
-    * `brew install postgres@18`
-    * `createdb voxels && psql voxels < db/import.sql`
-    * Install node@25 and pnpm
-    * `pnpm install`
-    * `pnpm run dev`
+* Clone repo
+* `brew install postgres@18`
+* `createdb voxels && psql voxels < db/import.sql`
+* Install node@25 and pnpm
+* `pnpm install`
+* `pnpm run dev`
 
 # Infrastructure
 

@@ -2,7 +2,9 @@
 set -euo pipefail
 cd /workspaces/retro
 
-export DATABASE_URL="${DATABASE_URL:-postgres://voxels:voxels@db:5432/voxels}"
+export DATABASE_URL="${DATABASE_URL:-postgres://localhost:5432/voxels}"
+
+createdb voxels
 
 echo "Waiting for PostgreSQL..."
 until pg_isready -h db -U voxels -d voxels >/dev/null 2>&1; do sleep 1; done
