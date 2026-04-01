@@ -32,13 +32,12 @@ export default function (db: Db, passport: PassportStatic, app: Express) {
       p.address,
       p.name,
       p.geometry_json as geometry,
-      st_area(geometry) * 100 * 100 as area,
-      round(st_xmin(p.geometry) * 100) as x1,
-      round(st_xmax(p.geometry) * 100) as x2,
+      p.x1,
+      p.x2,
       y1,
       y2 - y1 as y2,
-      round(st_ymin(p.geometry) * 100) as z1,
-      round(st_ymax(p.geometry) * 100) as z2,
+      p.z1,
+      p.z2,
       label,
       description,
       owner
@@ -124,11 +123,8 @@ export default function (db: Db, passport: PassportStatic, app: Express) {
       case 'island':
         orderBy = `properties.island ${direction}`
         break
-      case 'area':
-        orderBy = `ST_Area(properties.geometry) ${direction}`
-        break
       case 'distance':
-        orderBy = `ST_Distance(properties.geometry, ST_GeomFromText('POINT(0 0)', 3857)) ${direction}`
+        orderBy = `properties.distance_to_center ${direction}`
         break
       default:
         orderBy = `properties.id DESC`
@@ -144,19 +140,18 @@ export default function (db: Db, passport: PassportStatic, app: Express) {
         properties.island,
         properties.name as name,
         geometry_json as geometry,
-        round(st_area(properties.geometry) * 100 * 100) as area,
         CAST(distance_to_center as double precision),
         CAST(distance_to_ocean as double precision),
         CAST(distance_to_closest_common as double precision),
         lower(properties.owner) as owner,
         avatars.name as owner_name,
-        round(st_xmin(properties.geometry) * 100) as x1,
-        round(st_xmax(properties.geometry) * 100) as x2,
+        properties.x1,
+        properties.x2,
         y1,
         label,
         y2 - y1 as y2,
-        round(st_ymin(properties.geometry) * 100) as z1,
-        round(st_ymax(properties.geometry) * 100) as z2,
+        properties.z1,
+        properties.z2,
         memoized_hash as hash,
         count(*) OVER() AS pagination_count
       from
@@ -198,12 +193,12 @@ export default function (db: Db, passport: PassportStatic, app: Express) {
     const geometry_query = `select p.id,
       y2 - y1 as height,
       p.geometry_json as geometry,
-      round(st_xmin(p.geometry) * 100) as x1,
-      round(st_xmax(p.geometry) * 100) as x2,
+      p.x1,
+      p.x2,
       y1,
       y2 - y1 as y2,
-      round(st_ymin(p.geometry) * 100) as z1,
-      round(st_ymax(p.geometry) * 100) as z2
+      p.z1,
+      p.z2
       from
       properties p
       `
@@ -507,12 +502,6 @@ export default function (db: Db, passport: PassportStatic, app: Express) {
     '/api/parcels/:id/history/:version.json',
     cache('1 second'),
     createRequestHandlerForQuery(db, 'get-parcel-by-version', 'version', (req) => [parseInt(req.params.id, 10), req.params.version]),
-  )
-
-  app.get(
-    '/api/parcels/:id/closest/street.json',
-    cache('30 minutes'),
-    createRequestHandlerForQuery(db, 'parcels/get-closest-street-and-suburb-position', 'result', (req) => [parseInt(req.params.id)]),
   )
 
   app.get('/api/parcels/:id/list', cache(false), passport.authenticate('jwt', { session: false }), async (req, res) => {

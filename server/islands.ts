@@ -53,7 +53,7 @@ export class Islands {
       
       holes_geometry_json,
       lakes_geometry_json,
-      st_asgeojson(geometry)::json as geometry
+      geometry_json as geometry
     from
       islands
     order by

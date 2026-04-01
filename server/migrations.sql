@@ -50,100 +50,66 @@ $body$;
 --------------------------------------------------------------------------------
 
 
--- make hash and image_url not required on asset_library table
 
-select apply_migration('make-hash-and-image-url-not-required-on-asset-library-table',
+-- Remove PostGIS: footprint columns, cube bounds, JSON backfill, drop streets and geometry
+select apply_migration('remove-postgis-footprint-bounds-json',
 $$
-  ALTER TABLE asset_library ALTER COLUMN hash DROP NOT NULL;
-  ALTER TABLE asset_library ALTER COLUMN image_url DROP NOT NULL;
-  ALTER TABLE asset_library ALTER COLUMN id DROP DEFAULT;
-$$
-);
+  CREATE EXTENSION IF NOT EXISTS cube;
 
+  ALTER TABLE islands ADD COLUMN IF NOT EXISTS holes_geometry_json jsonb;
+  ALTER TABLE islands ADD COLUMN IF NOT EXISTS lakes_geometry_json jsonb;
+  ALTER TABLE islands ADD COLUMN IF NOT EXISTS content json;
+  ALTER TABLE islands ADD COLUMN IF NOT EXISTS other_name text;
 
+  ALTER TABLE properties ADD COLUMN IF NOT EXISTS geometry_json jsonb;
+  UPDATE properties
+  SET geometry_json = (COALESCE(geometry_json::jsonb, ST_AsGeoJSON(geometry)::jsonb))::json
+  WHERE geometry IS NOT NULL;
 
--- add lightmap_url to properties table
-select apply_migration('add-lightmap-url-to-properties-table',
-$$
-  ALTER TABLE properties ADD COLUMN lightmap_url TEXT;
+  ALTER TABLE properties ADD COLUMN IF NOT EXISTS x1 integer;
+  ALTER TABLE properties ADD COLUMN IF NOT EXISTS x2 integer;
+  ALTER TABLE properties ADD COLUMN IF NOT EXISTS z1 integer;
+  ALTER TABLE properties ADD COLUMN IF NOT EXISTS z2 integer;
 
   UPDATE properties
-  SET lightmap_url = content->>'lightmap_url';
+  SET
+    x1 = round(ST_XMin(geometry) * 100)::integer,
+    x2 = round(ST_XMax(geometry) * 100)::integer,
+    z1 = round(ST_YMin(geometry) * 100)::integer,
+    z2 = round(ST_YMax(geometry) * 100)::integer
+  WHERE geometry IS NOT NULL;
 
-  ALTER TABLE properties DROP COLUMN lightmap_status;
-
+  ALTER TABLE properties ADD COLUMN IF NOT EXISTS bounds cube;
   UPDATE properties
-  SET content = (content::jsonb - 'lightmap_url')::json;
-$$
-);
-
-
--- add lightmap_url to properties table
-select apply_migration('add-lightmap-url-to-properties-table-2',
-$$
-  ALTER TABLE properties ADD COLUMN lightmap_url TEXT;
-
-  UPDATE properties
-  SET lightmap_url = content->>'lightmap_url';
-
-  ALTER TABLE properties DROP COLUMN lightmap_status;
-
-$$
-);
-
-
-
--- add lightmap_url to spaces table
-select apply_migration('add-lightmap-url-to-spaces-table',
-$$
-  ALTER TABLE spaces ADD COLUMN lightmap_url TEXT;
-
-  UPDATE spaces
-  SET lightmap_url = content->>'lightmap_url';
-
-  ALTER TABLE spaces DROP COLUMN lightmap_status;
-
-$$
-);
-
-
--- correct search_corpus materialized view definition to fix avatar search and maybe even wearable search
--- migration that created the materialized view was lost, but I found it here: https://github.com/cryptovoxels/cryptovoxels/commit/95b025131806a2978c4aa10996710fff81ad89fe#diff-c2b7b39dbd96e99076d33a8af4c00e01daa8829403a11626797ebc2bac123c9d
-select apply_migration('correct-search-corpus-materialized-view-definition',
-$$
-  DROP MATERIALIZED VIEW search_corpus;
-  CREATE MATERIALIZED VIEW search_corpus AS
-    WITH src AS (
-      SELECT p.id::text                     AS id,
-            COALESCE(p.name, p.address)    AS title,
-            p.id::text                     AS description, -- parcel id as description so we can find it by id
-            p.minted_at                    AS created_at,
-            'parcel'                       AS kind
-      FROM   properties p
-      WHERE  (p.minted OR p.is_common)
-
-      UNION ALL
-      SELECT w.id::text, w.name, w.description, w.created_at, 'wearable'
-      FROM   wearables w
-
-      UNION ALL
-      SELECT av.owner as id, COALESCE(av.name, av.owner::text), (CASE WHEN av.name IS NOT NULL THEN av.owner ELSE NULL END), av.created_at, 'avatar'
-      FROM   avatars av
-
-      UNION ALL
-      SELECT s.id::text, s.name, NULL, s.created_at, 'space'
-      FROM   spaces s
-      WHERE  s.unlisted IS DISTINCT FROM true
-
-      UNION ALL
-      SELECT al.id::text, al.name, al.description, al.created_at, 'asset'
-      FROM   asset_library al
+  SET bounds = cube(
+    ARRAY[x1::float8, y1::float8, z1::float8],
+    ARRAY[x2::float8, y2::float8, z2::float8]
   )
-  SELECT *,
-        setweight(to_tsvector('english', title), 'A') ||
-        setweight(to_tsvector('english', COALESCE(description, '')), 'B')
-        AS search_tsv         -- ← computed once during REFRESH
-  FROM   src;
+  WHERE x1 IS NOT NULL AND y1 IS NOT NULL AND y2 IS NOT NULL;
 
+  ALTER TABLE islands ADD COLUMN IF NOT EXISTS geometry_json jsonb;
+  UPDATE islands
+  SET geometry_json = (COALESCE(geometry_json::jsonb, ST_AsGeoJSON(geometry)::jsonb))::json
+  WHERE geometry IS NOT NULL;
+
+  ALTER TABLE islands ADD COLUMN IF NOT EXISTS position_json jsonb;
+  UPDATE islands
+  SET position_json = (COALESCE(position_json::jsonb, ST_AsGeoJSON(ST_Centroid(geometry))::jsonb))::json
+  WHERE geometry IS NOT NULL;
+
+  ALTER TABLE suburbs ADD COLUMN IF NOT EXISTS position_json jsonb;
+  UPDATE suburbs
+  SET position_json = (COALESCE(position_json::jsonb, ST_AsGeoJSON("position")::jsonb))::json
+  WHERE "position" IS NOT NULL;
+
+  DROP TABLE IF EXISTS streets CASCADE;
+
+  DROP INDEX IF EXISTS idx_properties_geometry;
+
+  ALTER TABLE properties DROP COLUMN IF EXISTS geometry;
+  ALTER TABLE islands DROP COLUMN IF EXISTS geometry;
+  ALTER TABLE suburbs DROP COLUMN IF EXISTS "position";
+
+  DROP EXTENSION IF EXISTS postgis CASCADE;
 $$
 );

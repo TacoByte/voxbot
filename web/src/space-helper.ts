@@ -49,23 +49,6 @@ export default class SpaceHelper {
     return `/spaces/${this.id}/play?mode=orbit`
   }
 
-  get areaMetres() {
-    if (!this.width || !this.depth) return null
-    return Math.round(this.width * this.depth)
-  }
-
-  get voxels() {
-    if (!this.width || !this.depth) return null
-
-    return this.width * this.height * this.depth * 2 * 2 * 2
-  }
-
-  get volumeMetres() {
-    if (!this.width || !this.depth) return null
-
-    return this.width * this.height * this.depth
-  }
-
   get ownerName() {
     return this.owner.slice(0, 10).toLowerCase() + '...'
   }

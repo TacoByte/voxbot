@@ -16,7 +16,7 @@ CREATE TABLE favorites (
   );
     CREATE UNIQUE INDEX wallet_parcel_id_idx on favorites (wallet,parcel_id);
 
-CREATE EXTENSION IF NOT EXISTS postgis;
+CREATE EXTENSION IF NOT EXISTS cube;
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
   CREATE TABLE properties(
   id SERIAL PRIMARY KEY,
@@ -26,7 +26,18 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
   visible boolean DEFAULT false,
   token integer,
   content json,
-geometry geometry(Polygon,3857),
+  geometry_json jsonb,
+  x1 integer,
+  x2 integer,
+  z1 integer,
+  z2 integer,
+  bounds cube,
+  distance_to_center double precision DEFAULT 0,
+  distance_to_ocean double precision DEFAULT 0,
+  distance_to_closest_common double precision DEFAULT 0,
+  traffic_visits integer DEFAULT 0,
+  is_common boolean DEFAULT false,
+  settings json,
   minted boolean DEFAULT false,
   name text COLLATE pg_catalog."default",
   free_edit boolean DEFAULT false,
@@ -48,15 +59,12 @@ geometry geometry(Polygon,3857),
   state json,
   hash text COLLATE pg_catalog."default",
   memoized_hash text COLLATE pg_catalog."default",
-  label text COLLATE pg_catalog."default"
+  label text COLLATE pg_catalog."default",
+  listed_at timestamp without time zone
   )WITH (
     OIDS = FALSE
 );
 
-CREATE INDEX idx_properties_geometry
-    ON properties USING gist
-    (geometry)
-    TABLESPACE pg_default;
 CREATE INDEX properties_minted_idx
     ON properties USING btree
     (minted ASC NULLS LAST)
@@ -67,7 +75,7 @@ CREATE TABLE suburbs
 (
     id SERIAL PRIMARY KEY,
     name text COLLATE pg_catalog."default",
-    "position" geometry(Point,3857)
+    position_json jsonb
 )
 WITH (
     OIDS = FALSE
@@ -79,7 +87,12 @@ CREATE TABLE islands
     id SERIAL PRIMARY KEY,
     name text COLLATE pg_catalog."default",
     texture text COLLATE pg_catalog."default",
-    geometry geometry(Polygon,3857)
+    geometry_json jsonb,
+    position_json jsonb,
+    content json,
+    holes_geometry_json jsonb,
+    lakes_geometry_json jsonb,
+    other_name text
 )
 WITH (
     OIDS = FALSE

@@ -4,8 +4,6 @@ import { queryAndCallback } from '../lib/query-helpers'
 import db from '../pg'
 import ParcelHelper from '../../common/helpers/parcel-helper'
 import { Request, Response } from 'express'
-import Street from '../street'
-
 function getLocation(parcel: Parcel) {
   const x = Math.round((parcel.x1 + parcel.x2) / 2)
   const z = Math.round((parcel.z1 + parcel.z2) / 2)
@@ -26,9 +24,6 @@ export default function getTokenMetadata(req: Request, res: Response) {
     const loc = getLocation(parcel)
     const animationUrl = `https://www.voxels.com/play?coords=${loc}&embedded=true&mode=orbit&isolate=true`
 
-    const toName = (s: Street[]) => s.filter((s) => s && s.name).map((s) => s.name)
-    const toSentence = (r: string[]) => 'and near to ' + r.slice(0, r.length - 1).join(', ') + (r.length > 1 ? ' and ' : '') + r[r.length - 1]
-
     const helper = new ParcelHelper(parcel)
     const isWaterfront = helper.isWaterFront
 
@@ -38,21 +33,21 @@ export default function getTokenMetadata(req: Request, res: Response) {
     const parcelDescription = () => {
       if (parcel.kind == 'inner') {
         return (
-          `${isWaterfront ? 'Waterfront ' : ''}${Math.floor(parcel.area)}m² pre-built parcel with uneditable external layer near ${parcel.suburb} in ${parcel.island}, ${Math.floor(
+          `${isWaterfront ? 'Waterfront ' : ''}Pre-built parcel with uneditable external layer near ${parcel.suburb} in ${parcel.island}, ${Math.floor(
             parcel.distance_to_center,
-          )}m from the origin, with a ${Math.floor(parcel.height)}m build height ${parcel.streets?.length ? toSentence(toName(parcel.streets)) : ''}. ` + description_footer
+          )}m from the origin, with a ${Math.floor(parcel.height)}m build height. ` + description_footer
         )
       }
 
       if (parcel.y1 <= 0) {
         return (
-          `${isWaterfront ? 'Waterfront ' : ''}${Math.floor(parcel.area)}m² parcel ${parcel.y1 < 0 ? 'with basement ' : ''}near ${parcel.suburb} in ${parcel.island}, ${Math.floor(
+          `${isWaterfront ? 'Waterfront ' : ''}Parcel ${parcel.y1 < 0 ? 'with basement ' : ''}near ${parcel.suburb} in ${parcel.island}, ${Math.floor(
             parcel.distance_to_center,
-          )}m from the origin, with a ${Math.floor(parcel.height)}m build height ${parcel.streets?.length ? toSentence(toName(parcel.streets)) : ''}. ` + description_footer
+          )}m from the origin, with a ${Math.floor(parcel.height)}m build height. ` + description_footer
         )
       } else {
         return (
-          `${isWaterfront ? 'Waterfront ' : ''}${Math.floor(parcel.area)}m² parcel near ${parcel.suburb} in ${parcel.island}, ${Math.floor(parcel.distance_to_center)}m from the origin, with a ${Math.floor(
+          `${isWaterfront ? 'Waterfront ' : ''}Parcel near ${parcel.suburb} in ${parcel.island}, ${Math.floor(parcel.distance_to_center)}m from the origin, with a ${Math.floor(
             parcel.height,
           )}m build height and floor is at ${parcel.y1}m elevation. ` + description_footer
         )
@@ -73,7 +68,6 @@ export default function getTokenMetadata(req: Request, res: Response) {
       animation_url: animationUrl,
       description: parcelDescription(),
       attributes: {
-        area: parcel.area,
         width: parcel.x2 - parcel.x1,
         depth: parcel.z2 - parcel.z1,
         height: parcel.height,

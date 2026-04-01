@@ -473,7 +473,7 @@ export default class Grid extends SocketClient {
     for (const p of this.nearestParcels) {
       if (!p.contains(this.scene.cameraPosition)) continue
 
-      if (!containingParcel || (p.area || 0) < (containingParcel.area || 0)) {
+      if (!containingParcel || p.footprintCm2 < containingParcel.footprintCm2) {
         containingParcel = p
       }
     }

@@ -1,4 +1,5 @@
 import { Express } from 'express'
+import { centroid } from '@turf/turf'
 
 import cache from '../cache'
 
@@ -68,15 +69,22 @@ export default function AdminController(db: Db, passport: PassportStatic, app: E
     const minZ = Math.min(z1, z2) * scale
     const maxZ = Math.max(z1, z2) * scale
 
-    const polygon = `POLYGON((
-      ${minX} ${minZ},
-      ${minX} ${maxZ},
-      ${maxX} ${maxZ},
-      ${maxX} ${minZ},
-      ${minX} ${minZ}
-    ))`
-
-    console.log(polygon)
+    const x1c = Math.round(Math.min(x1, x2) * 100)
+    const x2c = Math.round(Math.max(x1, x2) * 100)
+    const z1c = Math.round(Math.min(z1, z2) * 100)
+    const z2c = Math.round(Math.max(z1, z2) * 100)
+    const ring = [
+      [minX, minZ],
+      [minX, maxZ],
+      [maxX, maxZ],
+      [maxX, minZ],
+      [minX, minZ],
+    ]
+    const geometry_json = JSON.stringify({
+      type: 'Polygon',
+      crs: { type: 'name', properties: { name: 'EPSG:3857' } },
+      coordinates: [ring],
+    })
 
     const kind = 'plot'
 
@@ -85,11 +93,11 @@ export default function AdminController(db: Db, passport: PassportStatic, app: E
         'sql/create-parcel',
         `
         INSERT INTO 
-          properties (id, address, owner, y1, y2, geometry, geometry_json, visible, island, kind)
+          properties (id, address, owner, y1, y2, geometry_json, x1, x2, z1, z2, bounds, visible, island, kind)
         VALUES 
-          ($1, $2, $3, $4, $5, ST_GeomFromText($6, 3857), ST_AsGeoJSON(ST_GeomFromText($6, 3857))::jsonb, true, $7, $8)
+          ($1, $2, $3, $4, $5, $6::jsonb, $7, $8, $9, $10, cube(ARRAY[$7::float8,$4::float8,$9::float8], ARRAY[$8::float8,$5::float8,$10::float8]), true, $11, $12)
       `,
-        [id, address, owner, y1, y2, polygon.replace(/\s+/g, ' ').trim(), island, kind],
+        [id, address, owner, y1, y2, geometry_json, x1c, x2c, z1c, z2c, island, kind],
       )
     } catch (e: any) {
       console.log(e)
@@ -113,6 +121,15 @@ export default function AdminController(db: Db, passport: PassportStatic, app: E
 
     console.log(JSON.stringify(geometry, null, 2))
 
+    const geomStr = JSON.stringify(geometry)
+    let position_json = '{}'
+    try {
+      const c = centroid(JSON.parse(geomStr) as any)
+      position_json = JSON.stringify(c.geometry)
+    } catch {
+      // todo: invalid geometry from admin
+    }
+
     try {
       var result = await db.query(
         'sql/upsert-island',
@@ -121,7 +138,8 @@ export default function AdminController(db: Db, passport: PassportStatic, app: E
         UPDATE
           islands
         SET
-          geometry = ST_SetSRID(ST_GeomFromGeoJSON($2), 3857),
+          geometry_json = $2::jsonb,
+          position_json = $4::jsonb,
           content = $3
         WHERE
           name = $1
@@ -129,13 +147,13 @@ export default function AdminController(db: Db, passport: PassportStatic, app: E
       )
 
       INSERT INTO
-        islands (name, geometry, content)
+        islands (name, geometry_json, content, position_json)
       SELECT
-        $1, ST_SetSRID(ST_GeomFromGeoJSON($2), 3857), $3
+        $1, $2::jsonb, $3, $4::jsonb
       WHERE
         NOT EXISTS (SELECT 1 FROM upsert);
     `,
-        [name, JSON.stringify(geometry), content],
+        [name, geomStr, content, position_json],
       )
     } catch (e: any) {
       console.log(e)

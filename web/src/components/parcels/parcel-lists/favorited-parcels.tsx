@@ -35,8 +35,8 @@ export default class AllFavoritedParcels extends ParcelList {
       switch (this.state.sort) {
         case 'id':
           return parseInt(p.id, 10)
-        case 'area':
-          return parseInt(h.area, 10)
+        case 'footprint':
+          return Math.abs((h.x2 - h.x1) * (h.z2 - h.z1))
         case 'owner':
           return p.ownerName
         case 'suburb':
@@ -75,8 +75,8 @@ export default class AllFavoritedParcels extends ParcelList {
             <button className={this.state.sort == 'id' && (`active ${this.state.ascending ? 'up' : 'down'}` as any)} onClick={() => this.toggleSort('id')}>
               Parcel ID
             </button>
-            <button className={this.state.sort == 'area' && (`active ${this.state.ascending ? 'up' : 'down'}` as any)} onClick={() => this.toggleSort('area')} title="Area of the ground">
-              Area
+            <button className={this.state.sort == 'footprint' && (`active ${this.state.ascending ? 'up' : 'down'}` as any)} onClick={() => this.toggleSort('footprint')} title="Ground footprint (cm^2)">
+              Footprint
             </button>
             <button className={this.state.sort == 'island' && (`active ${this.state.ascending ? 'up' : 'down'}` as any)} onClick={() => this.toggleSort('island')} title="Island in the world">
               Island

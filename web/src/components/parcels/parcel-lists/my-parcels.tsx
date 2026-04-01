@@ -33,8 +33,8 @@ export default class AllOwnedParcels extends ParcelList {
       switch (this.state.sort) {
         case 'id':
           return parseInt(p.id, 10)
-        case 'area':
-          return parseInt(h.area, 10)
+        case 'footprint':
+          return Math.abs((h.x2 - h.x1) * (h.z2 - h.z1))
         case 'owner':
           return p.ownerName
         case 'suburb':
@@ -79,7 +79,7 @@ export default class AllOwnedParcels extends ParcelList {
               Sort by&nbsp;
               <select value={this.state.sort} onChange={(e: any) => this.setState({ sort: e.target.value })}>
                 <option value="id">Parcel ID</option>
-                <option value="area">Area</option>
+                <option value="footprint">Footprint</option>
                 <option value="island">Island</option>
                 <option value="suburb">Neighborhood</option>
                 <option value="height">Height</option>

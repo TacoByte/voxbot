@@ -47,8 +47,8 @@ const TableRow = (props: TableRowProps) => {
         )}
       </td>
       <td>
-        {props.helper.area.toFixed(0)}
-        <small>m&sup2;</small>
+        {props.helper.width} &times; {props.helper.depth}
+        <small> cm</small>
       </td>
       <td>
         {props.record.height}
@@ -58,7 +58,7 @@ const TableRow = (props: TableRowProps) => {
   )
 }
 
-const propertiesSort = ['area', 'id', 'height', 'island', 'suburb', 'area', 'distance'] as const
+const propertiesSort = ['id', 'height', 'island', 'suburb', 'distance'] as const
 type PropertiesSort = (typeof propertiesSort)[number]
 
 export interface Props {
@@ -184,9 +184,7 @@ export default class Parcels extends Component<Props, State> {
           <tr>
             <th>#</th>
             <th onClick={() => this.toggleSort('id')}>Address</th>
-            <th onClick={() => this.toggleSort('area')} title="Area of the ground">
-              Area
-            </th>
+            <th title="Ground footprint (width x depth in cm)">Footprint</th>
             <th onClick={() => this.toggleSort('height')} title="Building height limit">
               Height
             </th>

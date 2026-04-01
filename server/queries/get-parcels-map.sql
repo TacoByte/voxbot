@@ -9,16 +9,15 @@ select properties.id                                                            
         from (select wallet, role from parcel_users where parcel_id = properties.id) t)                                                 as parcel_users,
        properties.settings,
        island,
-       (select name from suburbs where id = properties.suburb_id)                                                                       as suburb,
        geometry_json                                                                                                                    as geometry,
        lower(properties.owner)                                                                                                          as owner,
        avatars.name                                                                                                                     as owner_name,
-       round(st_xmin(properties.geometry) * 100)                                                                                        as x1,
-       round(st_xmax(properties.geometry) * 100)                                                                                        as x2,
+       properties.x1,
+       properties.x2,
        label,
        y2 - y1                                                                                                                          as y2,
-       round(st_ymin(properties.geometry) * 100)                                                                                        as z1,
-       round(st_ymax(properties.geometry) * 100)                                                                                        as z2,
+       properties.z1,
+       properties.z2,
        (listed_at >= (NOW() - interval '4 days')) ::boolean as on_sale
 from properties
          left join suburbs on properties.suburb_id = suburbs.id

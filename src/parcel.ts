@@ -77,7 +77,6 @@ export default class Parcel extends TypedEventTarget<ParcelEventMap> {
   readonly budget: ParcelBudget
   readonly lightmapUpdateObservable: BABYLON.Observable<string | null> = new BABYLON.Observable()
   socketAuth: string | undefined
-  readonly area: number | undefined
   label: string | undefined
   featuresActive?: boolean // Are features active for this parcel? IE are we displaying features? May be in generation.
   readonly scene: Scene
@@ -88,6 +87,10 @@ export default class Parcel extends TypedEventTarget<ParcelEventMap> {
   readonly x2: number
   readonly y2: number
   readonly z2: number
+  /** Horizontal footprint in cm^2; used when picking smallest nested parcel. */
+  get footprintCm2() {
+    return Math.abs((this.x2 - this.x1) * (this.z2 - this.z1))
+  }
   hash: string | undefined
   parcelScript: ParcelScript | null = null
   loaded = false
@@ -160,7 +163,6 @@ export default class Parcel extends TypedEventTarget<ParcelEventMap> {
     this.parcel_users = record.parcel_users || []
     this.voxels = record.voxels
     this.geometry = record.geometry
-    this.area = record.area
     this.settings = record.settings || {}
 
     this.autobuild()

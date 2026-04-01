@@ -74,7 +74,6 @@ export default class ParcelSnapshot extends Component<Props, State> {
       distance_to_center: p.distance_to_center,
       distance_to_ocean: p.distance_to_ocean,
       distance_to_closest_common: p.distance_to_closest_common,
-      area: p.area,
       content: p.content,
       geometry: p.geometry,
     })

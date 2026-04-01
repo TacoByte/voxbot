@@ -9,12 +9,10 @@ const KEYS = [
   'address',
   'suburb',
   'island',
-  'streets',
   'height',
   'geometry',
   'owner',
   'owner_name',
-  'area',
   'x1',
   'y1',
   'z1',
@@ -46,7 +44,6 @@ export default class ParcelHelper {
   geometry: ParcelGeometry | undefined = undefined
   owner: string = undefined!
   owner_name: string = undefined!
-  area: any
   x1: number = undefined!
   y1: number = undefined!
   z1: number = undefined!
@@ -153,10 +150,6 @@ export default class ParcelHelper {
     return `/play?coords=${this.centerLocation}`
   }
 
-  get areaMetres() {
-    return Math.round(this.width * this.depth)
-  }
-
   get isWaterFront() {
     return this.distance_to_ocean < 10
   }
@@ -165,12 +158,8 @@ export default class ParcelHelper {
     return this.distance_to_closest_common < 20 ? 'Close' : this.distance_to_closest_common <= 80 ? 'Nearby' : 'Far'
   }
 
-  get voxels() {
+  get voxelCapacity() {
     return this.width * this.height * this.depth * 2 * 2 * 2
-  }
-
-  get volumeMetres() {
-    return this.width * this.height * this.depth
   }
 
   get coords() {
@@ -259,14 +248,14 @@ export default class ParcelHelper {
   get percentageBuilt() {
     const voxNumber = this.numberOfVoxels // avoid calling this twice as it's expensive
     const count = voxNumber > 0 ? voxNumber - this.depth * this.width * 2 * 2 * 2 : 0
-    const total = this.voxels - this.depth * this.width * 2 * 2 * 2 // remove the 2 voxels layer that users can't edit
+    const total = this.voxelCapacity - this.depth * this.width * 2 * 2 * 2 // remove the 2 voxels layer that users can't edit
     return (count / total).toFixed(4)
   }
 
   get metadataDescription() {
     return this.island == 'Origin City'
-      ? `${Math.floor(this.areaMetres)}m² ${this.kind == 'inner' ? 'pre-built ' : ''}parcel near ${this.suburb} in ${this.island}`
-      : `${Math.floor(this.areaMetres)}m² ${this.kind == 'inner' ? 'pre-built ' : ''}parcel on ${this.island}, ${Math.floor(this.distance_to_center)}m from the origin, with a ${Math.floor(this.height)}m build height, floor is at ${
+      ? `${this.kind == 'inner' ? 'Pre-built ' : ''}parcel near ${this.suburb} in ${this.island}`
+      : `${this.kind == 'inner' ? 'Pre-built ' : ''}parcel on ${this.island}, ${Math.floor(this.distance_to_center)}m from the origin, with a ${Math.floor(this.height)}m build height, floor is at ${
           this.y1
         }m elevation`
   }

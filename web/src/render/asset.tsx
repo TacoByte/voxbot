@@ -69,7 +69,6 @@ const blankSpace: ParcelRecord = {
   owner: '',
   hash: null,
   // Properties from SimpleParcelRecord
-  area: 0,
   height: 0,
   distance_to_center: 0,
   distance_to_ocean: 0,

@@ -54,12 +54,6 @@ export function ParcelAttributes(props: Props) {
       <dd>
         {`${helper.width}m`} &times; {`${helper.depth}m`} and {`${helper.height}m`} tall.
       </dd>
-      <dt>Area</dt>
-      <dd>{`${helper.areaMetres}m`}&sup2;</dd>
-
-      <dt>Volume</dt>
-      <dd>{`${helper.volumeMetres}m`}&sup3;</dd>
-
       {props.parcel.y1 > 0 && (
         <Fragment>
           <dt>Elevation</dt>

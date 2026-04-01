@@ -10,10 +10,10 @@ select p1.parcel_id,
   p1.updated_at,
   p.address,
   p.name,
-  round(st_xmin(p.geometry) * 100) as x1,
-  round(st_xmax(p.geometry) * 100) as x2,
-  round(st_ymin(p.geometry) * 100) as z1,
-  round(st_ymax(p.geometry) * 100) as z2
+  p.x1,
+  p.x2,
+  p.z1,
+  p.z2
 from
     property_versions p1
     inner join

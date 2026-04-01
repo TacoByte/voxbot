@@ -28,13 +28,7 @@ const toLine = <I extends any[] = any[]>(sql: QueryConfig<I>): string => {
   return result
 }
 
-let userName = userInfo().username
-
-if (userName == 'root') {
-  userName = 'ben'
-}
-
-const connectionString = process.env.DATABASE_URL || `postgres://${userName}@localhost/cryptovoxels`
+const connectionString = process.env.DATABASE_URL || `postgres://localhost/voxels`
 
 // Convert postgresql:// to postgres:// if needed, DO uses postgresql in their connection strings
 const formattedConnectionString = connectionString.replace(/^postgresql:\/\//, 'postgres://')

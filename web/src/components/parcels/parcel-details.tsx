@@ -53,7 +53,7 @@ export function ParcelDetails(props: ParcelDetailsProps) {
         </dd>
         <dt>Size</dt>
         <dd>
-          {`${helper.width}m`} wide &times; {`${helper.depth}m`} deep &times; {`${helper.height}m`} tall. {`${helper.areaMetres}m`}&sup2; area.
+          {`${helper.width}m`} wide &times; {`${helper.depth}m`} deep &times; {`${helper.height}m`} tall.
         </dd>
         {props.parcel.y1 > 0 && (
           <Fragment>

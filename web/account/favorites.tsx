@@ -58,8 +58,8 @@ export class Favorites extends Component<Props, State> {
       switch (this.state.sort) {
         case 'id':
           return parseInt(p.id, 10)
-        case 'area':
-          return parseInt(h.area, 10)
+        case 'footprint':
+          return Math.abs((h.x2 - h.x1) * (h.z2 - h.z1))
         case 'owner':
           return p.ownerName
         case 'suburb':

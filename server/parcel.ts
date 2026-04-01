@@ -1,7 +1,7 @@
 import 'babylonjs' // BABYLON
 import { EventEmitter } from 'events'
 import { ParcelUser } from '../common/helpers/parcel-helper'
-import { decodeCoords, HTTP2WSBaseURL, isValidUrl } from '../common/helpers/utils'
+import { HTTP2WSBaseURL, isValidUrl } from '../common/helpers/utils'
 import { ParcelKind, ParcelRecord, ParcelSettings } from '../common/messages/parcel'
 import { getBufferFromVoxels, getFieldShape } from '../common/voxels/helpers'
 import { isCommonParcel, isSecurityTeamParcel, isTestIsland } from './lib/helpers'
@@ -13,12 +13,8 @@ import ethers from 'ethers'
 import ParcelUserRight from './parcel-user-right'
 
 import { bbox } from '@turf/turf'
-import fs from 'fs'
-import path from 'path'
 import { SUPPORTED_CHAINS } from '../common/helpers/chain-helpers'
 import { FeatureRecord, FeatureType } from '../common/messages/feature'
-import Street from './street'
-
 const DEGREES_TO_METRES = 100
 
 // query builder - optimized to prevent full table scan on avatars
@@ -35,19 +31,17 @@ const loadQuery = () => {
       p.visible,
       content,
       p.geometry_json as geometry,
-      st_area(p.geometry) * 100 * 100 as area,
       CAST (distance_to_center as double precision),
       CAST (distance_to_closest_common as double precision),
       CAST (distance_to_ocean as double precision),
-      (SELECT array_to_json(array_agg(s)) FROM streets s WHERE st_intersects(s.geometry, st_buffer(p.geometry, 0.04))) as streets,
       p.island,
       suburbs.name as suburb,
-      round(st_xmin(p.geometry) * 100) as x1,
-      round(st_xmax(p.geometry) * 100) as x2,
+      p.x1,
+      p.x2,
       y1,
       y2,
-      round(st_ymin(p.geometry) * 100) as z1,
-      round(st_ymax(p.geometry) * 100) as z2,
+      p.z1,
+      p.z2,
       memoized_hash as hash,
       (select array_to_json(array_agg(row_to_json(t))) from (select wallet,role from parcel_users where parcel_id=p.id) t) as parcel_users,
       is_common,
@@ -65,8 +59,6 @@ const loadQuery = () => {
       p.id = $1
   `
 }
-
-const COORD_QUERY = fs.readFileSync(path.join(__dirname, 'queries', 'get-parcel-by-coord.sql')).toString()
 
 export interface ParcelEventEmitter {
   on(event: 'hashUpdate', listener: (parcelId: number, hash: string) => void): this
@@ -598,11 +590,9 @@ export abstract class AbstractParcel implements IParcelRef {
 
 // Automatically sets visible = true if the parcel _justGotMinted.
 export default class Parcel extends AbstractParcel {
-  area!: number
   distance_to_center!: number
   distance_to_closest_common!: number
   distance_to_ocean!: number
-  streets!: Street[]
 
   constructor(row: any) {
     super(row)
@@ -769,12 +759,12 @@ export default class Parcel extends AbstractParcel {
     select
       id,
       address,
-      round(st_xmin(p.geometry) * 100) as x1,
-      round(st_xmax(p.geometry) * 100) as x2,
+      p.x1,
+      p.x2,
       y1,
       y2,
-      round(st_ymin(p.geometry) * 100) as z1,
-      round(st_ymax(p.geometry) * 100) as z2
+      p.z1,
+      p.z2
       from
       properties p
       where
@@ -786,18 +776,6 @@ export default class Parcel extends AbstractParcel {
       return null
     }
     return new Parcel(result.rows[0])
-  }
-
-  static async loadFromCoords(coords: string): Promise<Parcel | null> {
-    const c = decodeCoords(coords)
-
-    const result = await db.query('embedded/get-parcel-by-coords', COORD_QUERY, [c.position.x / 100, Math.round(c.position.y), c.position.z / 100])
-
-    if (result.rows[0]) {
-      return new Parcel(result.rows[0])
-    }
-
-    return null
   }
 
   // this value is debouced and cached in grid-socket

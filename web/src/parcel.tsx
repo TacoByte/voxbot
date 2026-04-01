@@ -347,17 +347,7 @@ export default class Parcel extends Component<Props, State> {
     const { parcel } = await f.json()
     console.log('parcel', parcel)
 
-    this.setState({ parcel })
-
-    try {
-      f = await cachedFetch(`/api/parcels/${parcelId}/nearby.json`, { signal: this.abort.signal })
-    } catch (e) {
-      this.setState({ loading: false })
-      console.error('Fetch aborted', e)
-      return
-    }
-    const { parcels } = await f.json()
-    this.setState({ nearby: parcels, loading: false })
+    this.setState({ parcel, nearby: [], loading: false })
 
     this.abort = null
   }

@@ -555,13 +555,6 @@ app.get(
   }),
 )
 
-// Get parcel at location
-app.get(
-  '/api/parcels/geocode.json',
-  cache('5 minutes', true),
-  createRequestHandlerForQuery(db, 'get-parcel-geocode', 'parcel', (req) => [req.query.lat, req.query.lng]),
-)
-
 // Islands baby!
 app.get('/api/islands.json', cache('30 minutes', true), createRequestHandlerForQuery(db, 'get-islands', 'islands'))
 app.get('/api/islands-metadata.json', cache('1 hour', true), createRequestHandlerForQuery(db, 'get-islands-metadata', 'islands'))
@@ -571,17 +564,6 @@ app.get(
 )
 
 app.get('/api/parcels/cached.json', cache('60 seconds', true), createRequestHandlerForQuery(db, 'get-parcels-cached', 'parcels'))
-
-app.get(
-  '/api/parcels/:id/nearby.json',
-  cache('15 minute', true),
-  createRequestHandlerForQuery(db, 'get-parcels-nearby', 'parcels', (req) => [
-    parseInt(req.params.id, 10),
-    typeof req.query.radius === 'string' ? parseFloat(req.query.radius) : 0.5,
-    typeof req.query.includeUnnamed === 'string' ? req.query.includeUnnamed === 'true' : false,
-    parseQueryInt(req.query.limit, 10),
-  ]),
-)
 
 app.get(
   '/api/parcels/edits/latest.json',

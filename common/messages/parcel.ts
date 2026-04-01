@@ -115,7 +115,6 @@ export const FullParcelRecord = t.type(
 
     address: NullableStr, // 10 parcels lack an address
     geometry: ParcelGeometry,
-    area: t.number,
     height: t.number,
     distance_to_center: t.number,
     distance_to_ocean: t.number,
@@ -170,7 +169,6 @@ export const MarketplaceParcelRecord = t.intersection([
     'distance_to_center',
     'distance_to_ocean',
     'distance_to_closest_common',
-    'area',
     'owner_name',
     'address',
   ]),
@@ -183,7 +181,6 @@ export const NearbyParcelRecord = pickType(FullParcelRecord, 'NearbyParcelRecord
   'address',
   'name',
   'geometry',
-  'area',
   'distance_to_center',
   'distance_to_ocean',
   'distance_to_closest_common',
@@ -220,7 +217,6 @@ export const SimpleParcelRecord = pickType(FullParcelRecord, 'SimpleParcelRecord
   'z2',
   'address',
   'geometry',
-  'area',
   'height',
   'distance_to_center',
   'distance_to_ocean',

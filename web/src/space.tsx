@@ -219,10 +219,6 @@ export default class Space extends Component<Props, State> {
             <dd>
               {0} to {space.height} meters
             </dd>
-            <dt>Area</dt>
-            <dd>{this.helper?.areaMetres} square meters</dd>
-            <dt>Volume</dt>
-            <dd>{this.helper?.volumeMetres} cubic meters</dd>
           </dl>
 
           <ParcelAdminPanel parcelOrSpace={space} onSave={this.refreshIframe.bind(this)} />
