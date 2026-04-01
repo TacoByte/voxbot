@@ -10,6 +10,7 @@ guidelines.
 # Getting started
 
     * `pnpm install`
+    * `cp .env.example .env`
     * `pnpm run dev`
     * `open port 9000`
 
