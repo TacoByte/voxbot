@@ -153,8 +153,14 @@ function initialSpawn(scene: Scene, grid: Grid, controls: Controls) {
   }
 }
 
+// Show params as NESW coordinates
 function updateNavbarWithCoords(scene: BABYLON.Scene, connector: Connector) {
-  // Show params as NESW coordinates
+
+  if (document.location.pathname.match(/sandbox/)) {
+    // Don't update path
+    return
+  }
+
   let oldUrl = '/'
   setInterval(() => {
     if (isLoaded()) {

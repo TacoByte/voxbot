@@ -342,16 +342,8 @@ export default class Parcel extends TypedEventTarget<ParcelEventMap> {
   }
 
   get canEdit(): boolean {
-    if (process.env.NODE_ENV === 'development') {
-      return true
-    }
-
     if (app.isAdmin()) {
       return true
-    }
-
-    if (isMobile()) {
-      return false
     }
 
     if (this.sandbox) {
@@ -388,7 +380,7 @@ export default class Parcel extends TypedEventTarget<ParcelEventMap> {
   }
 
   get sandbox() {
-    return this.settings.sandbox === true
+    return this.kind == 'sandbox' || this.settings.sandbox === true
   }
 
   get hostedScripts() {
