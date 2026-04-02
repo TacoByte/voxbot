@@ -726,6 +726,11 @@ export default class UserInterface extends Component<UserInterfaceProps, UserInt
                   Summon
                 </a>
               </li> */}
+              <li class={active('info')}>
+                <a href="#info" onMouseOver={onHover('info')} onClick={onClick('info')}>
+                  Info
+                </a>
+              </li>
               <li class={active('add', !canEdit)}>
                 <a title="Add things to your thing" href="#add" onMouseOver={onHover('add')} onClick={onClick('add')} accessKey="a">
                   Add
