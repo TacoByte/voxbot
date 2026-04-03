@@ -164,16 +164,9 @@ export default class Womp extends Component<Props, State> {
             <dd>{new Date(this.state.womp.created_at).toLocaleString()}</dd>
           </dl>
 
-          <button
-            class="secondary"
-            onClick={() => {
-              if (this.visitUrl) {
-                window.location.href = this.visitUrl
-              }
-            }}
-          >
+          <a href={this.visitUrl!} class="secondary button">
             Teleport
-          </button>
+          </a>
 
           <h3>Image</h3>
 
