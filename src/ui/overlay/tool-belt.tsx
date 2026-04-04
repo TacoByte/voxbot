@@ -201,57 +201,65 @@ const VoxelToolBelt = ({ parcel, scene }: Props) => {
 
   return (
     <Fragment>
-    <div
-      class={'VoxelToolBelt ' + (ui?.voxelTool.enabled.value ? 'active' : '')}
-      onMouseLeave={() => {
-        if (tintChooser) setTintChooser(false)
-      }}
-    >
-      <div class="wrapper">
-        <div class="tool-modes">
-          <button title="Click to activate Paint Mode [Ctrl/Cmd + Click in build mode]" class={'-paint' + (mode === SelectionMode.Paint ? ' -selected' : '')} onClick={activatePaintTool}>
-            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1.5 0h18v3h4.5v8.712l-10.5 2.25V15h1.5v9H9v-9h1.5V11.538l10.5-2.25V6h-1.5v1.5H1.5z" fill="currentColor"/></svg>
-          </button>
-          <button title="Click to activate Erase Mode [Shift + Click in build mode]" class={'-erase' + (mode === SelectionMode.Remove ? ' -selected' : '')} onClick={activateEraseTool}>
-            <svg viewBox="3 3 19 17" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="m15.072 3.997 5.679 5.837-3.697 3.696-3.978 3.97h7.928V19H7.935l-3.933-3.933zM10.952 17.5l4.51-4.5-3.635-3.637-5.704 5.704L8.556 17.5z" fill="currentColor"/></svg>
-          </button>
-        </div>
-        <div class="toolbelt-pagination">
-          <span data-active={page === 0} onClick={() => setPage(0)}>
-            1
-          </span>
-          <span data-active={page === 1} onClick={() => setPage(1)}>
-            2
-          </span>
-        </div>
+      <div
+        class={'VoxelToolBelt ' + (ui?.voxelTool.enabled.value ? 'active' : '')}
+        onMouseLeave={() => {
+          if (tintChooser) setTintChooser(false)
+        }}
+      >
+        <div class="wrapper">
+          <div class="tool-modes">
+            <button
+              class={'iconish -paint' + (mode === SelectionMode.Paint ? ' -selected' : '')}
+              title="Paint Mode [Ctrl/Cmd + Click in build mode]"
+              onClick={activatePaintTool}
+            >
+              P
+            </button>
+            <button
+              class={'iconish -erase' + (mode === SelectionMode.Remove ? ' -selected' : '')}
+              title="Erase Mode [Shift + Click in build mode]"
+              onClick={activateEraseTool}
+            >
+              E
+            </button>
+          </div>
+          <div class="toolbelt-pagination">
+            <span data-active={page === 0} onClick={() => setPage(0)}>
+              1
+            </span>
+            <span data-active={page === 1} onClick={() => setPage(1)}>
+              2
+            </span>
+          </div>
 
-        <div class="textures">{textures}</div>
+          <div class="textures">{textures}</div>
 
-        <div ref={tintRef} class="tint-wrap">
-          <button type="button" class={'tint' + (tintChooser ? ' -selected' : '')} title="Choose tint color" onClick={toggleTintChooser}>
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="28 28 456 456" aria-hidden="true"><path fill="#fff" d="m441 336.2-.06-.05c-9.93-9.18-22.78-11.34-32.16-12.92l-.69-.12c-9.05-1.49-10.48-2.5-14.58-6.17-2.44-2.17-5.35-5.65-5.35-9.94s2.91-7.77 5.34-9.94l30.28-26.87c25.92-22.91 40.2-53.66 40.2-86.59s-14.25-63.68-40.2-86.6c-35.89-31.59-85-49-138.37-49C223.72 48 162 71.37 116 112.11c-43.87 38.77-68 90.71-68 146.24s24.16 107.47 68 146.23c21.75 19.24 47.49 34.18 76.52 44.42a266.17 266.17 0 0 0 86.87 15h1.81c61 0 119.09-20.57 159.39-56.4 9.7-8.56 15.15-20.83 15.34-34.56.21-14.17-5.37-27.95-14.93-36.84ZM112 208a32 32 0 1 1 32 32 32 32 0 0 1-32-32Zm40 135a32 32 0 1 1 32-32 32 32 0 0 1-32 32Zm40-199a32 32 0 1 1 32 32 32 32 0 0 1-32-32Zm64 271a48 48 0 1 1 48-48 48 48 0 0 1-48 48Zm72-239a32 32 0 1 1 32-32 32 32 0 0 1-32 32Z"/></svg>
-          </button>
-          {tintChooser && (
-            <div class="tint-chooser">
-              {tints}
-              <button type="button" class="tint-chooser-edit" title="Edit tint colors" onClick={() => openTintModal()}>
-                Edit
-              </button>
-            </div>
-          )}
+          <div ref={tintRef} class="tint-wrap">
+            <button type="button" class={'iconish tint' + (tintChooser ? ' -selected' : '')} title="Tint color" onClick={toggleTintChooser}>
+              T
+            </button>
+            {tintChooser && (
+              <div class="tint-chooser">
+                {tints}
+                <button type="button" class="tint-chooser-edit" title="Edit tint colors" onClick={() => openTintModal()}>
+                  Edit
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
-    </div>
-    {tintModalOpen && (
-      <div class="tint-modal-backdrop" onClick={() => setTintModalOpen(false)}>
-        <div class="tint-modal-panel" onClick={(e) => e.stopPropagation()}>
-          <button type="button" class="tint-modal-close" title="Close" aria-label="Close" onClick={() => setTintModalOpen(false)}>
-            x
-          </button>
-          <CustomizeVoxels parcel={parcel} scene={scene} />
+      {tintModalOpen && (
+        <div class="tint-modal-backdrop" onClick={() => setTintModalOpen(false)}>
+          <div class="tint-modal-panel" onClick={(e) => e.stopPropagation()}>
+            <button type="button" class="tint-modal-close" title="Close" aria-label="Close" onClick={() => setTintModalOpen(false)}>
+              x
+            </button>
+            <CustomizeVoxels parcel={parcel} scene={scene} />
+          </div>
         </div>
-      </div>
-    )}
+      )}
     </Fragment>
   )
 }
