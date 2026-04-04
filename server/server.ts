@@ -28,7 +28,6 @@ import EventsController from './controllers/parcel-events'
 import ParcelsController from './controllers/parcels'
 import PlayController from './controllers/play'
 import SpacesController from './controllers/spaces'
-import StatsController from './controllers/statistics'
 
 import cache, { defaultCache, noCache } from './cache'
 import db, { pgp } from './pg'
@@ -359,8 +358,6 @@ SpacesController(db, passport, app)
 CollectionsController(db, passport, app)
 // collectibles
 CollectiblesController(db, passport, app)
-//stats
-StatsController(db, passport, app)
 //Events
 EventsController(db, passport, app)
 // Emoji Badges

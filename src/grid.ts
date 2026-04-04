@@ -124,7 +124,7 @@ export default class Grid extends SocketClient {
     if (environment) {
       this.environment = environment
     } else {
-      const emptyScene = Object.assign(scene, { config: { isSpace: true, spaceId: spaceId || '' } })
+      const emptyScene = Object.assign(scene, { config: { isGrid: false, isSpace: true } })
       this.environment = new SpacesEnvironment(parent, emptyScene)
     }
 

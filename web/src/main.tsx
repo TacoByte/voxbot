@@ -85,7 +85,7 @@ const Main = () => {
   // Have server handle path="/parcels/:id/:visit"
   function handleRoute(e: RouterOnChangeArgs) {
     if (/^\/parcels\/\d+\/visit$/.test(e.url)) {
-      window.location.href = `${process.env.ASSET_PATH + e.url}`
+      window.location.href = e.url
     }
 
     setCurrentPath(e.url)

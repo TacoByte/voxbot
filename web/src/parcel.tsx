@@ -13,7 +13,6 @@ import { ParcelAttributes } from './components/parcel-attributes'
 import ParcelDescription from './components/parcel-description'
 import ParcelEventPanel from './components/parcel-event-panel'
 import WebParcelSnapshots from './components/parcel-snapshots'
-import ParcelStatistics from './components/parcel-statistics'
 import cachedFetch from './helpers/cached-fetch'
 import ParcelVersions from './parcel-versions'
 import { Spinner } from './spinner'
@@ -521,8 +520,6 @@ export default class Parcel extends Component<Props, State> {
             {this.isOwner && <WebParcelSnapshots parcel={this.state.parcel} path={`/parcels/${this.state.parcelId}/snapshots`} />}
             {this.isOwner && <ParcelVersions parcel={this.state.parcel} id={this.state.parcelId} onContentChange={this.refreshIframe.bind(this)} path={`/parcels/${this.props.parcel?.id ?? this.state.parcelId}/versions`} />}
           </Router>
-
-          <div>{this.state.parcel && (this.isOwner || this.isCollaborator) && <ParcelStatistics parcel={this.state.parcel} />}</div>
         </div>
 
         <aside class="push-header">
