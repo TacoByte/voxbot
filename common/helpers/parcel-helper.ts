@@ -1,5 +1,5 @@
 import { unzlibSync } from 'fflate'
-import * as ndarray from 'ndarray'
+import ndarray from 'ndarray'
 import { MapParcelRecord } from '../messages/api-parcels'
 import { FullParcelRecord, ParcelContentRecord, ParcelGeometry, ParcelKind, SingleParcelRecord } from '../messages/parcel'
 import { shorterWallet, ssrFriendlyWindow } from './utils'
