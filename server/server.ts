@@ -46,7 +46,6 @@ import AvatarsController from './controllers/avatars'
 import CostumesController from './controllers/costumes'
 import ExternalsController from './controllers/externals'
 import MailsController from './controllers/mails'
-import RealEstateController from './controllers/real-estate'
 import ModerationReportsController from './controllers/reports'
 import WompsController from './controllers/womps'
 import createGridSocket from './grid/createGridSocket'
@@ -348,9 +347,6 @@ PlayController(db, passport, app)
 ParcelsController(db, passport, app)
 // Avatars controller
 AvatarsController(db, passport, app)
-
-// Mount real estate routes
-app.use('/api/real-estate', RealEstateController(pgp))
 
 // Costumes controller
 CostumesController(db, passport, app)
