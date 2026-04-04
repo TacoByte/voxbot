@@ -448,12 +448,12 @@ export class Client {
 
   // Returns the day in GMT+0
   get day() {
-    return new Date().getUTCDay()
+    return new Date().getUTCDay() % 7
   }
 
+  // todo - replace with something that isn't md5
   private anonymizedClientId(): number {
-    const joined = `${this.clientUUID}-${this.identity.wallet}-${this.day}`
-    return parseInt(md5(joined), 16) % 0xffffff
+    return parseInt(md5(this.clientUUID), 16) % 0xffffff
   }
 
   private handleMetric(msg: messages.MetricMessage): void {
@@ -473,7 +473,7 @@ export class Client {
     }
 
     // Rotate values into the metrics table
-    const i = this.day % 14
+    const i = this.day
     const table = `day_${i.toString().padStart(2, '0')}`
 
     this.connection.query(

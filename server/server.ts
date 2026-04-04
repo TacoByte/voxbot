@@ -28,6 +28,7 @@ import EventsController from './controllers/parcel-events'
 import ParcelsController from './controllers/parcels'
 import PlayController from './controllers/play'
 import SpacesController from './controllers/spaces'
+import MetricsController from './controllers/metrics'
 
 import cache, { defaultCache, noCache } from './cache'
 import db, { pgp } from './pg'
@@ -337,6 +338,9 @@ NftController(db, passport, app)
 
 // Scratchpad for all users
 ScratchpadController(app)
+
+// Metrics controller
+MetricsController(db, app)
 
 // Main client controller
 PlayController(db, passport, app)
