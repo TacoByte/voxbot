@@ -7,10 +7,9 @@ import { defaultColors } from '../common/content/blocks'
 import { recordParcelEvent } from '../common/helpers/apis'
 import { isBatterySaver, isMobile } from '../common/helpers/detector'
 import { ParcelUser } from '../common/helpers/parcel-helper'
-import { ApiParcelMessage } from '../common/messages/api-parcels'
+import type { ApiParcelMessage } from '../common/messages/api-parcels'
 import { FeatureRecord } from '../common/messages/feature'
 import type { ParcelGeometry, ParcelKind, ParcelPatch, ParcelRecord, ParcelRef, ParcelSettings } from '../common/messages/parcel'
-import { validateMessageResponse } from '../common/messages/validate'
 import { getBufferFromVoxels, getFieldShape, getVoxelsFromBuffer } from '../common/voxels/helpers'
 import { VoxelSize } from '../common/voxels/mesher'
 import { app } from '../web/src/state'
@@ -1122,7 +1121,7 @@ export default class Parcel extends TypedEventTarget<ParcelEventMap> {
     }, 5)
   }
 
-  reload(hash?: string, cb: any = null) {
+  async reload(hash?: string, cb: any = null) {
     // use the hash provided otherwise the last known hash
     if (!hash) {
       hash = this.hash
@@ -1138,38 +1137,37 @@ export default class Parcel extends TypedEventTarget<ParcelEventMap> {
 
     this.loading = true
 
-    fetch(url, {
+    const res = await fetch(url, {
       method: 'get',
     })
-      .then(validateMessageResponse(ApiParcelMessage))
-      .then((r) => {
-        if (!r.success) {
-          return
-        }
+    if (!res.ok) throw res
+    const r = (await res.json()) as ApiParcelMessage
+    if (!r.success) {
+      return
+    }
 
-        Object.assign(this, r.parcel)
+    Object.assign(this, r.parcel)
 
-        // the fetch does not include the hash, so we update it here
-        this.hash = hash
+    // the fetch does not include the hash, so we update it here
+    this.hash = hash
 
-        this.loaded = true
-        this.loading = false
+    this.loaded = true
+    this.loading = false
 
-        // console.log(`[parcel-${this.id}] Reloaded parcel`)
-        this.loadField()
-        this.regenerate()
-        this.refreshBrightness()
-        this.refreshPalette()
+    // console.log(`[parcel-${this.id}] Reloaded parcel`)
+    this.loadField()
+    this.regenerate()
+    this.refreshBrightness()
+    this.refreshPalette()
 
-        // allow bringing up of build menu
-        if (this.canEdit && !window.user.parcels.includes(this)) {
-          window.user.parcels.push(this)
-        }
+    // allow bringing up of build menu
+    if (this.canEdit && !window.user.parcels.includes(this)) {
+      window.user.parcels.push(this)
+    }
 
-        if (typeof cb === 'function') {
-          cb()
-        }
-      })
+    if (typeof cb === 'function') {
+      cb()
+    }
   }
 
   afterUserChange() {

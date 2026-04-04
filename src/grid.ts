@@ -20,7 +20,6 @@ import {
   PatchStateMessage,
   SuspendedMessage,
 } from '../common/messages/grid'
-import { validateMessageString } from '../common/messages/validate'
 import { createComlinkWorker, createMessageHandler } from '../common/helpers/comlink-worker'
 import { GridWorkerAPI, GridWorkerOutput, GridWorkerParcelLoaded, GridWorkerParcelUnloaded, GridWorkerQueryResponse } from './grid-worker'
 import { app, AppEvent } from '../web/src/state'
@@ -624,7 +623,7 @@ export default class Grid extends SocketClient {
   }
 
   protected onMessage(ev: MessageEvent<string>) {
-    const message = validateMessageString<GridMessage>(GridMessage, ev.data)
+    const message = JSON.parse(ev.data) as GridMessage
     switch (message.type) {
       case 'patch':
         this.handleParcelPatch(message)
