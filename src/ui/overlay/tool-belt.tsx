@@ -208,19 +208,16 @@ const VoxelToolBelt = ({ parcel, scene }: Props) => {
         }}
       >
         <div class="wrapper">
+          <div class="add-menu-anchor">
+            <button type="button" class="add-menu-toolbelt-btn" title="Add features" aria-label="Add features" onClick={() => ui?.setPane('add')}>
+              +
+            </button>
+          </div>
           <div class="tool-modes">
-            <button
-              class={'iconish -paint' + (mode === SelectionMode.Paint ? ' -selected' : '')}
-              title="Paint Mode [Ctrl/Cmd + Click in build mode]"
-              onClick={activatePaintTool}
-            >
+            <button class={'iconish -paint' + (mode === SelectionMode.Paint ? ' -selected' : '')} title="Paint Mode [Ctrl/Cmd + Click in build mode]" onClick={activatePaintTool}>
               P
             </button>
-            <button
-              class={'iconish -erase' + (mode === SelectionMode.Remove ? ' -selected' : '')}
-              title="Erase Mode [Shift + Click in build mode]"
-              onClick={activateEraseTool}
-            >
+            <button title="Erase Mode [Shift + Click in build mode]" class={'iconish -erase' + (mode === SelectionMode.Remove ? ' -selected' : '')} onClick={activateEraseTool}>
               E
             </button>
           </div>
