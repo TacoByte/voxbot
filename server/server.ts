@@ -216,7 +216,7 @@ if (config.isDevelopment) {
       return
     }
 
-    if (host === 'voxels.com') {
+    if (host === 'voxels.com' || host === 'retro.voxels.com') {
       res.setHeader('Cache-Control', 'max-age=3600')
       res.redirect(302, `https://${CANONICAL}` + req.originalUrl)
       return
