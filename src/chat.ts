@@ -24,6 +24,8 @@ export class Bubble extends BABYLON.Mesh {
     // 2. Apply that geometry to 'this' instance
     vertexData.applyToMesh(this)
 
+    this.billboardMode = BABYLON.Mesh.BILLBOARDMODE_Y
+
     this.texture = new BABYLON.DynamicTexture(
       'chat',
       {
@@ -55,7 +57,7 @@ export class Bubble extends BABYLON.Mesh {
 
     ctx.clearRect(0, 0, WIDTH, HEIGHT)
 
-    // 1. Comic-style font (Make sure it's loaded in your CSS)
+    // 1. Comic-style font
     ctx.font = "bold 32px 'Comic Sans MS', sans-serif"
     ctx.textBaseline = 'top'
 
@@ -67,8 +69,6 @@ export class Bubble extends BABYLON.Mesh {
 
     const left = (WIDTH - w) / 2
     const top = 40
-
-    console.log(w, h, left, top)
 
     // 2. Draw the Speech Bubble Shape
     ctx.lineCap = 'round'
@@ -85,31 +85,26 @@ export class Bubble extends BABYLON.Mesh {
 
     // 3. The "Tail" (Pointing down)
     ctx.beginPath()
-    ctx.moveTo(WIDTH / 2 - 20, top + h - 4)
-    ctx.lineTo(WIDTH / 2 - 40, top + h + 40) // Tip of tail
-    ctx.lineTo(WIDTH / 2 + 5, top + h - 4)
+    ctx.moveTo(WIDTH / 2 + 30, top + h - 4)
+    ctx.lineTo(WIDTH / 2, top + h + 40) // Tip of tail
+    ctx.lineTo(WIDTH / 2 + 10, top + h - 4)
     ctx.fill()
 
     // 4. Tail stroke
     ctx.beginPath()
-    ctx.moveTo(WIDTH / 2 - 20, top + h)
-    ctx.lineTo(WIDTH / 2 - 40, top + h + 40) // Tip of tail
-    ctx.lineTo(WIDTH / 2 + 5, top + h)
+    ctx.moveTo(WIDTH / 2 + 30, top + h)
+    ctx.lineTo(WIDTH / 2, top + h + 40) // Tip of tail
+    ctx.lineTo(WIDTH / 2 + 10, top + h)
     ctx.stroke()
 
     ctx.beginPath()
 
-    // 4. Draw the Text (All caps for that comic feel)
-    // lines.forEach((line, index) => {
-    //   console.log(line)
-    //   const textWidth = ctx.measureText(line.toUpperCase()).width
-    //   const xOffset = left + (w - textWidth) / 2 // Center text in bubble
+    // Draw text
     ctx.fillStyle = '#000000'
     ctx.textAlign = 'center'
     ctx.textBaseline = 'top'
     ctx.fillText(this.text, WIDTH / 2, h - 10)
     ctx.fill()
-    // })
 
     this.texture.update()
   }

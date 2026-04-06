@@ -38,8 +38,7 @@ const AVATAR_NAME_OFFSET = 0.5
 const NAME_CHAT_OFFSET = 0.6
 
 // fixme get screen refresh rate
-const DURATION = 12 // Math.floor(60 / UPDATE_HZ)
-const CHAT_READ_DURATION = 10e3
+const CHAT_READ_DURATION = 3500
 
 // distance in meters from camera that we play sounds for this avatar
 const SOUND_DISTANCE = 20
@@ -53,7 +52,6 @@ export default class Avatar extends Entity {
   skeleton: BABYLON.Skeleton | null = null
   private readonly _description: AvatarRecord
   private readonly _uuid: string
-  private chatBubbles: Array<BABYLON.Mesh> = []
   private armatureMesh: BABYLON.Mesh | null = null
   private neckBone: BABYLON.Bone | undefined
   private nameMesh: BABYLON.Mesh | null = null
@@ -462,9 +460,6 @@ export default class Avatar extends Entity {
 
     this.removeActions()
 
-    this.chatBubbles.forEach((b) => b.dispose())
-    this.chatBubbles = []
-
     this._material?.dispose(true, true)
     this._material = null
 
@@ -793,6 +788,13 @@ export default class Avatar extends Entity {
   }
 
   addChat(text: string) {
+    // Dispose old bubbles
+    for (const b of this.node.getChildren()) {
+      if (b instanceof Bubble) {
+        b.dispose()
+      }
+    }
+
     const bubble = new Bubble(this.scene, this.node, text)
     bubble.position.set(0, 0.5, 0)
 
