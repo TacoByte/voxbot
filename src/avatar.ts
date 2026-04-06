@@ -793,12 +793,8 @@ export default class Avatar extends Entity {
   }
 
   addChat(text: string) {
-    console.log('addChat', text)
-
     const bubble = new Bubble(this.scene, this.node, text)
     bubble.position.set(0, 0.5, 0)
-
-    console.log('text')
 
     setTimeout(() => {
       bubble.dispose()

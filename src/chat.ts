@@ -1,25 +1,5 @@
-export const getTextLines = (ctx: CanvasRenderingContext2D, text: string, width: number): string[] => {
-  const lines = []
-  const words = text.split(' ')
-  let currentLine = ''
-  for (const word of words) {
-    if (ctx.measureText(currentLine + ' ' + word).width > width) {
-      lines.push(currentLine)
-      currentLine = word
-    }
-  }
-
-  if (currentLine) {
-    lines.push(currentLine)
-  }
-
-  return lines
-}
-
-export const getLineMaxWidth = (ctx: CanvasRenderingContext2D, lines: string[]): number => {
-  return lines.reduce((result, line) => {
-    return Math.max(result, ctx.measureText(line).width)
-  }, 0)
+const getTextWidth = (ctx: CanvasRenderingContext2D, text: string) => {
+  return ctx.measureText(text).width
 }
 
 const WIDTH = 512
@@ -76,17 +56,19 @@ export class Bubble extends BABYLON.Mesh {
     ctx.clearRect(0, 0, WIDTH, HEIGHT)
 
     // 1. Comic-style font (Make sure it's loaded in your CSS)
-    ctx.font = "bold 32px 'Bangers', 'Comic Sans MS', sans-serif"
+    ctx.font = "bold 32px 'Comic Sans MS', sans-serif"
     ctx.textBaseline = 'top'
 
-    const lines = getTextLines(ctx, this.text, WIDTH - 100)
+    const lines = 1
     const lineHeight = 36
 
-    const w = getLineMaxWidth(ctx, lines) + 60 // Extra padding for bubble
-    const h = lineHeight * lines.length + 40
+    const w = getTextWidth(ctx, this.text) + 40
+    const h = lineHeight * lines + 40
 
     const left = (WIDTH - w) / 2
     const top = 40
+
+    console.log(w, h, left, top)
 
     // 2. Draw the Speech Bubble Shape
     ctx.lineCap = 'round'
@@ -98,22 +80,36 @@ export class Bubble extends BABYLON.Mesh {
     ctx.beginPath()
     // Rounded bubble body
     ctx.roundRect(left, top, w, h, 30)
-
-    // 3. The "Tail" (Pointing down)
-    ctx.moveTo(WIDTH / 2 - 20, top + h - 2)
-    ctx.lineTo(WIDTH / 2 - 40, top + h + 40) // Tip of tail
-    ctx.lineTo(WIDTH / 2 + 5, top + h - 2)
-
     ctx.fill()
     ctx.stroke()
 
+    // 3. The "Tail" (Pointing down)
+    ctx.beginPath()
+    ctx.moveTo(WIDTH / 2 - 20, top + h - 4)
+    ctx.lineTo(WIDTH / 2 - 40, top + h + 40) // Tip of tail
+    ctx.lineTo(WIDTH / 2 + 5, top + h - 4)
+    ctx.fill()
+
+    // 4. Tail stroke
+    ctx.beginPath()
+    ctx.moveTo(WIDTH / 2 - 20, top + h)
+    ctx.lineTo(WIDTH / 2 - 40, top + h + 40) // Tip of tail
+    ctx.lineTo(WIDTH / 2 + 5, top + h)
+    ctx.stroke()
+
+    ctx.beginPath()
+
     // 4. Draw the Text (All caps for that comic feel)
+    // lines.forEach((line, index) => {
+    //   console.log(line)
+    //   const textWidth = ctx.measureText(line.toUpperCase()).width
+    //   const xOffset = left + (w - textWidth) / 2 // Center text in bubble
     ctx.fillStyle = '#000000'
-    lines.forEach((line, index) => {
-      const textWidth = ctx.measureText(line.toUpperCase()).width
-      const xOffset = left + (w - textWidth) / 2 // Center text in bubble
-      ctx.fillText(line.toUpperCase(), xOffset, top + 20 + index * lineHeight)
-    })
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'top'
+    ctx.fillText(this.text, WIDTH / 2, h - 10)
+    ctx.fill()
+    // })
 
     this.texture.update()
   }
