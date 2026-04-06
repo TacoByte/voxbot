@@ -528,10 +528,6 @@ export default class Connector extends TypedEventTarget<{ avatar_joined: string 
     this.send(message)
   }
 
-  canChatOnChannel(channel: ChatChannel): boolean {
-    return channel === LOCAL_CHANNEL || this.isLoggedIn
-  }
-
   sendMetric(action: messages.Action, parcel?: number) {
     // Set nearest parcel if possible
     if (!parcel) {
