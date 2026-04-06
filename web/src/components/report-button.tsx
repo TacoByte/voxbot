@@ -1,7 +1,6 @@
 import { Component, ComponentChildren, render, VNode } from 'preact'
 import { unmountComponentAtNode } from 'preact/compat'
 import { useEffect, useState } from 'preact/hooks'
-import Connector, { messageList } from '../../../src/connector'
 import { app } from '../state'
 import { PanelType } from './panel'
 
@@ -35,10 +34,6 @@ export default class ReportButton extends Component<Props, State> {
     }
   }
 
-  get connector(): Connector {
-    return window.connector
-  }
-
   reportItem = async () => {
     if (this.state.fetching) {
       return
@@ -46,7 +41,8 @@ export default class ReportButton extends Component<Props, State> {
 
     this.setState({ reported: true, fetching: true })
 
-    const chat = messageList.value.slice()
+    // fixme
+    const chat = ['test', 'test2', 'test3']
 
     const body = {
       reported_id: this.props.type == 'avatar' ? this.props.item.owner : this.props.item.id,
