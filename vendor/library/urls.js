@@ -40,7 +40,7 @@ function bundleUrls(minified) {
 module.exports = {
   // For use by the website
   ...bundleUrls(process.env.NODE_ENV !== 'development'),
-  UNBUNDLED_BABYLON_LIB_URL_FOR_WEB_WORKERS: babylonBundleUrls(process.env.NODE_ENV !== 'development').BABYLON_LIB_URL, // The bundle references 'window' :(
+  UNBUNDLED_BABYLON_LIB_URL_FOR_WEB_WORKERS: 'https://www.voxels.com/babylon.min.js',
 
   // For use by the bundler
   bundles
