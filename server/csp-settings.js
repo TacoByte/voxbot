@@ -1,6 +1,5 @@
 const csp = require('helmet-csp')
 
-const plausible = 'plausible.io'
 // const twitter_platform = 'platform.twitter.com'
 // const twitter = ['cdn.syndication.twimg.com', 'twitter.com', 'syndication.twitter.com', twitter_platform]
 // we need to load https://immersive-web.github.io/webxr-input-profiles/packages/viewer/dist/profiles/profilesList.json
@@ -28,12 +27,12 @@ module.exports = (reportOnly) =>
       // also used to allow untrusted.cryptovoxels.com to server scripts to www
       frameAncestors: ["'self'", 'https:'],
       // Only from self and cdn
-      defaultSrc: ["'self'", '*.seadn.io', 'discordapp.com', 'controllers.babylonjs.com', 'www.youtube.com', 'blob:', plausible, crvoxAll, ...voxels],
+      defaultSrc: ["'self'", '*.seadn.io', 'discordapp.com', 'controllers.babylonjs.com', 'www.youtube.com', 'blob:', crvoxAll, ...voxels],
 
       // Need unsafe-eval for turf
       // Need unsafe-inline for metamask on firefox :(
       // Need blob for workers
-      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", 'blob:', jsdelivr, 'cdn.babylonjs.com', plausible, ...voxels],
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", 'blob:', jsdelivr, 'cdn.babylonjs.com', ...voxels],
 
       // need unsafe-inline for babylonjs webvr button
       styleSrc: ["'self'", "'unsafe-inline'", jsdelivr, ...voxels],

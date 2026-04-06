@@ -59,6 +59,5 @@ export default function renderComponent(component: VNode) {
 
 <script defer src='${BABYLON_BUNDLE_URL}'></script>
 <script defer src='${webJs}'></script>
-<script async data-domain="voxels.com" src="https://plausible.io/js/plausible.js"></script>
 </html>`
 }
