@@ -15,6 +15,7 @@ import ParcelEventPanel from './components/parcel-event-panel'
 import WebParcelSnapshots from './components/parcel-snapshots'
 import cachedFetch from './helpers/cached-fetch'
 import ParcelVersions from './parcel-versions'
+import Head from './components/head'
 import { Spinner } from './spinner'
 import { app, AppEvent } from './state'
 import { fetchAPI, fetchOptions } from './utils'
@@ -263,16 +264,14 @@ export default class Parcel extends Component<Props, State> {
   constructor(props: Props) {
     super(props)
 
-    // const parcel = props.parcel ?? getSSREventData() ?? parcelCache.get(`/parcels/${props.id}`) ?? null
+    const parcel = props.parcel ?? null
 
     this.state = {
       parcelId: props.id!,
-      // parcel: parcel,
-      loading: true,
+      parcel: parcel ?? undefined,
+      loading: !parcel,
       nearby: [],
       viewTab: 'client',
-      // hosted_scripts: parcel?.settings?.hosted_scripts ?? false,
-      // sandbox: parcel?.settings?.sandbox ?? false,
     }
   }
 
@@ -486,9 +485,22 @@ export default class Parcel extends Component<Props, State> {
 
     const iframeUrl = this.helper?.iframeUrl
 
+    const parcelName = this.state.parcel?.name ?? this.state.parcel?.address ?? `Parcel #${this.state.parcelId}`
+    const parcelDesc = this.state.parcel?.description
+      || [this.state.parcel?.address, this.state.parcel?.suburb, this.state.parcel?.island].filter(Boolean).join(', ')
+      || ''
+    const slug = this.state.parcel?.address?.toLowerCase().replace(/ /g, '-') ?? ''
+    const ogImage = slug ? `https://map.voxels.com/parcel/${this.state.parcelId}-${slug}.png` : undefined
+
+    const featureTexts = (this.state.parcel as any)?.features
+      ?.filter((f: any) => (f.type === 'sign' || f.type === 'richtext') && f.text)
+      .map((f: any) => f.text as string)
+      .slice(0, 20) ?? []
+
     return (
       <section class="columns parcel-page">
-        <h1>{this.state.parcel?.name ?? this.state.parcel?.address ?? `Parcel #${this.state.parcelId}`}</h1>
+        <Head title={parcelName} description={parcelDesc} url={`/parcels/${this.state.parcelId}`} imageURL={ogImage} />
+        <h1>{parcelName}</h1>
 
         <article>
           <figcaption>
@@ -553,6 +565,12 @@ export default class Parcel extends Component<Props, State> {
 
           <Metrics parcelId={this.state.parcelId} />
         </aside>
+
+        {featureTexts.length > 0 && (
+          <ul class="parcel-feature-texts">
+            {featureTexts.map((t: string, i: number) => <li key={i}>{t}</li>)}
+          </ul>
+        )}
       </section>
     )
   }
