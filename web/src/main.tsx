@@ -144,7 +144,7 @@ const Main = () => {
           <Events path="/events" />
           <WompsPage path="/womps" />
 
-          <IslandsAdmin path="/admin/islands" />
+          <IslandsAdmin path="/propose/islands" />
         </Router>
         <Footer />
       </main>

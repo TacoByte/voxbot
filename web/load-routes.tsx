@@ -178,7 +178,7 @@ export default function loadRoutes(app: Express) {
 
   // These routes don't have any static content, are only available in the bundle
   const dynamicRoutes = [
-    { path: '/admin/*', cache: '1 minute' },
+    { path: '/propose/*', cache: '1 minute' },
     { path: '/map', cache: '1 minute' },
     { path: '/mail', cache: '1 minute' },
     { path: '/home', cache: '1 minute' },

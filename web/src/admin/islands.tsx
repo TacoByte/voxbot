@@ -152,7 +152,7 @@ export default class IslandsAdmin extends Component<Props, State> {
       parcels: defaultParcels,
       start: 1,
       w: 8,
-      h: 6,
+      h: 8,
       d: 8,
       name: '',
       center: [11.14, -5.61],
@@ -701,6 +701,22 @@ export default class IslandsAdmin extends Component<Props, State> {
         </header>
 
         <article>
+          <figcaption>
+            <label>
+              Size:
+              <select
+                value={this.state.w + ',' + this.state.h + ',' + this.state.d}
+                onChange={(e: any) => {
+                  const [w, h, d] = e.target.value.split(',').map(Number)
+                  this.setState({ w, h, d })
+                }}
+              >
+                {sizes.map((size) => (
+                  <option value={size.join(',')}>{size.join('x')}</option>
+                ))}
+              </select>
+            </label>
+          </figcaption>
           <figure>
             <canvas id="islands-canvas" ref={this.canvas} />
           </figure>
@@ -722,18 +738,6 @@ export default class IslandsAdmin extends Component<Props, State> {
             <div class="island-map" ref={this.mapRef} />
 
             <button onClick={this.onSave}>Save</button>
-
-            <select
-              value={this.state.w + ',' + this.state.h + ',' + this.state.d}
-              onChange={(e: any) => {
-                const [w, h, d] = e.target.value.split(',').map(Number)
-                this.setState({ w, h, d })
-              }}
-            >
-              {sizes.map((size) => (
-                <option value={size.join(',')}>{size.join('x')}</option>
-              ))}
-            </select>
           </form>
           <h3>Parcels</h3>
 
