@@ -107,12 +107,12 @@ export default function loadRoutes(app: Express) {
         return
       }
 
-      // if (response.parcel && response.parcel.updated_at) {
-      //   const lastModified = new Date(response.parcel.updated_at)
-      //   if (!isNaN(lastModified.getTime())) {
-      //     res.setHeader('Last-Modified', lastModified.toUTCString())
-      //   }
-      // }
+      if (response.parcel?.updated_at) {
+        const lastModified = new Date(response.parcel.updated_at)
+        if (!isNaN(lastModified.getTime())) {
+          res.setHeader('Last-Modified', lastModified.toUTCString())
+        }
+      }
 
       res.send(renderPage(<Parcel parcel={response.parcel} />))
     })
