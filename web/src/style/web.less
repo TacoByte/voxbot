@@ -649,7 +649,7 @@ small {
 /* Admin */
 
 #islands-canvas {
-  width: 70vw;
+  width: 50vw;
   height: 70vh;
 }
 
@@ -670,4 +670,36 @@ small {
 .island-map {
   width: 100%;
   height: 320px;
+}
+
+/* Forms */
+
+div.f {
+  position: relative;
+  display: flex;
+  flex-direction: row;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+
+  label {
+    width: 4rem;
+    display: block;
+    text-align: left;
+  }
+
+  & > input,
+  & > select {
+    flex: 1;
+  }
+
+  & > button {
+    align-self: flex-start;
+  }
+}
+
+.island-admin {
+  article,
+  aside {
+    width: 50vw;
+  }
 }

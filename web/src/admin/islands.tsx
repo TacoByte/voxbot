@@ -154,7 +154,7 @@ export default class IslandsAdmin extends Component<Props, State> {
       w: 8,
       h: 6,
       d: 8,
-      name: 'New Island',
+      name: '',
       center: [11.14, -5.61],
     }
   }
@@ -694,8 +694,11 @@ export default class IslandsAdmin extends Component<Props, State> {
   render() {
     const center = this.state.center.map((c) => c.toFixed(2)).join(',')
     return (
-      <section class="columns">
-        <h1>{this.state.name ? this.state.name : 'Island Builder'}</h1>
+      <section class="island-admin columns">
+        <header>
+          <h1>Island Builder</h1>
+          <p>Propose new islands for approval.</p>
+        </header>
 
         <article>
           <figure>
@@ -712,8 +715,11 @@ export default class IslandsAdmin extends Component<Props, State> {
             <div class="f">
               <label>Center</label>
               <input type="text" value={center} onChange={(e: any) => this.setState({ center: e.target.value.split(',').map(Number) })} />
-              <div class="island-map" ref={this.mapRef} />
             </div>
+
+            <h5>Location</h5>
+
+            <div class="island-map" ref={this.mapRef} />
 
             <button onClick={this.onSave}>Save</button>
 
@@ -740,6 +746,7 @@ export default class IslandsAdmin extends Component<Props, State> {
                 <th>ID</th>
                 <th>Position</th>
                 <th>Size</th>
+                <th></th>
               </tr>
             </thead>
             <tbody>
@@ -753,7 +760,7 @@ export default class IslandsAdmin extends Component<Props, State> {
                     </td>
                     <td>{`${parcel.x1},${parcel.y1},${parcel.z1}`}</td>
                     <td>{`${parcel.x2 - parcel.x1},${parcel.y2 - parcel.y1},${parcel.z2 - parcel.z1}`}</td>
-                    <td>{minted ? <button onClick={() => this.mint(parcel)}>Mint</button> : <button onClick={() => this.create(parcel)}>Create</button>}</td>
+                    <td>{minted ? <button onClick={() => this.mint(parcel)}>Mint</button> : <button onClick={() => this.create(parcel)}>Insert</button>}</td>
                   </tr>
                 )
               })}
@@ -793,19 +800,7 @@ const sizes = [
   [4, 12, 32],
 ].sort((a, b) => b[0] * b[1] * b[2] - a[0] * a[1] * a[2])
 
-const defaultParcels = [
-  { x1: 20, y1: 0, z1: 8, x2: 28, y2: 10, z2: 16, id: 9112 },
-  { x1: 20, y1: 0, z1: -4, x2: 28, y2: 8, z2: 4, id: 9113 },
-  { x1: 20, y1: 0, z1: 32, x2: 28, y2: 13, z2: 40, id: 9114 },
-  { x1: 20, y1: 0, z1: 20, x2: 28, y2: 9, z2: 28, id: 9115 },
-  { x1: 20, y1: 0, z1: -24, x2: 28, y2: 15, z2: -16, id: 9116 },
-  { x1: 36, y1: 0, z1: 20, x2: 44, y2: 10, z2: 28, id: 9117 },
-  { x1: 48, y1: 0, z1: 20, x2: 56, y2: 14, z2: 28, id: 9118 },
-  { x1: 60, y1: 0, z1: 20, x2: 68, y2: 14, z2: 28, id: 9119 },
-  { x1: 34, y1: 0, z1: -2, x2: 46, y2: 19, z2: 10, id: 9120 },
-  { x1: 30, y1: 0, z1: -18, x2: 42, y2: 15, z2: -6, id: 9121 },
-  { x1: 20, y1: 0, z1: 48, x2: 28, y2: 15, z2: 56, id: 9122 },
-]
+const defaultParcels = [{ x1: -4, y1: -4, z1: -4, x2: 4, y2: 4, z2: 4, id: 69000 }]
 
 type IslandField = NdArray<Uint16Array>
 
