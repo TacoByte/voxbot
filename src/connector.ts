@@ -538,7 +538,12 @@ export default class Connector extends TypedEventTarget<{ avatar_joined: string 
       }
     }
 
-    const position = this.persona.avatar!.position.floor().asArray() as messages.vec3
+    try {
+      var position = this.persona.avatar!.position.floor().asArray() as messages.vec3
+    } catch (e) {
+      console.error('Error getting position', e)
+      return
+    }
 
     const message: messages.MetricMessage = {
       type: messages.MessageType.metric,
