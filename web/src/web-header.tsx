@@ -130,7 +130,7 @@ export default class WebHeader extends Component<Props, State> {
 
     const onPlay = (e: any) => {
       e.preventDefault()
-      window.location.href = '/play?coords=SE@665E,648S'
+      window.location.href = '/play?coords=N@257N'
     }
 
     const isActive = (label?: string) => {
