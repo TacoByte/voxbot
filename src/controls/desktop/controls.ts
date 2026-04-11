@@ -7,7 +7,6 @@ import { unmountComponentAtNode } from 'preact/compat'
 import { createFirstPersonCamera } from '../utils/fps-camera'
 import { decodeCoordsFromURL } from '../../utils/helpers'
 import { hasPointerLock } from '../../../common/helpers/ui-helpers'
-import { isSafari } from '../../../common/helpers/detector'
 import { Scene } from '../../scene'
 
 const POINTER_WHEEL_MULTIPLIER = 0.001
@@ -175,16 +174,6 @@ export default class DesktopControls extends Controls {
   }
 
   addPointerLockHandler() {
-    if (isSafari()) {
-      ;(<any>this.scene._inputManager)._updatePointerPosition = () => {
-        // Safari-specific override - disables pointer position updates due to compatibility issues
-        // This prevents input manager from updating pointer coordinates on Safari
-      }
-
-      this.babylonNormalMouse()
-      return
-    }
-
     // Pointerlock listener to only enable babylon picking behaviour while in pointerlock
     this.onPointerLockChange = this.onPointerLockChange.bind(this)
     document.addEventListener('pointerlockchange', this.onPointerLockChange)
@@ -413,10 +402,6 @@ export default class DesktopControls extends Controls {
 
     // Chrome return as promise here
     this.canvas.focus()
-
-    if (isSafari()) {
-      return
-    }
 
     const maybePromise: unknown = this.canvas.requestPointerLock()
     if (maybePromise instanceof Promise) {
