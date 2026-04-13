@@ -1,7 +1,8 @@
-import { Component, Fragment, JSX } from 'preact'
+import { Fragment, Component } from 'preact'
+import { ColorInput } from '../../src/components/ColorInput'
 import { Costume } from '../../../common/messages/costumes'
-import { ColorPicker } from './color-picker'
-const SKIN = '' // require('../../../dist/images/uv-map.svg?raw')
+
+const SKIN = '' // require('../../../dist/images/uv-map.svg')
 
 class SVG extends Component<{
   svg?: string
@@ -11,14 +12,14 @@ class SVG extends Component<{
   }
 }
 
-interface Props {
+export interface Props {
   skin?: string
   default_color?: string
   setSkin: (skin: string) => void
   costume: Costume
 }
 
-type State = Readonly<{
+export type State = Readonly<{
   defaultColor: string
   svg?: string
   paths: Readonly<Array<string>>
@@ -37,22 +38,7 @@ export default class Skin extends Component<Props, State> {
       colors: {},
       defaultColor: props.default_color ?? '#f3f3f3',
       svg: props.skin,
-      expand: true,
     }
-  }
-
-  get svgContent() {
-    const e = document.querySelector('svg g')?.parentElement
-    if (!e) return ''
-    const s = new XMLSerializer().serializeToString(e)
-    return '<?xml version="1.0" encoding="UTF-8"?>\n' + s
-  }
-
-  /**
-   * Grabs the parts and sort them alphabetically
-   */
-  get sortedParts() {
-    return Array.from(this.state.paths).sort((a, b) => a.localeCompare(b))
   }
 
   setAllColors = (color: string) => {
@@ -74,6 +60,20 @@ export default class Skin extends Component<Props, State> {
   onPartColorChange = (part: string, color: string) => {
     this.setColor(part, color)
     this.props.setSkin(this.svgContent)
+  }
+
+  get svgContent() {
+    const e = document.querySelector('svg g')?.parentElement
+    if (!e) return ''
+    const s = new XMLSerializer().serializeToString(e)
+    return '<?xml version="1.0" encoding="UTF-8"?>\n' + s
+  }
+
+  /**
+   * Grabs the parts and sort them alphabetically
+   */
+  get sortedParts() {
+    return Array.from(this.state.paths).sort((a, b) => a.localeCompare(b))
   }
 
   setStateAsync(state: Partial<State>): Promise<void> {
@@ -172,16 +172,13 @@ export default class Skin extends Component<Props, State> {
           <SVG svg={this.state.svg} />
         </div>
 
-        <details open={this.state.expand} onClick={(event: Event) => event.preventDefault}>
-          <summary onClick={toggle}>Skin</summary>
-          <ul>
-            <li>
-              <ColorPicker value={this.state.defaultColor} onChange={(color) => this.setAllColors(color)} />
-              <label for="everything">Everything</label>
-            </li>
-            {parts}
-          </ul>
-        </details>
+        <ul class="skin-list">
+          <li class="everything">
+            <ColorInput color={this.state.defaultColor} onColorSelect={(color) => this.setAllColors(color)} id="everything" />
+            <label for="everything">Everything</label>
+          </li>
+          {parts}
+        </ul>
       </Fragment>
     )
   }
@@ -200,7 +197,8 @@ function PartRow({ partName, transparent, fillColor, onColorSet, onTransparentSe
   const id = partName.split(' ').join('_')
   return (
     <li key={id}>
-      <ColorPicker value={fillColor} onChange={onColorSet} />
+      <TransparentCheckbox transparent={transparent} onTransparentCheck={onTransparentSet} />
+      <ColorInput color={fillColor} disabled={transparent} onColorSelect={onColorSet} id={id} />
       <label for={id}>{partName}</label>
     </li>
   )
@@ -211,7 +209,7 @@ type TransparentCheckboxProps = {
   onTransparentCheck(transparent: boolean): void
 }
 
-function TransparentCheckbox({ transparent, onTransparentCheck }: TransparentCheckboxProps): JSX.Element {
+function TransparentCheckbox({ transparent, onTransparentCheck }: TransparentCheckboxProps) {
   return (
     <input
       title="Uncheck to make part invisible"

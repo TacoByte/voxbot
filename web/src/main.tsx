@@ -14,6 +14,7 @@ import Assets from './assets'
 import EditAsset from './assets/edit'
 import { SignIn } from './auth/login'
 import Avatar from './avatar'
+import Costumer from './costumer'
 import CollectionPage from './collection'
 import Collections from './components/list-of-collections'
 import Snackbar from './components/snackbar'
@@ -134,6 +135,9 @@ const Main = () => {
           <Avatar path="/avatar/:walletOrName/:tab?" />
           <Avatar path="/u/:walletOrName" />
           <Avatar path="/u/:walletOrName/:tab?" />
+
+          <Costumer path="/costumer" />
+          <Costumer path="/costumer/:costumeId" />
 
           <Collections path="/collections" />
           <CollectionPage path="/collections/:id" />
