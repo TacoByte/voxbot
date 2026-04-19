@@ -1,11 +1,10 @@
 import { Request, Response } from 'express'
 import { ChainIdentifier, getChainIdByName, SUPPORTED_CHAINS } from '../../common/helpers/chain-helpers'
 import cache from '../cache'
-import { createCollectible, getAmountOfWearable, updateWearable, validateHashWearable } from '../handlers/collectible-handler'
+import { createCollectible, updateWearable, validateHashWearable } from '../handlers/collectible-handler'
 import { createRequestHandlerForQuery, queryAndCallback } from '../lib/query-helpers'
 import { parseQueryInt } from '../lib/query-parsing-helpers'
 import { Db } from '../pg'
-import { identifyCollectionParams } from './collections'
 
 export default function (db: Db, passport: any, app: any) {
   app.get(
@@ -17,6 +16,14 @@ export default function (db: Db, passport: any, app: any) {
       return [`%${req.query.q || ''}%`, isNaN(page) ? 0 : page - 1, req.query.sort ? req.query.sort : 'updated_at', req.query.asc === 'true']
     }),
   )
+
+  app.get(`/api/collectibles/:id/vox`, cache('immutable'), async (req: Request, res: Response) => {
+    const wearable = await db.query('sql/get-wearable-by-id', `select * from wearables where id=$1`, [req.params.id])
+
+    res.set('Content-Type', 'application/octet-stream')
+    res.setHeader('Content-Disposition', `attachment; filename="${req.params.id}.vox"`)
+    res.status(200).send(wearable.rows[0].data)
+  })
 
   /**
    *   Create any type of collectible

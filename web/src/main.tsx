@@ -142,7 +142,7 @@ const Main = () => {
           <Collections path="/collections" />
           <CollectionEditPage path="/collections/:id/edit" />
           <CollectionPage path="/collections/:id" />
-          <Wearable path="/collections/:cid/:address/:id" />
+          <Wearable path="/collections/:cid/:address/:tid" />
 
           <Womp path="/womps/:id" />
           <EventPage path="/events/:id" />

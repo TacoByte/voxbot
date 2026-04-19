@@ -23,7 +23,7 @@ import { WearableViewer } from './wearable-viewer'
 export interface Props {
   path?: string
   cid?: number
-  id?: number
+  tid?: number
 }
 
 export interface State {
@@ -51,7 +51,7 @@ export default class Wearable extends Component<Props, State> {
   }
 
   fetch = async () => {
-    let url = `/api/collections/${this.props.cid}/collectibles/${this.props.id}`
+    let url = `/api/collections/${this.props.cid}/collectibles/${this.props.tid}`
 
     const f = await fetch(url)
     const { collectible } = await f.json()
@@ -66,7 +66,7 @@ export default class Wearable extends Component<Props, State> {
       this.viewer = new WearableViewer(this.canvas.current!)
     }
 
-    this.viewer?.loadURL(`/api/collections/${this.props.cid}/collectibles/${this.props.id}/vox`)
+    this.viewer?.loadURL(`/api/collectibles/${this.wearable!.id}/vox`)
   }
 
   get wearable() {
