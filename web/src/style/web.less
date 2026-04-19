@@ -259,9 +259,201 @@ main {
   margin: 0 auto;
 }
 
+section.costumer-page > p.costumer-breadcrumb {
+  grid-column: 1 / -1;
+  margin: 0 0 0.25rem 0;
+}
+
+section.costumer-page > h1 {
+  grid-column: 1 / -1;
+  margin: 0 0 0.35rem 0;
+}
+
+section.costumer-page article {
+  min-width: 0;
+}
+
+section.costumer-page aside {
+  min-width: 0;
+}
+
+section.costumer-page figcaption {
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  top: -2rem;
+}
+
+section.costumer-page figcaption #gizmos {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  margin-right: 0.35rem;
+}
+
+section.costumer-page figcaption #gizmos.inactive {
+  opacity: 0.5;
+}
+
+section.costumer-page figcaption #gizmos button.secondary {
+  padding: 0.3rem 0.5rem;
+  font-size: 0.75rem;
+}
+
+section.costumer-page .costumer-upload {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0;
+}
+
+section.costumer-page .costumer-costume-pick {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-left: auto;
+}
+
+section.costumer-page .costumer-costume-pick-label {
+  font-size: 0.75rem;
+  opacity: 0.65;
+  white-space: nowrap;
+}
+
+section.costumer-page figcaption select {
+  font: inherit;
+  max-width: 14rem;
+}
+
+section.costumer-page .costumer-name-block {
+  margin-top: 0.75rem;
+}
+
+section.costumer-page .costumer-name-block h3 {
+  margin: 0 0 0.25rem 0;
+}
+
+section.costumer-page article > h3 {
+  margin: 1rem 0 0.35rem 0;
+}
+
+section.costumer-page .postscript {
+  height: 0;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+section.costumer-page .wearable-hand-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  align-items: start;
+}
+
+section.costumer-page .wearable-hand-column h4 {
+  margin: 0 0 0.35rem 0;
+}
+
+section.costumer-page .wearable-pick-row {
+  display: flex;
+  gap: 0.25rem;
+  margin-top: 0.25rem;
+}
+
+section.costumer-page .wearable-pick-row button {
+  flex: 1;
+  padding: 0.15rem 0.25rem;
+}
+
+@media @mobile {
+  section.costumer-page .wearable-hand-columns {
+    grid-template-columns: 1fr;
+  }
+}
+
+section.costumer-page .costumer-canvas-wrap {
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+}
+
+section.costumer-page .bone-picker-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  background: rgba(0, 0, 0, 0.12);
+}
+
+section.costumer-page .bone-wearable-popup {
+  position: absolute;
+  z-index: 6;
+  box-sizing: border-box;
+  min-width: 200px;
+  max-width: 280px;
+  max-height: min(360px, 70vh);
+  overflow: auto;
+  padding: 0.4rem 0.5rem 0.5rem;
+  border: 1px solid #888;
+  background: #f4f4f4;
+  color: #111;
+}
+
+section.costumer-page .bone-wearable-popup-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.35rem;
+}
+
+section.costumer-page .bone-wearable-popup-x {
+  line-height: 1;
+  padding: 0.1rem 0.35rem;
+}
+
+section.costumer-page .bone-wearable-popup-msg {
+  margin: 0.25rem 0;
+  font-size: 0.85rem;
+}
+
+section.costumer-page .bone-wearable-popup-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+section.costumer-page .bone-wearable-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 76px;
+  padding: 0.2rem;
+  gap: 0.15rem;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+section.costumer-page .bone-wearable-tile span {
+  font-size: 0.65rem;
+  line-height: 1.1;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 // Grid layout
 
 .parcel-page.columns {
+  grid-template-columns: 7fr 1fr;
+}
+
+.costumer-page.columns {
   grid-template-columns: 7fr 1fr;
 }
 
@@ -705,5 +897,127 @@ div.f {
   article,
   aside {
     width: 40vw;
+  }
+}
+
+fieldset {
+  border: none;
+  padding: 0;
+  margin: 0 0 0.65rem;
+  min-width: 0;
+}
+
+/* Account sign-in (passkey / email / wallet) */
+
+section.login {
+  padding: 1rem 1.25rem 2.5rem;
+  margin: 0;
+  max-width: 28rem;
+  text-align: left;
+
+  label {
+    display: block;
+    font-size: 0.85rem;
+    margin-bottom: 0.15rem;
+  }
+
+  input[type='email'],
+  input[type='text'] {
+    display: block;
+    width: 100%;
+    max-width: 22rem;
+    box-sizing: border-box;
+    margin-top: 0.2rem;
+    padding: 0.4rem 0.5rem;
+    border: 1px solid #999;
+    background: #fff;
+    font-family: inherit;
+    font-size: 0.9rem;
+  }
+
+  .login-form {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .login-block {
+    margin: 0;
+
+    h1 {
+      font-size: 1.15rem;
+      font-weight: bold;
+      margin: 0 0 0.65rem;
+    }
+  }
+
+  hr.login-form-divider {
+    border: 0;
+    border-top: 1px solid #ccc;
+    margin: 1.25rem 0;
+    width: 100%;
+    align-self: stretch;
+  }
+
+  .login-hint {
+    margin: 0 0 0.75rem;
+    max-width: 26rem;
+    font-size: 0.75rem;
+    line-height: 1.4;
+    color: #555;
+  }
+
+  .login-error {
+    margin: 0 0 0.5rem;
+    font-size: 0.8rem;
+    line-height: 1.35;
+    color: #a00;
+  }
+
+  .login-actions {
+    margin: 0.35rem 0 0;
+  }
+
+  .login-or-cancel {
+    margin-left: 0.5rem;
+    font-size: 0.85rem;
+  }
+
+  .login-passkey-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.15rem;
+  }
+
+  button.login-passkey-wait {
+    margin-top: 0.15rem;
+  }
+}
+
+/* Account page (your own profile) */
+
+section.profile {
+  .account-name-hero {
+    font-size: 1.85rem;
+    font-weight: bold;
+    line-height: 1.2;
+    margin: 0 0 0.5rem;
+  }
+
+  .account-welcome-msg {
+    font-size: 0.88rem;
+    line-height: 1.45;
+    color: #444;
+    max-width: 36rem;
+    margin: 0 0 0.85rem;
+  }
+
+  .account-logout-row {
+    margin: 0.5rem 0 0;
+  }
+
+  .account-logout-btn {
+    font-size: 0.85rem;
   }
 }

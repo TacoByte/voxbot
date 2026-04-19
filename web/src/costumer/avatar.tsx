@@ -87,19 +87,21 @@ export default class Avatar extends Component<Props, State> {
           hips.getTransformNode()?.rotate(BABYLON.Axis.Y, Math.PI)
 
           bones.forEach((b) => {
-            const m = BABYLON.MeshBuilder.CreateSphere('bonesphere', { diameter: 0.15 }, scene)
+            const m = BABYLON.MeshBuilder.CreateDisc(`bonesphere:${b.name}`, { radius: 0.07, tessellation: 28 }, scene)
             this.boneMeshes.push(m)
             m.id = 'bonesphere'
             m.attachToBone(b, armature)
             m.metadata = b.name.replace(/^.+:/, '')
+            m.isPickable = true
+            m.billboardMode = BABYLON.AbstractMesh.BILLBOARDMODE_ALL
             const mat = new BABYLON.StandardMaterial(b.name, scene)
-            mat.emissiveColor.set(1, 1, 1)
+            mat.emissiveColor.set(0.75, 0.75, 0.78)
             mat.disableLighting = true
-            mat.alpha = 0.5
+            mat.alpha = 0.55
             mat.blockDirtyMechanism = true
             m.material = mat
             m.renderingGroupId = 2
-            m.setEnabled(false)
+            m.setEnabled(true)
           })
 
           this.setState({ loaded: true })

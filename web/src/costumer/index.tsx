@@ -12,7 +12,9 @@ import { route } from 'preact-router'
 import { pending, setupGizmos, setupScene } from './utils'
 import { Wearable } from './wearable'
 import { v1 as uuidv1 } from 'uuid'
-import { CollectiblesData } from '../../../common/helpers/collections-helpers'
+import { CollectiblesData, fetchMergedWearableCatalog } from '../../../common/helpers/collections-helpers'
+import { wearablesForBone } from './bone-wearables'
+import { getWearableGif } from '../helpers/wearable-helpers'
 import { createHash } from 'crypto'
 import { Spinner } from '../../src/spinner'
 import Redirect from '../../src/components/redirect'
@@ -42,6 +44,11 @@ interface State {
   attachmentId: string | null
   costumes?: Array<Costume>
   avatarCostumeId?: number
+  bonePickerBone: string | null
+  bonePickerItems: CollectiblesData[] | null
+  bonePickerLoading: boolean
+  bonePickerX: number
+  bonePickerY: number
 }
 
 export default class Costumer extends Component<Props, State> {
@@ -52,7 +59,15 @@ export default class Costumer extends Component<Props, State> {
   private editor = createRef()
   private canvas = createRef()
 
-  state: State = { attachmentId: null, loading: true }
+  state: State = {
+    attachmentId: null,
+    loading: true,
+    bonePickerBone: null,
+    bonePickerItems: null,
+    bonePickerLoading: false,
+    bonePickerX: 0,
+    bonePickerY: 0,
+  }
 
   componentDidMount() {
     if (!this.canvas.current) {
@@ -174,9 +189,97 @@ export default class Costumer extends Component<Props, State> {
     await this.throttledUpdate(costume)
   }
   onClick = (mesh: BABYLON.AbstractMesh | undefined) => {
+    if (mesh?.id === 'bonesphere' && mesh.metadata) {
+      void this.openBoneWearablePicker(String(mesh.metadata))
+      return
+    }
     if (!mesh) {
+      this.closeBoneWearablePicker()
       this.setState({ attachmentId: null })
     }
+  }
+
+  openBoneWearablePicker = async (bone: string) => {
+    this.resetBoneSphereHighlights(null)
+    const canvas = this.canvas.current
+    let x = 12
+    let y = 12
+    if (canvas && this.scene) {
+      const r = canvas.getBoundingClientRect()
+      const pw = this.scene.pointerX
+      const ph = this.scene.pointerY
+      x = Math.min(Math.max(4, pw - 24), Math.max(4, r.width - 220))
+      y = Math.min(Math.max(4, ph - 24), Math.max(4, r.height - 160))
+    }
+    this.setState({
+      bonePickerBone: bone,
+      bonePickerItems: null,
+      bonePickerLoading: true,
+      bonePickerX: x,
+      bonePickerY: y,
+    })
+    try {
+      const all = await fetchMergedWearableCatalog(app.state.wallet)
+      const items = wearablesForBone(bone, all)
+      items.sort((a, b) => (a.name || '').localeCompare(b.name || ''))
+      this.setState({ bonePickerItems: items, bonePickerLoading: false })
+    } catch {
+      this.setState({ bonePickerItems: [], bonePickerLoading: false })
+    }
+  }
+
+  closeBoneWearablePicker = () => {
+    this.resetBoneSphereHighlights(null)
+    this.setState({
+      bonePickerBone: null,
+      bonePickerItems: null,
+      bonePickerLoading: false,
+    })
+  }
+
+  onBonePickerBackdrop = (e: MouseEvent) => {
+    if (e.target === e.currentTarget) {
+      this.closeBoneWearablePicker()
+    }
+  }
+
+  onPickWearableFromBonePopup = (w: CollectiblesData) => {
+    const bone = this.state.bonePickerBone
+    if (!bone) {
+      return
+    }
+    this.closeBoneWearablePicker()
+    void this.addAttachment(w, bone)
+  }
+
+  onCanvasPointerMove = (ev: MouseEvent) => {
+    if (!this.scene || !this.canvas.current || this.state.bonePickerBone) {
+      return
+    }
+    const info = this.scene.pick(ev.offsetX, ev.offsetY, (m: BABYLON.AbstractMesh) => m.id == 'bonesphere')
+    const hb = info?.hit && info.pickedMesh?.metadata ? String(info.pickedMesh.metadata) : null
+    this.resetBoneSphereHighlights(hb)
+  }
+
+  onCanvasLeave = () => {
+    if (!this.state.bonePickerBone) {
+      this.resetBoneSphereHighlights(null)
+    }
+  }
+
+  resetBoneSphereHighlights(hoverBone: string | null) {
+    this.bonespheres?.forEach((mesh: BABYLON.AbstractMesh) => {
+      if (!mesh.material) {
+        return
+      }
+      const mat = mesh.material as BABYLON.StandardMaterial
+      const bone = mesh.metadata as string
+      if (hoverBone && bone === hoverBone) {
+        mat.emissiveColor.set(0.35, 0, 1)
+      } else {
+        mat.emissiveColor.set(0.75, 0.75, 0.78)
+      }
+    })
   }
   setActive = async () => {
     const costume_id = this.props.costumeId
@@ -338,25 +441,11 @@ export default class Costumer extends Component<Props, State> {
   onDragOver = (ev: DragEvent) => {
     this.targetBone = null
 
-    this.bonespheres?.forEach((mesh: BABYLON.AbstractMesh) => {
-      mesh.setEnabled(true)
-      if (!mesh.material) {
-        console.warn('no material', mesh)
-        return
-      }
-      const mat = mesh.material as BABYLON.StandardMaterial
-
-      mat.emissiveColor.set(1, 1, 1)
-    })
-
     if (this.scene) {
       const info = this.scene.pick(ev.offsetX, ev.offsetY, (mesh: BABYLON.AbstractMesh) => mesh.id == 'bonesphere')
-
-      if (info?.pickedMesh?.material) {
-        const mat = info.pickedMesh.material as BABYLON.StandardMaterial
-
-        mat.emissiveColor.set(0.3, 0, 1)
-
+      const hb = info?.hit && info.pickedMesh?.metadata ? String(info.pickedMesh.metadata) : null
+      this.resetBoneSphereHighlights(hb)
+      if (info?.pickedMesh?.metadata) {
         this.targetBone = info.pickedMesh.metadata
       }
     }
@@ -368,7 +457,7 @@ export default class Costumer extends Component<Props, State> {
   }
 
   onDragExit = () => {
-    this.hideBoneSpheres()
+    this.resetBoneSphereHighlights(null)
   }
 
   onWheel = (ev: WheelEvent) => {
@@ -376,7 +465,7 @@ export default class Costumer extends Component<Props, State> {
   }
 
   onDrop = async () => {
-    this.hideBoneSpheres()
+    this.resetBoneSphereHighlights(null)
 
     const wearable = this.droppedWearable()
     if (!wearable) {
@@ -540,8 +629,8 @@ export default class Costumer extends Component<Props, State> {
         throw err
       })
 
-    // Wait for this...
-    const f = await fetch(`/api/costumes/by/${wallet}`)
+    // Wait for this... (must match CostumesController GET /api/avatars/:wallet/costumes)
+    const f = await fetch(`/api/avatars/${wallet}/costumes`)
     if (!f.ok) {
       this.setState({ loading: false })
       throw new Error('Could not fetch costumes')
@@ -560,9 +649,7 @@ export default class Costumer extends Component<Props, State> {
   }
 
   hideBoneSpheres() {
-    this.bonespheres?.forEach((mesh: BABYLON.AbstractMesh) => {
-      mesh.setEnabled(false)
-    })
+    this.resetBoneSphereHighlights(null)
   }
 
   droppedWearable(): CollectiblesData | null {
@@ -584,6 +671,10 @@ export default class Costumer extends Component<Props, State> {
     }
 
     return true
+  }
+
+  pickWearableForHand = (wearable: CollectiblesData, bone: string) => {
+    void this.addAttachment(wearable, bone)
   }
 
   async addAttachment(wearable: CollectiblesData, bone: string) {
@@ -609,10 +700,9 @@ export default class Costumer extends Component<Props, State> {
       uuid: attachmentId,
     }
 
-    if (!costume.attachments) {
-      costume.attachments = []
-    }
-
+    let attachments = [...(costume.attachments || [])]
+    attachments = attachments.filter((a) => a.bone !== bone)
+    costume.attachments = attachments
     costume.attachments.push(attachment)
 
     this.setState({ attachmentId })
@@ -704,88 +794,141 @@ export default class Costumer extends Component<Props, State> {
     const preview = `/u/${app.wallet}/costumes/${this.props.costumeId}`
 
     return (
-      <section class="costumer">
-        <p>
+      <section class="columns costumer-page">
+        <p class="costumer-breadcrumb">
           <a href="/">Home</a> &gt; Costumer
         </p>
 
-        <h1>{this.costume?.name || 'New Costume'}</h1>
+        <h1>{this.costume?.name || 'New costume'}</h1>
 
-        <form class="new">
-          <button onClick={pending(this.createCostume)}>New</button>
-        </form>
-
-        <form class="upload">
-          <input onChange={this.onUpload} type="file" />
-          <button>Upload</button>
-        </form>
-
-        <button disabled={worn} onClick={pending(this.setActive)}>
-          Wear
-        </button>
-        <button onClick={this.downloadCostume}>Download</button>
-        <button onClick={pending(this.duplicateCostume)}>Duplicate</button>
-        <button onClick={pending(this.deleteCostume)}>Delete</button>
-        <a class="button" href={preview}>
-          Preview
-        </a>
-
-        <select value={this.costume?.id} onInput={this.onChange}>
-          {costumes}
-        </select>
-
-        <figure>
-          <canvas onWheel={this.onWheel} onDragOver={this.onDragOver} onDragExit={this.onDragExit} onDrop={this.onDrop} class="costumer" ref={this.canvas} />
-        </figure>
-        <main>
-          <article>
-            {this.costume && (
-              <div>
-                <h3>
-                  <TextInput value={this.costume.name ? this.costume.name : `costume#${this.costume.id}`} onSave={this.setName} />
-                </h3>
-                <div class="column-header"></div>
-              </div>
-            )}
-
-            <div class="viewer">
-              <div id="gizmos" class={this.state.attachmentId !== null ? 'active' : 'inactive'}>
-                <button disabled={this.state.attachmentId === null} id="gizmo-position">
-                  Position
-                </button>
-                <button disabled={this.state.attachmentId === null} id="gizmo-rotation">
-                  Rotation
-                </button>
-                <button disabled={this.state.attachmentId === null} id="gizmo-scale">
-                  Scale
-                </button>
-              </div>
-
-              {avatar}
+        <article>
+          <figcaption>
+            <div id="gizmos" class={this.state.attachmentId !== null ? 'active' : 'inactive'}>
+              <button type="button" class="secondary" disabled={this.state.attachmentId === null} id="gizmo-position">
+                Position
+              </button>
+              <button type="button" class="secondary" disabled={this.state.attachmentId === null} id="gizmo-rotation">
+                Rotation
+              </button>
+              <button type="button" class="secondary" disabled={this.state.attachmentId === null} id="gizmo-scale">
+                Scale
+              </button>
             </div>
 
-            <h3>Wearing</h3>
+            <button type="button" class="secondary" onClick={pending(this.createCostume)}>
+              New
+            </button>
 
-            <div class="column-header"></div>
+            <form class="costumer-upload" onSubmit={(e) => e.preventDefault()}>
+              <input onChange={this.onUpload} type="file" />
+              <button type="button" class="secondary">
+                Upload
+              </button>
+            </form>
 
-            {this.state.attachmentId && <Editor ref={this.editor} key={editorKey} attachmentId={this.state.attachmentId} costume={this.costume} deleteAttachment={this.removeAttachment} updateAttachment={this.updateAttachment} />}
+            <button type="button" class="secondary" disabled={worn} onClick={pending(this.setActive)}>
+              Wear
+            </button>
+            <button type="button" class="secondary" onClick={this.downloadCostume}>
+              Download
+            </button>
+            <button type="button" class="secondary" onClick={pending(this.duplicateCostume)}>
+              Duplicate
+            </button>
+            <button type="button" class="secondary" onClick={pending(this.deleteCostume)}>
+              Delete
+            </button>
+            <a class="buttonish" href={preview}>
+              Preview
+            </a>
 
-            {this.costume && (
-              <Fragment>
-                <ul class="tree">
-                  <li>
-                    <ul class="attachment-list">{attachments}</ul>
-                  </li>
-                  <li>{this.costume && <Skin key={skinKey} costume={this.costume} skin={this.costume.skin} default_color={this.costume.default_color} setSkin={this.setSkin} />}</li>
-                </ul>
-              </Fragment>
-            )}
-          </article>
+            <label class="costumer-costume-pick">
+              <span class="costumer-costume-pick-label">Costume</span>
+              <select value={this.costume?.id} onInput={this.onChange}>
+                {costumes}
+              </select>
+            </label>
+          </figcaption>
 
-          <aside>
-            <div class="wearables-list">{this.costume && <WearableList />}</div>
-          </aside>
-        </main>
+          <figure class="costumer-canvas-wrap">
+            <canvas
+              onWheel={this.onWheel}
+              onDragOver={this.onDragOver}
+              onDragExit={this.onDragExit}
+              onDrop={this.onDrop}
+              onMouseMove={this.onCanvasPointerMove}
+              onMouseLeave={this.onCanvasLeave}
+              class="costumer"
+              ref={this.canvas}
+            />
+            {this.state.bonePickerBone ? (
+              <div class="bone-picker-overlay" onMouseDown={this.onBonePickerBackdrop}>
+                <div
+                  class="bone-wearable-popup"
+                  style={{ left: `${this.state.bonePickerX}px`, top: `${this.state.bonePickerY}px` }}
+                  onMouseDown={(e) => e.stopPropagation()}
+                >
+                  <div class="bone-wearable-popup-head">
+                    <strong>{this.state.bonePickerBone}</strong>
+                    <button type="button" class="bone-wearable-popup-x" onClick={this.closeBoneWearablePicker}>
+                      x
+                    </button>
+                  </div>
+                  {this.state.bonePickerLoading ? <p class="bone-wearable-popup-msg">Loading</p> : null}
+                  {!this.state.bonePickerLoading && (this.state.bonePickerItems?.length ?? 0) === 0 ? (
+                    <p class="bone-wearable-popup-msg">No wearables for this bone</p>
+                  ) : null}
+                  <ul class="bone-wearable-popup-list">
+                    {(this.state.bonePickerItems || []).map((w) => (
+                      <li key={`bp-${w.collection_id}-${w.token_id}-${w.id}`}>
+                        <button type="button" class="bone-wearable-tile" onClick={() => this.onPickWearableFromBonePopup(w)}>
+                          <img src={getWearableGif(w)} width={56} height={56} alt="" />
+                          <span>{w.name}</span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            ) : null}
+          </figure>
+
+          {avatar}
+
+          {this.costume && (
+            <div class="costumer-name-block">
+              <h3>Name</h3>
+              <TextInput value={this.costume.name ? this.costume.name : `costume#${this.costume.id}`} onSave={this.setName} />
+            </div>
+          )}
+
+          <h3>Wearing</h3>
+
+          {this.state.attachmentId && (
+            <Editor ref={this.editor} key={editorKey} attachmentId={this.state.attachmentId} costume={this.costume} deleteAttachment={this.removeAttachment} updateAttachment={this.updateAttachment} />
+          )}
+
+          {this.costume && (
+            <Fragment>
+              <ul class="tree">
+                <li>
+                  <ul class="attachment-list">{attachments}</ul>
+                </li>
+                <li>
+                  <Skin key={skinKey} costume={this.costume} skin={this.costume.skin} default_color={this.costume.default_color} setSkin={this.setSkin} />
+                </li>
+              </ul>
+            </Fragment>
+          )}
+        </article>
+
+        <div class="postscript" />
+
+        <aside class="push-header">
+          <div class="wearables-list">
+            <WearableList onPickWearable={this.pickWearableForHand} />
+          </div>
+        </aside>
       </section>
     )
   }
