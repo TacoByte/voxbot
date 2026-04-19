@@ -219,8 +219,8 @@ export default class CollectionPage extends Component<Props, State> {
         <div key={w.id}>
           <a href={url}>
             <Image type="wearable" src={bucketUrl(w.id!)} altsrc={renderUrl(w.id!)} />
+            <p>{truncate(w.name, { length: 40 })}</p>
           </a>
-          <p>{truncate(w.name, { length: 40 })}</p>
         </div>
       )
     })

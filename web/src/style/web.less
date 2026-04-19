@@ -907,3 +907,21 @@ section.profile {
   height: 60vh;
   background: #0af;
 }
+
+.broken-image,
+.loading-image {
+  width: 100%;
+  aspect-ratio: 1/1;
+  background: #eee;
+  position: relative;
+
+  img {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 16px;
+    filter: grayscale(100%);
+    transform: translate(-50%, -50%);
+    mix-blend-mode: multiply;
+  }
+}
