@@ -250,7 +250,7 @@ export class StateLogin {
     }
   }
 
-  onToken(key: string, name: string | null, isNewUser: boolean) {
+  onToken(key: string, name: string | null, isNewUser: boolean): void {
     const payload = decodeJwt(key) as any
     if (!payload || typeof payload !== 'object') {
       console.error('Invalid JWT')
@@ -426,10 +426,15 @@ export class StateLogin {
       return
     }
 
+    if (!this.provider || typeof this.provider.request !== 'function') {
+      this.provider = null
+      return false
+    }
+
     // Request accounts of the user.
     const accounts = await getUserAccounts(this.provider)
     if (!accounts || !accounts[0]) {
-      //No account found
+      // No account found (user denied or locked wallet)
       this.#app.emit(AppEvent.ErrorLogin)
       return false
     }

@@ -7,15 +7,16 @@ if (process.env.NODE_ENV === 'development') {
 import { Component, render } from 'preact'
 import { Route, Router, type RouterOnChangeArgs } from 'preact-router'
 
-import AccountCollectibles from '../account/collectibles'
 import NewSpace from '../account/new-space'
 import Asset from './asset'
 import Assets from './assets'
 import EditAsset from './assets/edit'
 import { SignIn } from './auth/login'
 import Avatar from './avatar'
+import Costumer from './costumer'
+import CollectionEditPage from './collection-edit'
 import CollectionPage from './collection'
-import Collections from './components/list-of-collections'
+import Collections from './collections'
 import Snackbar from './components/snackbar'
 import Conduct from './conduct'
 import EventPage from './event-page'
@@ -135,9 +136,13 @@ const Main = () => {
           <Avatar path="/u/:walletOrName" />
           <Avatar path="/u/:walletOrName/:tab?" />
 
+          <Costumer path="/costumer" />
+          <Costumer path="/costumer/:costumeId" />
+
           <Collections path="/collections" />
+          <CollectionEditPage path="/collections/:id/edit" />
           <CollectionPage path="/collections/:id" />
-          <Wearable path="/collections/:chain_identifier/:address/:token_id" />
+          <Wearable path="/collections/:cid/:address/:tid" />
 
           <Womp path="/womps/:id" />
           <EventPage path="/events/:id" />
@@ -202,7 +207,6 @@ function AccountRoutes(props: { path?: string }) {
   return (
     <Router>
       <Route path="/account/:tab?" component={Home} />
-      <AccountCollectibles path="/account/collectibles" />
     </Router>
   )
 }

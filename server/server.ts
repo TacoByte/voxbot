@@ -8,6 +8,7 @@ import Parcel, { PARCEL_EVENT_EMITTER } from './parcel'
 import BuildRequestHandler, { SpaceBuildRequestHandler } from './handlers/build-parcel'
 import queryParcel, { refreshParcelsByWallet } from './handlers/query-parcel'
 import { EmailCode, SignIn } from './handlers/sign-in'
+import { PasskeyAvailable, PasskeyLoginOptions, PasskeyLoginVerify, PasskeyRegisterOptions, PasskeyRegisterVerify } from './handlers/passkey'
 import updateParcel from './handlers/update-parcel'
 
 import { currentVersion } from '../common/version'
@@ -258,23 +259,6 @@ app.get(`/${currentVersion}-client.css`, cache('1 day'), (req, res) => {
   return res.sendFile(path.join(__dirname, '..', 'dist', `client.css`))
 })
 
-// Static files (need cloudfront over the front of the app so these
-// don't cause load on express)
-
-if (config.isUAT) {
-  app.use(function (req, res, next) {
-    res.set('X-Robots-Tag', 'noindex')
-    next()
-  })
-
-  app.use(
-    basicAuth({
-      users: { uat: 'snowcrash' },
-      challenge: true,
-    }),
-  )
-}
-
 app.use(
   expressStaticGzip(path.join(__dirname, '..', 'dist'), {
     enableBrotli: true,
@@ -311,6 +295,11 @@ const timeoutMiddleware = (delay: number) => (req: express.Request, res: express
 }
 app.post('/api/signin', signInRateLimit, timeoutMiddleware(5 * 60 * 60 * 1000), SignIn)
 app.post('/api/signin/code', signInRateLimit, timeoutMiddleware(5 * 60 * 60 * 1000), EmailCode)
+app.post('/api/passkey/available', signInRateLimit, PasskeyAvailable)
+app.post('/api/passkey/register/options', signInRateLimit, PasskeyRegisterOptions)
+app.post('/api/passkey/register/verify', signInRateLimit, PasskeyRegisterVerify)
+app.post('/api/passkey/login/options', signInRateLimit, PasskeyLoginOptions)
+app.post('/api/passkey/login/verify', signInRateLimit, PasskeyLoginVerify)
 
 // Search tool
 app.get('/api/search', searchAndReturn)
