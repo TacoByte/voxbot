@@ -88,8 +88,7 @@ export default function AvatarsController(db: Db, passport: PassportStatic, app:
         w.suppressed,
         w.category,
         w.default_settings,
-        w.is_free,
-        w.default_bone,
+        w.is_free
         c.address as collection_address,
         c.chainid as chain_id,
         c.name as collection_name
@@ -102,7 +101,6 @@ export default function AvatarsController(db: Db, passport: PassportStatic, app:
         and w.suppressed is not true
         and w.token_id is not null
       order by
-        w.default_bone nulls last,
         w.name
       `,
       [],

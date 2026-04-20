@@ -164,14 +164,8 @@ export default class Costumer extends Component<Props, State> {
       this.forceUpdate()
     }
 
-    if (!this.state.attachmentIdx) {
-      if (this.layer) {
-        this.layer.removeAllMeshes()
-      }
-
-      if (this.gizmoManager) {
-        this.gizmoManager.attachToMesh(null)
-      }
+    if (!this.state.attachmentIdx && this.gizmoManager) {
+      this.gizmoManager.attachToMesh(null)
     }
   }
 
@@ -576,10 +570,6 @@ export default class Costumer extends Component<Props, State> {
 
   private get attachment(): CostumeAttachment | null {
     return this.costume?.attachments?.[this.state.attachmentIdx ?? 0] ?? null
-  }
-
-  private get layer() {
-    return this.scene?.getHighlightLayerByName('selected') ?? null
   }
 
   private get bonespheres() {

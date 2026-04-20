@@ -1,7 +1,6 @@
 import { Component } from 'preact'
 import voxImport from '../../../common/vox-import/sync-vox-import'
 import { CostumeAttachment } from '../../../common/messages/costumes'
-const GLOW = new BABYLON.Color3(0.7, 0.3, 1.0)
 
 interface Props {
   attachment: CostumeAttachment
@@ -17,9 +16,67 @@ interface State {
   attached?: boolean
 }
 
+let selectionBoxMat: BABYLON.StandardMaterial | null = null
+
+function getSelectionBoxMat(scene: BABYLON.Scene): BABYLON.StandardMaterial {
+  if (!selectionBoxMat) {
+    selectionBoxMat = new BABYLON.StandardMaterial('selection-box-mat', scene)
+    selectionBoxMat.diffuseColor.set(0.9, 0.0, 0.6)
+    // selectionBoxMat.emissiveColor.set(0.7, 0.7, 0.7)
+  }
+
+  return selectionBoxMat
+}
+
+function createBoxFrame(name: string, w: number, h: number, d: number, b: number, scene: BABYLON.Scene): BABYLON.Mesh {
+  const hw = w / 2,
+    hh = h / 2,
+    hd = d / 2
+  const edges: BABYLON.Mesh[] = []
+
+  // 4 edges along X
+  for (const [y, z] of [
+    [-hh, -hd],
+    [-hh, hd],
+    [hh, -hd],
+    [hh, hd],
+  ] as [number, number][]) {
+    const e = BABYLON.MeshBuilder.CreateBox('e', { width: w, height: b, depth: b }, scene)
+    e.position.set(0, y, z)
+    edges.push(e)
+  }
+  // 4 edges along Y
+  for (const [x, z] of [
+    [-hw, -hd],
+    [-hw, hd],
+    [hw, -hd],
+    [hw, hd],
+  ] as [number, number][]) {
+    const e = BABYLON.MeshBuilder.CreateBox('e', { width: b, height: h, depth: b }, scene)
+    e.position.set(x, 0, z)
+    edges.push(e)
+  }
+  // 4 edges along Z
+  for (const [x, y] of [
+    [-hw, -hh],
+    [-hw, hh],
+    [hw, -hh],
+    [hw, hh],
+  ] as [number, number][]) {
+    const e = BABYLON.MeshBuilder.CreateBox('e', { width: b, height: b, depth: d }, scene)
+    e.position.set(x, y, 0)
+    edges.push(e)
+  }
+
+  const merged = BABYLON.Mesh.MergeMeshes(edges, true, true)!
+  merged.name = name
+  return merged
+}
+
 export class Wearable extends Component<Props, State> {
   mesh: BABYLON.Mesh | null = null
   origin: BABYLON.TransformNode | null = null
+  selectionBox: BABYLON.Mesh | null = null
   mounted = false
 
   constructor(props: Props) {
@@ -45,10 +102,6 @@ export class Wearable extends Component<Props, State> {
     return `/api/collectibles/${this.props.attachment.wid}/vox`
   }
 
-  private get layer() {
-    return this.scene?.getHighlightLayerByName('selected') ?? null
-  }
-
   private bone(bone: string): BABYLON.Bone | null {
     if (!this.skeleton) return null
 
@@ -62,15 +115,33 @@ export class Wearable extends Component<Props, State> {
     return this.skeleton.bones[index]
   }
 
-  private focus() {
-    if (this.layer && this.mesh) {
-      this.layer.removeAllMeshes()
-      this.layer.addMesh(this.mesh, GLOW)
+  private focus(on: boolean) {
+    if (on) {
+      this.showSelectionBox()
+    } else {
+      this.selectionBox?.dispose()
+      this.selectionBox = null
     }
 
-    if (this.props.gizmoManager && this.mesh) {
-      this.props.gizmoManager.attachToMesh(this.mesh)
+    if (this.props.gizmoManager) {
+      this.props.gizmoManager.attachToMesh(on ? this.mesh : null)
     }
+  }
+
+  private showSelectionBox() {
+    if (!this.mesh || !this.scene) return
+    this.selectionBox?.dispose()
+
+    const bb = this.mesh.getBoundingInfo().boundingBox
+    const size = bb.maximum.subtract(bb.minimum)
+    const center = bb.minimum.add(size.scale(0.5))
+
+    this.selectionBox = createBoxFrame('selection-box', size.x, size.y, size.z, 0.01, this.scene)
+    this.selectionBox.parent = this.mesh
+    this.selectionBox.position.copyFrom(center)
+    this.selectionBox.material = getSelectionBoxMat(this.scene)
+    this.selectionBox.isPickable = false
+    this.selectionBox.renderingGroupId = 1
   }
 
   async componentDidMount() {
@@ -106,9 +177,7 @@ export class Wearable extends Component<Props, State> {
     this.origin = new BABYLON.TransformNode('Node/wearable', this.scene)
     this.mesh.setParent(this.origin)
 
-    if (this.layer && this.props.selected) {
-      this.focus()
-    }
+    if (this.props.selected) this.focus(true)
 
     this.mesh.actionManager = new BABYLON.ActionManager(this.scene)
 
@@ -132,6 +201,7 @@ export class Wearable extends Component<Props, State> {
 
   componentWillUnmount() {
     this.mounted = false
+    this.selectionBox?.dispose()
     this.mesh?.dispose()
     this.origin?.dispose()
   }
@@ -148,8 +218,8 @@ export class Wearable extends Component<Props, State> {
     // update mesh from state
     this.setTransform()
 
-    if (this.mesh && prevProps.selected < this.props.selected) {
-      this.focus()
+    if (this.mesh && prevProps.selected !== this.props.selected) {
+      this.focus(this.props.selected)
     }
   }
 
