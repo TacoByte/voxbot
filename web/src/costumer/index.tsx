@@ -42,7 +42,7 @@ interface Props {
 
 interface State {
   loading: boolean
-  attachmentId: string | null
+  attachmentIdx: number | null
   costumes?: Array<Costume>
   avatarCostumeId?: number
   pickedBone: BABYLON.Bone | null
@@ -119,7 +119,7 @@ export default class Costumer extends Component<Props, State> {
   private canvas = createRef()
 
   state: State = {
-    attachmentId: null,
+    attachmentIdx: null,
     pickedBone: null,
     wearables: [],
   }
@@ -166,11 +166,11 @@ export default class Costumer extends Component<Props, State> {
 
   componentDidUpdate(prevProps: Props) {
     if (!isEqual(this.props.costumeId, prevProps.costumeId)) {
-      this.setState({ attachmentId: null })
+      this.setState({ attachmentIdx: null })
       this.forceUpdate()
     }
 
-    if (!this.state.attachmentId) {
+    if (!this.state.attachmentIdx) {
       if (this.layer) {
         this.layer.removeAllMeshes()
       }
@@ -261,7 +261,7 @@ export default class Costumer extends Component<Props, State> {
     }
     if (!mesh) {
       this.closeBoneWearablePicker()
-      this.setState({ attachmentId: null })
+      this.setState({ attachmentIdx: null })
     }
   }
 
@@ -520,41 +520,6 @@ export default class Costumer extends Component<Props, State> {
     await this.addAttachment(wearable, bone)
   }
 
-  onUpload = async (e: Event) => {
-    const input = e.target
-    if (!input || !(input instanceof HTMLInputElement)) {
-      console.warn('invalid input', input)
-      return
-    }
-
-    if (!input.files || input.files.length == 0) {
-      console.warn('no files', input.files)
-      return
-    }
-
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      const r = e.target?.result ?? ''
-      if (typeof r != 'string') {
-        console.warn('invalid result', r)
-        return
-      }
-
-      const j = JSON.parse(r) as Partial<Costume & { wallet: string }>
-
-      delete j.wallet
-      delete j.id
-
-      if (j.attachments) {
-        j.attachments.forEach((a) => a.uuid == uuidv1())
-      }
-
-      this.createCostume(j)
-    }
-
-    reader.readAsText(input.files[0])
-  }
-
   setName = async (name: string) => {
     if (!this.costume) {
       app.showSnackbar("Can't set name on when no costume is selected", PanelType.Warning, 5000)
@@ -612,8 +577,8 @@ export default class Costumer extends Component<Props, State> {
     await this.throttledUpdate(costume)
   }
 
-  private get attachment(): any {
-    return this.costume?.attachments?.find((a) => a.uuid == this.state.attachmentId)
+  private get attachment(): CostumeAttachment | null {
+    return this.costume?.attachments?.[this.state.attachmentIdx ?? 0] ?? null
   }
 
   private get layer() {
@@ -732,21 +697,16 @@ export default class Costumer extends Component<Props, State> {
       return
     }
 
-    const voxelSize = 0.5
+    const s = 0.5
     const costume = { ...this.costume }
 
-    const attachmentId = uuidv1()
     const attachment: CostumeAttachment = {
       name: wearable.name,
-      wearable_id: typeof wearable.token_id == 'number' ? wearable.token_id : parseInt(wearable.token_id, 10),
-      collection_address: wearable.collection_address ?? undefined,
-      chain_id: wearable.chain_id,
-      collection_id: typeof wearable.collection_id == 'number' ? wearable.collection_id : parseInt(wearable.collection_id, 10),
+      wid: wearable.id!,
       position: [0, 0, 0],
       rotation: [0, 0, 0],
-      scaling: [voxelSize, voxelSize, voxelSize],
+      scaling: [s, s, s],
       bone,
-      uuid: attachmentId,
     }
 
     let attachments = [...(costume.attachments || [])]
@@ -754,7 +714,9 @@ export default class Costumer extends Component<Props, State> {
     costume.attachments = attachments
     costume.attachments.push(attachment)
 
-    this.setState({ attachmentId })
+    const attachmentIdx = attachments.length - 1
+
+    this.setState({ attachmentIdx })
     await this.updateCostume(costume)
     app.showSnackbar('Wearable added', PanelType.Success)
   }
@@ -770,48 +732,20 @@ export default class Costumer extends Component<Props, State> {
 
   private getWearablesForRender() {
     return (
-      this.costume?.attachments?.map((attachment) => {
+      this.costume?.attachments?.map((attachment, idx) => {
         return (
           <Wearable
-            key={`${this.props.costumeId}-${attachment.uuid}`}
+            key={[this.props.costumeId, idx].join('-')}
             scene={this.scene}
             attachment={attachment}
-            selected={attachment.uuid === this.state.attachmentId}
+            selected={idx === this.state.attachmentIdx}
             gizmoManager={this.gizmoManager}
             updateAttachment={this.updateAttachment}
-            onSelect={() => this.setState({ attachmentId: attachment.uuid })}
+            onSelect={() => this.setState({ attachmentIdx: idx })}
           />
         )
       }) ?? null
     )
-  }
-
-  private getAttachmentsForRender() {
-    // @ts-expect-error global abuse todo stop passing this via window
-    const skeleton: BABYLON.Skeleton | null = window['skeleton']
-    const bones = skeleton?.bones.filter((b) => !RegExp(/index/i).exec(b.name))
-
-    // sort wearables in bone Y Axis
-    this.costume?.attachments?.sort((a, b) => {
-      const aBone = bones?.find((n) => (n.name.split(':')[1] ?? n.name) === a.bone)
-      const bBone = bones?.find((n) => (n.name.split(':')[1] ?? n.name) === b.bone)
-      if (!aBone || !bBone) return 0
-      const posA = -aBone?.getPosition(BABYLON.Space.WORLD).y
-      const posB = -bBone?.getPosition(BABYLON.Space.WORLD).y
-      return posA - posB
-    })
-
-    return this.costume?.attachments?.map((a) => {
-      const name = a.name ?? `Wearable #${a.wearable_id}`
-      const onClick = () => {
-        this.setState({ attachmentId: this.state.attachmentId == a.uuid ? null : a.uuid })
-      }
-      return (
-        <li key={`attached-${this.props.costumeId}-${a.uuid}`} onClick={onClick}>
-          <a class={this.state.attachmentId !== a.uuid ? '' : 'active'}>{name}</a>
-        </li>
-      )
-    })
   }
 
   onChange = (e: Event) => {
@@ -824,9 +758,6 @@ export default class Costumer extends Component<Props, State> {
       return <Redirect to="/account" />
     }
 
-    const costumes = this.getCostumeForRender()
-    const attachments = this.getAttachmentsForRender()
-
     const avatar = this.scene && (
       <Avatar scene={this.scene} costume={this.costume}>
         {this.getWearablesForRender()}
@@ -835,11 +766,8 @@ export default class Costumer extends Component<Props, State> {
 
     const skinKey = `skin-${this.props.costumeId}`
 
-    const noCostumes = this.state.costumes && this.state.costumes.length == 0
     const worn = !this.props.costumeId ? false : this.state.avatarCostumeId == parseInt(this.props.costumeId, 10)
-    const noAttachments = attachments && attachments.length == 0
-    const noSkin = this.costume && !this.costume.skin
-    const editorKey = `editor-${this.state.attachmentId}-${this.props.costumeId}`
+    const editorKey = `editor-${this.state.attachmentIdx ?? 0}-${this.props.costumeId}`
     const preview = `/u/${app.wallet}/costumes/${this.props.costumeId}`
 
     return (
@@ -867,14 +795,14 @@ export default class Costumer extends Component<Props, State> {
           </figcaption>
 
           <figure>
-            <div id="gizmos" class={this.state.attachmentId !== null ? 'active' : 'inactive'}>
-              <button class="iconish" disabled={this.state.attachmentId === null} id="gizmo-position">
+            <div id="gizmos" class={this.state.attachmentIdx !== null ? 'active' : 'inactive'}>
+              <button class="iconish" disabled={this.state.attachmentIdx === null} id="gizmo-position">
                 P
               </button>
-              <button class="iconish" disabled={this.state.attachmentId === null} id="gizmo-rotation">
+              <button class="iconish" disabled={this.state.attachmentIdx === null} id="gizmo-rotation">
                 R
               </button>
-              <button class="iconish" disabled={this.state.attachmentId === null} id="gizmo-scale">
+              <button class="iconish" disabled={this.state.attachmentIdx === null} id="gizmo-scale">
                 S
               </button>
             </div>
@@ -897,41 +825,36 @@ export default class Costumer extends Component<Props, State> {
         </article>
 
         <aside>
-          {this.costume && (
-            <div class="costumer-name-block">
-              <h3>Name</h3>
-              <TextInput value={this.costume.name ? this.costume.name : `costume#${this.costume.id}`} onSave={this.setName} />
-            </div>
-          )}
+          <h3>Name</h3>
+          <input type="text" value={this.costume?.name ? this.costume.name : ``} />
 
-          {this.state.attachmentId && <Editor ref={this.editor} key={editorKey} attachmentId={this.state.attachmentId} costume={this.costume} deleteAttachment={this.removeAttachment} updateAttachment={this.updateAttachment} />}
+          {this.costume?.attachments?.length &&
+            this.costume.attachments.map((a, idx) => {
+              return (
+                <div>
+                  <a onClick={(e) => this.setState({ attachmentIdx: idx })} href={anchorUrl(a)}>
+                    {a.name ?? a.wid}
+                  </a>
 
-          {this.costume && (
-            <Fragment>
-              <ul class="tree">
-                <li>
-                  <ul class="attachment-list">{attachments}</ul>
-                </li>
-                <li>
-                  <Skin key={skinKey} costume={this.costume} skin={this.costume.skin} default_color={this.costume.default_color} setSkin={this.setSkin} />
-                </li>
-              </ul>
-            </Fragment>
-          )}
+                  {idx == this.state.attachmentIdx && <Editor ref={this.editor} key={editorKey} attachmentIdx={idx} costume={this.costume} deleteAttachment={this.removeAttachment} updateAttachment={this.updateAttachment} />}
+                </div>
+              )
+            })}
+
+          {this.costume && <Skin key={skinKey} costume={this.costume} skin={this.costume?.skin ?? ''} default_color={this.costume?.default_color ?? ''} setSkin={this.setSkin} />}
 
           <h2>Download</h2>
 
           <button type="button" onClick={this.downloadCostume}>
             costume-{this.costume?.id ?? 'new'}.json
           </button>
-
-          <h2>Import</h2>
-
-          <form class="costumer-upload" onSubmit={(e) => e.preventDefault()}>
-            <input onChange={this.onUpload} type="file" />
-          </form>
         </aside>
       </section>
     )
   }
+}
+
+const anchorUrl = (a: CostumeAttachment) => {
+  const name = a.name ?? a.wid
+  return `#${name.toLowerCase().replace(/^[a-z]/g, '-')}`
 }

@@ -5,7 +5,7 @@ import { Costume, CostumeAttachment } from '../../../common/messages/costumes'
 import { pending } from './utils'
 
 interface Props {
-  attachmentId: string | null
+  attachmentIdx: number
   updateAttachment: (a: CostumeAttachment) => void
   deleteAttachment: (attachmentId: string) => void
   costume: Costume | null
@@ -25,9 +25,15 @@ export const limitNumber = (value: number, min: number, max: number) => {
 }
 
 export class Editor extends Component<Props, State> {
-  deleteAttachment = () => {
-    if (this.props.attachmentId) this.props.deleteAttachment(this.props.attachmentId)
-    return Promise.resolve()
+  deleteAttachment = (e: Event) => {
+    //   if (!this.props.costume) {
+    //     return Promise.resolve()
+    //   }
+    //   const attachment = this.props.costume.attachments?.[this.props.attachmentIdx]
+    //   if (!attachment) {
+    //     return Promise.resolve()
+    //   }
+    //   this.props.deleteAttachment(this.props.attachmentIdx)
   }
 
   setAttachmentBone = async (name: string) => {
@@ -49,7 +55,7 @@ export class Editor extends Component<Props, State> {
     if (!this.props.costume) {
       return null
     }
-    return this.props.costume.attachments?.find((a) => a.wid === this.props.attachmentId) ?? null
+    return this.props.costume.attachments?.[this.props.attachmentIdx] ?? null
   }
 
   setStateAsync(state: Partial<State>): Promise<void> {
@@ -180,19 +186,6 @@ export class Editor extends Component<Props, State> {
     return (
       <div onWheel={this.suppress} class="costumer-wearable-editor">
         <h4>{this.attachment.name ?? 'Wearable'}</h4>
-
-        <div class="editor-field bones">
-          <label for="bone">Bone</label>
-          <div>
-            <select value={attachment?.bone} onClick={(e: MouseEvent) => e.stopPropagation()} onChange={(e) => this.setAttachmentBone(e.currentTarget['value'])} id="bone">
-              {bones.map((b) => (
-                <option key={boneName(b)} value={boneName(b)}>
-                  {boneName(b)}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
 
         <div class="editor-field position">
           <label for="position[x]">Position</label>
