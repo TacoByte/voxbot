@@ -35,12 +35,19 @@ export default function (db: Db, passport: any, app: any) {
     }),
   )
 
-  app.get(`/api/collectibles/:id/vox`, cache('immutable'), async (req: Request, res: Response) => {
-    const wearable = await db.query('sql/get-wearable-by-id', `select * from wearables where id=$1`, [req.params.id])
+  app.get(`/api/collectibles/:uuid/vox`, cache('10 minutes'), async (req: Request, res: Response) => {
+    const result = await db.query('sql/get-wearable', `select data from wearables where id=$1 limit 1`, [req.params.uuid])
+    console.log(result)
+
+    const data = result.rows[0].data
+
+    if (!data) {
+      res.status(404).send({ success: false, message: 'Wearable not found' })
+      return
+    }
 
     res.set('Content-Type', 'application/octet-stream')
-    res.setHeader('Content-Disposition', `attachment; filename="${req.params.id}.vox"`)
-    res.status(200).send(wearable.rows[0].data)
+    res.status(200).send(data)
   })
 
   //get a specific collectible given collection id

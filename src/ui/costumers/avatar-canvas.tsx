@@ -106,7 +106,7 @@ export default class AvatarCanvas extends Component<Props, State> {
 
     if (this.scene && this.costume?.attachments) {
       wearables = this.costume.attachments.map((attachment: CostumeAttachment) => {
-        return <Wearable key={`${this.costume.id}-${attachment.uuid}-${this.state.dance}`} scene={this.scene} attachment={attachment} selected={false} />
+        return <Wearable key={`${this.costume.id}-${attachment.wid}-${this.state.dance}`} scene={this.scene} attachment={attachment} selected={false} />
       })
     }
 

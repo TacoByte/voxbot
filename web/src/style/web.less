@@ -284,6 +284,7 @@ main {
 
   .bonepicker {
     background: #fafafa;
+    z-index: 10000;
     width: 20rem;
     border: 1px outset;
     padding: 0.3rem;
@@ -292,6 +293,21 @@ main {
       position: absolute;
       top: 0.3rem;
       right: 0.3rem;
+    }
+
+    ul {
+      list-style: none;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.1rem;
+
+      li {
+        width: 4rem;
+        height: 4rem;
+        background: white;
+        border-radius: 0.3rem;
+        padding: 0.1rem;
+      }
     }
   }
 }

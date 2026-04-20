@@ -1,8 +1,6 @@
 import { Component } from 'preact'
 import voxImport from '../../../common/vox-import/sync-vox-import'
 import { CostumeAttachment } from '../../../common/messages/costumes'
-import { SUPPORTED_CHAINS_BY_ID } from '../../../common/helpers/chain-helpers'
-
 const GLOW = new BABYLON.Color3(0.7, 0.3, 1.0)
 
 interface Props {
@@ -44,8 +42,7 @@ export class Wearable extends Component<Props, State> {
   }
 
   private get voxUrl() {
-    const a = this.props.attachment
-    return `/api/collections/${a.collection_id}/collectibles/${a.wearable_id}/vox`
+    return `/api/collectibles/${this.props.attachment.wid}/vox`
   }
 
   private get layer() {
@@ -85,7 +82,7 @@ export class Wearable extends Component<Props, State> {
       throw new Error('No scene')
     }
 
-    const mat = new BABYLON.StandardMaterial(`wearable-${this.props.attachment.uuid}`, this.scene)
+    const mat = new BABYLON.StandardMaterial(`wearable-${this.props.attachment.wid}`, this.scene)
     mat.emissiveColor.set(0.3, 0.3, 0.3) // need a little light otherwise dark wearables
     mat.diffuseColor.set(1, 1, 1)
     mat.blockDirtyMechanism = true
@@ -98,7 +95,7 @@ export class Wearable extends Component<Props, State> {
     }
 
     this.mesh.name = 'vox-instance'
-    this.mesh.id = this.props.attachment.uuid
+    this.mesh.id = this.props.attachment.wid
     this.mesh.material = mat
 
     this.mesh.rotationQuaternion = BABYLON.Quaternion.Identity()
@@ -128,7 +125,7 @@ export class Wearable extends Component<Props, State> {
     this.setTransform()
 
     if (this.props.onLoad) {
-      this.props.onLoad(this.props.attachment.uuid, this.mesh)
+      this.props.onLoad(this.props.attachment.wid, this.mesh)
     }
   }
 

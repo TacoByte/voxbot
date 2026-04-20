@@ -5,7 +5,6 @@ import { app } from '../../../web/src/state'
 import { md5 } from '../../../common/helpers/utils'
 // import { Wearable } from './wearable'
 
-import { v7 as uuidv7 } from 'uuid'
 import { CollectiblesData } from '../../../common/helpers/collections-helpers'
 import cachedFetch from '../../../web/src/helpers/cached-fetch'
 import Controls from '../../controls/controls'
@@ -115,7 +114,7 @@ export default class Costumer extends Component<Props, State> {
   }
 
   private get attachment(): any {
-    return this.costume?.attachments?.find((a) => a.uuid == this.state.attachmentId)
+    return this.costume?.attachments?.find((a) => a.wid == this.state.attachmentId)
   }
 
   private get layer() {
@@ -364,7 +363,7 @@ export default class Costumer extends Component<Props, State> {
       app.showSnackbar("Can't remove attached wearable when no costume is selected")
       return
     }
-    const attachments: CostumeAttachment[] = this.costume?.attachments?.filter((a) => a.uuid != uuid) ?? []
+    const attachments: CostumeAttachment[] = this.costume?.attachments?.filter((a) => a.wid != uuid) ?? []
     const costume = { ...this.costume, attachments }
 
     await this.updateCostume(costume, true)
@@ -381,7 +380,7 @@ export default class Costumer extends Component<Props, State> {
 
     if (costume.attachments) {
       costume.attachments.forEach((a) => {
-        if (a.uuid == attachment.uuid) {
+        if (a.wid == attachment.wid) {
           Object.assign(a, attachment)
         }
       })
@@ -435,7 +434,7 @@ export default class Costumer extends Component<Props, State> {
       return false
     }
 
-    const clones = this.costume.attachments.filter((a) => a.collection_id == w.collection_id && a.wearable_id == w.token_id)
+    const clones = this.costume.attachments.filter((a) => a.wid == w.id)
 
     return !(clones.length >= MAX_CLONES)
   }
@@ -451,18 +450,14 @@ export default class Costumer extends Component<Props, State> {
     const voxelSize = 0.5
     const costume = { ...this.costume }
 
-    const attachmentId = uuidv7()
+    const attachmentId = wearable.id!
     const attachment: CostumeAttachment = {
       name: wearable.name,
-      wearable_id: wearable.token_id || wearable.id!,
-      collection_id: wearable.collection_id,
-      collection_address: wearable.collection_address ?? undefined,
-      chain_id: wearable.chain_id,
+      wid: wearable.id!,
       position: [0, 0, 0],
       rotation: [0, 0, 0],
       scaling: [voxelSize, voxelSize, voxelSize],
       bone,
-      uuid: attachmentId,
     }
 
     if (!costume.attachments) {
@@ -510,13 +505,13 @@ export default class Costumer extends Component<Props, State> {
     })
 
     return this.costume?.attachments?.map((a) => {
-      const name = a.name ?? `Wearable #${a.wearable_id}`
+      const name = a.name ?? 'Wearable'
       const onClick = () => {
-        this.setState({ attachmentId: this.state.attachmentId == a.uuid ? null : a.uuid })
+        this.setState({ attachmentId: this.state.attachmentId == a.wid ? null : a.wid })
       }
       return (
-        <li key={a.uuid} onClick={onClick}>
-          <a class={this.state.attachmentId !== a.uuid ? '' : 'active'}>{name}</a>
+        <li key={a.wid} onClick={onClick}>
+          <a class={this.state.attachmentId !== a.wid ? '' : 'active'}>{name}</a>
         </li>
       )
     })

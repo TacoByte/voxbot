@@ -119,6 +119,8 @@ export default class Wearable extends Component<Props, State> {
             <dd>
               <a href={`/collections/${this.props.cid}`}>{this.wearable.collection_name}</a>
             </dd>
+            <dt>System ID</dt>
+            <dd>{this.wearable.id}</dd>
           </dl>
         </aside>
       </section>

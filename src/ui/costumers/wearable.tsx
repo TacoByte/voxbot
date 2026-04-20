@@ -51,11 +51,7 @@ export class Wearable extends Component<Props, State> {
 
     let url
 
-    if (isUuid(a.wearable_id.toString())) {
-      url = `/api/wearables/${a.wearable_id}/vox`
-    } else {
-      url = `/api/wearables/${a.collection_address}/${a.wearable_id}/vox`
-    }
+    url = `/api/collectibles/${a.wid}/vox`
 
     return url
   }
@@ -73,7 +69,7 @@ export class Wearable extends Component<Props, State> {
       throw new Error('No scene')
     }
 
-    const mat = new BABYLON.StandardMaterial(`wearable-${this.props.attachment.uuid}`, this.scene)
+    const mat = new BABYLON.StandardMaterial(`wearable-${this.props.attachment.wid}`, this.scene)
     mat.emissiveColor.set(0.3, 0.3, 0.3) // need a little light otherwise dark wearables
     mat.diffuseColor.set(1, 1, 1)
     mat.blockDirtyMechanism = true
@@ -86,7 +82,7 @@ export class Wearable extends Component<Props, State> {
     }
 
     this.mesh.name = 'vox-instance'
-    this.mesh.id = this.props.attachment.uuid
+    this.mesh.id = this.props.attachment.wid
     this.mesh.material = mat
 
     this.mesh.rotationQuaternion = BABYLON.Quaternion.Identity()

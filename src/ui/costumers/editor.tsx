@@ -29,7 +29,7 @@ export class Editor extends Component<Props, State> {
     if (!this.props.costume) {
       return null
     }
-    return this.props.costume.attachments?.find((a) => a.uuid === this.props.attachmentId) ?? null
+    return this.props.costume.attachments?.find((a) => a.wid === this.props.attachmentId) ?? null
   }
 
   deleteAttachment = () => {
@@ -179,7 +179,7 @@ export class Editor extends Component<Props, State> {
 
     return (
       <div onWheel={this.suppress}>
-        <h4>{this.attachment.name ?? `Wearable #${this.attachment.wearable_id}`}</h4>
+        <h4>{this.attachment.name ?? 'Wearable'}</h4>
 
         <div>
           <label for="bone">Bone</label>
