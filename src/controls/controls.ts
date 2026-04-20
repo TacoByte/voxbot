@@ -619,8 +619,7 @@ export default abstract class Controls implements IControls {
 
     const g = this.congaGroupBlend
     const backDist = CONGA_FOLLOW_DISTANCE + CONGA_STOPPED_EXTRA_BACK * g
-    const lateral =
-      congaLateralSlot(this.connector.persona.uuid) * CONGA_LATERAL_PER_SLOT * g
+    const lateral = congaLateralSlot(this.connector.persona.uuid) * CONGA_LATERAL_PER_SLOT * g
     const desired = target.position.subtract(forward.scale(backDist)).add(right.scale(lateral))
     if (!leaderFlying) {
       desired.y = this.camera.position.y

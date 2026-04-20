@@ -46,6 +46,8 @@ interface State {
   costumes?: Array<Costume>
   avatarCostumeId?: number
   pickedBone: BABYLON.Bone | null
+  bonePickerLoading: boolean
+  bonePickerItems: CollectiblesData[] | null
   wearables: CollectiblesData[]
 }
 
@@ -120,7 +122,10 @@ export default class Costumer extends Component<Props, State> {
 
   state: State = {
     attachmentIdx: null,
+    loading: true,
     pickedBone: null,
+    bonePickerLoading: false,
+    bonePickerItems: null,
     wearables: [],
   }
 
@@ -526,7 +531,7 @@ export default class Costumer extends Component<Props, State> {
       app.showSnackbar("Can't remove attached wearable when no costume is selected", PanelType.Warning, 5000)
       return
     }
-    const attachments: CostumeAttachment[] = this.costume?.attachments?.filter((a) => a.uuid != uuid) ?? []
+    const attachments: CostumeAttachment[] = this.costume?.attachments?.filter((a) => a.wid != uuid) ?? []
     const costume = { ...this.costume, attachments }
 
     await this.updateCostume(costume, true)
@@ -547,7 +552,7 @@ export default class Costumer extends Component<Props, State> {
 
     if (costume.attachments) {
       costume.attachments.forEach((a) => {
-        if (a.uuid == attachment.uuid) {
+        if (a.wid == attachment.wid) {
           Object.assign(a, attachment)
         }
       })
@@ -843,7 +848,7 @@ export default class Costumer extends Component<Props, State> {
             })}
           </ol>
 
-          {false && <Skin key={skinKey} costume={this.costume} skin={this.costume?.skin ?? ''} default_color={this.costume?.default_color ?? ''} setSkin={this.setSkin} />}
+          {false && <Skin key={skinKey} costume={this.costume as any} skin={this.costume?.skin ?? ''} default_color={this.costume?.default_color ?? ''} setSkin={this.setSkin} />}
 
           <h2>Download</h2>
 

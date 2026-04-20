@@ -893,9 +893,7 @@ export default class Connector extends TypedEventTarget<{ avatar_joined: string 
           channel: GLOBAL_CHANNEL,
           name: this.persona.user.name,
           uuid: this.persona.uuid,
-          text: entityEncode(
-            `Started a conga line at ${location}. Use /conga ${this.persona.user.name} to join from anywhere, or tap Join. [[conga:${this.persona.uuid}]]`,
-          ),
+          text: entityEncode(`Started a conga line at ${location}. Use /conga ${this.persona.user.name} to join from anywhere, or tap Join. [[conga:${this.persona.uuid}]]`),
         }
         this.send(announcement)
       }

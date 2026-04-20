@@ -102,7 +102,9 @@ export class ChatOverlay extends Component<Props, State> {
         <div class={'chat-messages'}>
           {messageList.value.map((m) => (
             <p>
-              <span>{name(m)}: <ChatText text={m.text} /></span>
+              <span>
+                {name(m)}: <ChatText text={m.text} />
+              </span>
             </p>
           ))}
         </div>

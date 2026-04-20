@@ -18,8 +18,7 @@ async function postJSON(url: string, body: unknown) {
     throw new Error('Bad response from server')
   }
   if (!f.ok) {
-    const msg =
-      typeof data?.error === 'string' ? data.error : typeof data?.message === 'string' ? data.message : `Request failed (${f.status})`
+    const msg = typeof data?.error === 'string' ? data.error : typeof data?.message === 'string' ? data.message : `Request failed (${f.status})`
     throw new Error(msg)
   }
   return data
@@ -180,7 +179,10 @@ export const SignIn = () => {
                 <p class="login-actions">
                   {status == Status.Submitting ? <button disabled>Submitting...</button> : <button>Sign in</button>}
                   <span class="login-or-cancel">
-                    or <a href="" role="button" onClick={onReset}>cancel</a>
+                    or{' '}
+                    <a href="" role="button" onClick={onReset}>
+                      cancel
+                    </a>
                   </span>
                 </p>
               </fieldset>

@@ -168,11 +168,15 @@ export default class WebHeader extends Component<Props, State> {
                 </Link>
               </li>
 
-              {signedIn ? <li>
-                <Link activeClassName="active" href="/costumer">
-                  Costume
-                </Link>
-              </li> : '' }
+              {signedIn ? (
+                <li>
+                  <Link activeClassName="active" href="/costumer">
+                    Costume
+                  </Link>
+                </li>
+              ) : (
+                ''
+              )}
 
               <li>
                 <Link aria-current={isActive('assets') ? 'page' : undefined} activeClassName="active" href="/assets" onClick={this.closeMobileMenu}>

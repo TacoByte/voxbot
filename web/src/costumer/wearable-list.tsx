@@ -2,12 +2,7 @@ import { Component, Fragment } from 'preact'
 import { getWearableGif } from '../../src/helpers/wearable-helpers'
 import { app } from '../../src/state'
 import { PanelType } from '../../src/components/panel'
-import {
-  CollectiblesData,
-  fetchUsersCollectiblesData,
-  fetchFreeWearablesData,
-  mergeOwnedAndFreeWearables,
-} from '../../../common/helpers/collections-helpers'
+import { CollectiblesData, fetchUsersCollectiblesData, fetchFreeWearablesData, mergeOwnedAndFreeWearables } from '../../../common/helpers/collections-helpers'
 import { Spinner } from '../../src/spinner'
 
 type WearableListState = {

@@ -19,18 +19,14 @@ async function main() {
   const client = await pool.connect()
 
   try {
-    const { rows: wearableRows } = await client.query<{ id: string; token_id: number; collection_id: number }>(
-      `select id, token_id, collection_id from wearables`,
-    )
+    const { rows: wearableRows } = await client.query<{ id: string; token_id: number; collection_id: number }>(`select id, token_id, collection_id from wearables`)
     const widMap = new Map<string, string>()
     for (const w of wearableRows) {
       widMap.set(`${w.collection_id}:${w.token_id}`, w.id)
     }
     console.log(`Loaded ${widMap.size} wearables into lookup table`)
 
-    const { rows: costumes } = await client.query<{ id: number; attachments: any[] | null }>(
-      `select id, attachments from costumes where attachments is not null and json_array_length(attachments) > 0`,
-    )
+    const { rows: costumes } = await client.query<{ id: number; attachments: any[] | null }>(`select id, attachments from costumes where attachments is not null and json_array_length(attachments) > 0`)
 
     console.log(`Found ${costumes.length} costumes with attachments`)
 

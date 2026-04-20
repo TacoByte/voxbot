@@ -308,11 +308,7 @@ export async function getUserInfo(res: Response, wallet: string, options: SignIn
   const preferred = options.preferredDisplayName?.trim()
   if (preferred) {
     try {
-      await db.query(
-        'sign-in/avatar-prefer-display-name',
-        'update avatars set name = $1 where lower(owner) = lower($2)',
-        [preferred, wallet],
-      )
+      await db.query('sign-in/avatar-prefer-display-name', 'update avatars set name = $1 where lower(owner) = lower($2)', [preferred, wallet])
       name = preferred
     } catch (e: any) {
       log.error(`sign-in preferredDisplayName: ${e.toString()}`)

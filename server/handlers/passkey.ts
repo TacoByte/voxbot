@@ -1,10 +1,5 @@
 import type { Request, Response } from 'express'
-import {
-  generateRegistrationOptions,
-  verifyRegistrationResponse,
-  generateAuthenticationOptions,
-  verifyAuthenticationResponse,
-} from '@simplewebauthn/server'
+import { generateRegistrationOptions, verifyRegistrationResponse, generateAuthenticationOptions, verifyAuthenticationResponse } from '@simplewebauthn/server'
 type AuthenticatorTransportFuture = 'ble' | 'cable' | 'hybrid' | 'internal' | 'nfc' | 'smart-card' | 'usb'
 import db from '../pg'
 import { getUserInfo } from './sign-in'
@@ -102,13 +97,20 @@ export async function PasskeyRegisterVerify(req: Request, res: Response) {
   const r = await db.query('passkey/get-or-create-uuid', 'select get_or_create_user_uuid($1) as uuid', ['passkey:' + name])
   const wallet: string = r.rows[0].uuid
 
-  await db.query(
-    'passkey/insert',
-    'insert into passkeys (username, user_uuid, credential_id, public_key, counter, transports) values ($1,$2,$3,$4,$5,$6)',
-    [name, wallet, credID, pubKey, credential.counter, (credential.transports as string[]) ?? null],
-  )
+  await db.query('passkey/insert', 'insert into passkeys (username, user_uuid, credential_id, public_key, counter, transports) values ($1,$2,$3,$4,$5,$6)', [
+    name,
+    wallet,
+    credID,
+    pubKey,
+    credential.counter,
+    (credential.transports as string[]) ?? null,
+  ])
 
-  const { token, name: avatarName, isNewUser } = await getUserInfo(res, wallet, {
+  const {
+    token,
+    name: avatarName,
+    isNewUser,
+  } = await getUserInfo(res, wallet, {
     rememberSignIn: true,
     preferredDisplayName: username.trim(),
   })
@@ -158,11 +160,7 @@ export async function PasskeyLoginVerify(req: Request, res: Response) {
     return
   }
 
-  const r = await db.query(
-    'passkey/get-full',
-    'select credential_id, public_key, counter, transports, user_uuid from passkeys where username = $1',
-    [name],
-  )
+  const r = await db.query('passkey/get-full', 'select credential_id, public_key, counter, transports, user_uuid from passkeys where username = $1', [name])
   if (!r.rows[0]) {
     res.json({ success: false, error: 'Username not found' })
     return
@@ -193,10 +191,7 @@ export async function PasskeyLoginVerify(req: Request, res: Response) {
     return
   }
 
-  await db.query('passkey/update-counter', 'update passkeys set counter = $1 where username = $2', [
-    verification.authenticationInfo.newCounter,
-    name,
-  ])
+  await db.query('passkey/update-counter', 'update passkeys set counter = $1 where username = $2', [verification.authenticationInfo.newCounter, name])
 
   const { token, name: avatarName, isNewUser } = await getUserInfo(res, row.user_uuid, { rememberSignIn: true })
   res.json({ success: true, token, name: avatarName, isNewUser })

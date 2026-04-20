@@ -331,14 +331,7 @@ extensionCodec.register({
     if (input.type != MessageType.updateAvatar) {
       return null
     }
-    return encodeAlias([
-      encodeUUID(input.uuid),
-      Float32Array.from(input.position),
-      compressQuaternion(input.orientation),
-      input.animation,
-      input.inConga ? 1 : 0,
-      input.congaFollowsUuid ? encodeUUID(input.congaFollowsUuid) : null,
-    ])
+    return encodeAlias([encodeUUID(input.uuid), Float32Array.from(input.position), compressQuaternion(input.orientation), input.animation, input.inConga ? 1 : 0, input.congaFollowsUuid ? encodeUUID(input.congaFollowsUuid) : null])
   },
   decode: (data): UpdateAvatarMessage => {
     const res = decodeAlias(data) as any[]

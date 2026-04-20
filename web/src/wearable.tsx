@@ -93,7 +93,7 @@ export default class Wearable extends Component<Props, State> {
 
         <article>
           <figcaption>
-            <a disabled={!this.previousUrl} class="buttonish" href={this.previousUrl}>
+            <a class="buttonish" href={this.previousUrl ?? undefined}>
               Previous
             </a>
             <a class="buttonish" href={this.nextUrl}>
