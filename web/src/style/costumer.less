@@ -4,6 +4,56 @@
 .costumer-page {
   // ...
 
+  figure {
+    position: relative;
+  }
+
+  #gizmos {
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+
+  .bonepicker {
+    background: #fafafa;
+    z-index: 10000;
+    width: 40rem;
+    border: 1px outset;
+    padding: 0.3rem;
+
+    .close {
+      position: absolute;
+      top: 0.3rem;
+      right: 0.3rem;
+    }
+
+    ul {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+
+      li > div {
+        width: 4rem;
+        height: 4rem;
+      }
+
+      span {
+        display: block;
+        text-overflow: ellipsis;
+        overflow: hidden;
+        white-space: nowrap;
+        width: 4rem;
+        font-size: 0.8rem;
+      }
+    }
+  }
+
   a.pending {
     opacity: 0.5;
   }

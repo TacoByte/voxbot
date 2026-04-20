@@ -185,8 +185,6 @@ export class Editor extends Component<Props, State> {
 
     return (
       <div onWheel={this.suppress} class="costumer-wearable-editor">
-        <h4>{this.attachment.name ?? 'Wearable'}</h4>
-
         <div class="editor-field position">
           <label for="position[x]">Position</label>
           <div class="fields">

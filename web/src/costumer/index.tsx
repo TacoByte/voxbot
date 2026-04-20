@@ -133,24 +133,13 @@ export default class Costumer extends Component<Props, State> {
     this.engine = new BABYLON.Engine(this.canvas.current, true, { stencil: true })
     window.addEventListener('resize', () => this.engine?.resize(), { passive: true })
     this.scene = setupScene(this.canvas.current, this.engine, this.onClick)
-    this.scene.autoClear = false
 
     this.gizmoManager = setupGizmos(this.scene, this.onDragEnd)
 
     registerCostumerVoidBackground()
 
-    const background = new BABYLON.Scene(this.engine)
-    background.clearColor = new BABYLON.Color4(0.96, 0.97, 0.99, 1)
-    background.createDefaultCamera()
-
-    const pp = new BABYLON.PostProcess('', 'CostumerVoid', [], [], 0, background.activeCamera)
-    pp.onApply = (effect) => {
-      effect.setFloat('iTime', performance.now() / 1000)
-    }
-
     this.fetch().then(() => {
       this.engine?.runRenderLoop(() => {
-        background.render()
         this.scene?.render()
       })
     })
@@ -769,6 +758,7 @@ export default class Costumer extends Component<Props, State> {
     const worn = !this.props.costumeId ? false : this.state.avatarCostumeId == parseInt(this.props.costumeId, 10)
     const editorKey = `editor-${this.state.attachmentIdx ?? 0}-${this.props.costumeId}`
     const preview = `/u/${app.wallet}/costumes/${this.props.costumeId}`
+    const attachments = this.costume?.attachments ?? []
 
     return (
       <section class="columns costumer-page">
@@ -825,23 +815,35 @@ export default class Costumer extends Component<Props, State> {
         </article>
 
         <aside>
-          <h3>Name</h3>
+          <h2>Name</h2>
           <input type="text" value={this.costume?.name ? this.costume.name : ``} />
 
-          {this.costume?.attachments?.length &&
-            this.costume.attachments.map((a, idx) => {
-              return (
-                <div>
-                  <a onClick={(e) => this.setState({ attachmentIdx: idx })} href={anchorUrl(a)}>
-                    {a.name ?? a.wid}
-                  </a>
+          <h2>Wearables</h2>
 
-                  {idx == this.state.attachmentIdx && <Editor ref={this.editor} key={editorKey} attachmentIdx={idx} costume={this.costume} deleteAttachment={this.removeAttachment} updateAttachment={this.updateAttachment} />}
-                </div>
-              )
+          <ol class="wearables">
+            {attachments.map((a, idx) => {
+              const name = a.name ?? a.wid
+
+              if (idx == this.state.attachmentIdx) {
+                return (
+                  <li>
+                    <b>{name}</b>
+                    <Editor ref={this.editor} key={editorKey} attachmentIdx={idx} costume={this.costume} deleteAttachment={this.removeAttachment} updateAttachment={this.updateAttachment} />
+                  </li>
+                )
+              } else {
+                return (
+                  <li>
+                    <a onClick={(e) => this.setState({ attachmentIdx: idx })} href={anchorUrl(a)}>
+                      {name}
+                    </a>
+                  </li>
+                )
+              }
             })}
+          </ol>
 
-          {this.costume && <Skin key={skinKey} costume={this.costume} skin={this.costume?.skin ?? ''} default_color={this.costume?.default_color ?? ''} setSkin={this.setSkin} />}
+          {false && <Skin key={skinKey} costume={this.costume} skin={this.costume?.skin ?? ''} default_color={this.costume?.default_color ?? ''} setSkin={this.setSkin} />}
 
           <h2>Download</h2>
 

@@ -193,7 +193,7 @@ void main(void) {
 
 export function setupScene(canvas: HTMLCanvasElement, engine: BABYLON.Engine, onClick?: (mesh: BABYLON.AbstractMesh | undefined) => void): BABYLON.Scene {
   const scene = new BABYLON.Scene(engine)
-  scene.clearColor = new BABYLON.Color4(0, 0, 0, 0)
+  scene.clearColor = new BABYLON.Color4(0, 0.6, 0.8, 1)
 
   if (onClick) {
     const pointerDown = new BABYLON.Vector2()
@@ -235,7 +235,7 @@ export function setupScene(canvas: HTMLCanvasElement, engine: BABYLON.Engine, on
   }
 
   // Camera
-  const camera = new BABYLON.ArcRotateCamera('Camera', -1.57, 1.4, 2.8, new BABYLON.Vector3(0, 1, 0), scene)
+  const camera = new BABYLON.ArcRotateCamera('Camera', -1.2, 1, 2.8, new BABYLON.Vector3(0, 1, 0), scene)
   camera.attachControl(canvas, true)
   camera.lowerRadiusLimit = 0.5
   camera.upperRadiusLimit = 8
@@ -249,17 +249,9 @@ export function setupScene(canvas: HTMLCanvasElement, engine: BABYLON.Engine, on
 
   scene.fogEnabled = true
   scene.fogMode = BABYLON.Scene.FOGMODE_EXP2
-  scene.fogColor = new BABYLON.Color3(1, 1, 1)
-  scene.fogStart = 22
-  scene.fogEnd = 50
-
-  const hl = new BABYLON.HighlightLayer('selected', scene, { isStroke: true })
-  hl.innerGlow = false
-  hl.outerGlow = true
-
-  const size = 0.2
-  hl.blurHorizontalSize = size
-  hl.blurVerticalSize = size
+  scene.fogColor = scene.clearColor as any
+  scene.fogStart = 10
+  scene.fogEnd = 40
 
   addCostumerGround(scene)
 
