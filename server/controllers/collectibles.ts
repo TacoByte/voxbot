@@ -14,8 +14,7 @@ export default function (db: Db, passport: any, app: any) {
         token_id,
         name,
         author,
-        collection_id,
-        default_bone
+        collection_id
       from 
         wearables
       limit
