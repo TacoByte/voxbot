@@ -265,26 +265,8 @@ main {
 }
 
 .costumer-page {
-  background: linear-gradient(180deg, #e4eaf6 0%, #f4f7fb 38%, #fdfefe 100%);
-  padding: 0.75rem 1rem 1.5rem;
-  border-radius: 12px;
-  box-sizing: border-box;
-
-  h1 {
-    color: #2c3140;
-    font-weight: 600;
-  }
-
-  & > article {
-    background: transparent;
-  }
-
   canvas {
-    width: 100%;
-    border-radius: 8px;
-    box-shadow:
-      0 1px 0 rgba(255, 255, 255, 0.85) inset,
-      0 12px 40px rgba(120, 140, 180, 0.08);
+    // height: 60vh;
   }
 
   figure {
@@ -304,10 +286,6 @@ main {
 // Grid layout
 
 .parcel-page.columns {
-  grid-template-columns: 7fr 1fr;
-}
-
-.costumer-page.columns {
   grid-template-columns: 7fr 1fr;
 }
 
@@ -362,6 +340,7 @@ canvas,
 div.map {
   width: auto;
   height: 80vh;
+  max-width: 100%;
 
   @media @mobile {
     width: 100%;
@@ -940,4 +919,11 @@ hgroup {
   h1 + p {
     margin-top: -0.5rem;
   }
+}
+
+// Empty State
+
+p.empty {
+  font-size: smaller;
+  opacity: 0.5;
 }

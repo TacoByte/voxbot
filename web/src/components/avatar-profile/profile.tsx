@@ -21,7 +21,7 @@ import WompsList from '../../womps-list'
 // import Collectibles from '../../../account/collectibles'
 
 type Props = {
-  walletOrUUId: string | undefined
+  walletOrUUId: string
   tab?: string
   isOwner?: boolean
 }
@@ -82,6 +82,7 @@ export default function Profile(props: Props) {
 
   const owner = props.isOwner
   const name = avatar?.name ?? (props.walletOrUUId ? ethTrunc(props.walletOrUUId!) : 'anon')
+  const hasWallet = props.walletOrUUId.match(/0x/)
 
   return (
     <section class="columns profile">
@@ -109,16 +110,6 @@ export default function Profile(props: Props) {
       </article>
 
       <aside>
-        <h3>Parcels</h3>
-
-        <Parcels wallet={props.walletOrUUId} isOwner={props.isOwner} />
-
-        <h3>Collaborations</h3>
-
-        <Contributor wallet={props.walletOrUUId} isOwner={props.isOwner} />
-
-        <h3>Spaces</h3>
-        <Spaces wallet={props.walletOrUUId} isOwner={props.isOwner} />
         <h3>Description</h3>
 
         <div>
@@ -126,8 +117,23 @@ export default function Profile(props: Props) {
         </div>
 
         <dl>
-          {!owner && (
-            <Fragment>
+          <dt>Parcels</dt>
+          <dd>
+            <Parcels wallet={props.walletOrUUId} isOwner={props.isOwner} />
+          </dd>
+
+          <dt>Collaborations</dt>
+          <dd>
+            <Contributor wallet={props.walletOrUUId} isOwner={props.isOwner} />
+          </dd>
+
+          <dt>Spaces</dt>
+          <dd>
+            <Spaces wallet={props.walletOrUUId} isOwner={props.isOwner} />
+          </dd>
+
+          {hasWallet && (
+            <>
               <dt>Wallet</dt>
               <dd>
                 <a onClick={copyWalletToClipboard} title="Click to copy wallet address to clipboard">
@@ -140,7 +146,7 @@ export default function Profile(props: Props) {
                 <br />
                 {!handledGetAddress(walletOrUUId) && <small>Id: {walletOrUUId}</small>}
               </dd>
-            </Fragment>
+            </>
           )}
 
           {avatar?.moderator && (

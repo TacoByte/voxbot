@@ -813,9 +813,6 @@ export default class Costumer extends Component<Props, State> {
             <button type="button" disabled={worn} onClick={pending(this.setActive)}>
               Wear
             </button>
-            <button type="button" onClick={this.downloadCostume}>
-              Download
-            </button>
             <button type="button" onClick={pending(this.duplicateCostume)}>
               Duplicate
             </button>
@@ -825,13 +822,6 @@ export default class Costumer extends Component<Props, State> {
             <a class="buttonish" href={preview}>
               Preview
             </a>
-
-            <label class="costumer-costume-pick">
-              <span class="costumer-costume-pick-label">Costume</span>
-              <select value={this.costume?.id} onInput={this.onChange}>
-                {costumes}
-              </select>
-            </label>
           </figcaption>
 
           <figure>
@@ -900,14 +890,17 @@ export default class Costumer extends Component<Props, State> {
             </Fragment>
           )}
 
+          <h2>Download</h2>
+
+          <button type="button" onClick={this.downloadCostume}>
+            costume-{this.costume?.id ?? 'new'}.json
+          </button>
+
+          <h2>Import</h2>
+
           <form class="costumer-upload" onSubmit={(e) => e.preventDefault()}>
             <input onChange={this.onUpload} type="file" />
-            <button type="button" class="secondary">
-              Upload
-            </button>
           </form>
-
-          <WearableList onPickWearable={this.pickWearableForHand} />
         </aside>
       </section>
     )
