@@ -1047,8 +1047,11 @@ export default class Parcel extends TypedEventTarget<ParcelEventMap> {
       await this.awaitVoxelMesh()
     }
 
-    if (this.voxelMesh) {
-      // Load tileset
+    if (this.voxelMesh && !this.isBaked) {
+      // Load tileset for unbaked parcels. Baked parcels already have the lightmap
+      // shader material applied by setLightBakedMaterial; stomping it here applies
+      // the unbaked shader to a mesh missing the `ambientOcclusion` attribute, which
+      // makes vColorValue 0 and the whole parcel render black.
       this.mesher.setVoxelMaterial(this, this.voxelMesh)
     }
 
