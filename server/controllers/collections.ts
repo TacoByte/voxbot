@@ -19,6 +19,7 @@ export default function (db: Db, passport: PassportStatic, app: Express) {
     const sortBy = req.query.sort || 'popular'
     const limit = parseInt(req.query.limit as string) || 15
     const page = parseInt(req.query.page as string) || 0
+    const owner = typeof req.query.owner === 'string' ? req.query.owner : null
 
     let orderBy = 'count(w.id) desc' // default for 'popular'
 
@@ -51,6 +52,7 @@ export default function (db: Db, passport: PassportStatic, app: Express) {
           wearables w on w.collection_id = c.id
         where
           c.name ilike $<search>
+          ${owner ? 'and c.owner = $<owner>' : ''}
         group by
           c.id
         order by
@@ -64,6 +66,7 @@ export default function (db: Db, passport: PassportStatic, app: Express) {
         search,
         limit,
         page,
+        owner,
       },
     )
 

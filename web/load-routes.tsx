@@ -183,6 +183,7 @@ export default function loadRoutes(app: Express) {
     { path: '/mail', cache: '1 minute' },
     { path: '/home', cache: '1 minute' },
     { path: '/account', cache: '1 minute' },
+    { path: '/account/edit', cache: '1 minute' },
     { path: '/login', cache: '1 minute' },
     { path: '/account/:section', cache: '30 seconds' },
     { path: '/costumes/', cache: '30 seconds' },

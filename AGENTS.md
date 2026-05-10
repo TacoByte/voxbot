@@ -212,6 +212,17 @@ Good:
 
 **Ben takeaway**: dead code is debt. Delete it.
 
+### 7) Use bens form and fuck all classes
+
+    <div class="f">
+      <label>Name</label>
+      <input type="text" ... />
+    </div>
+
+It's simple, we can style it simply. Add fuck all classes,
+never add styling css unless instructed to. Layout is ok,
+use `1rem` whenever required for padding, no borders, or colors. No solid backgrounds. No font sizes.
+
 ## Contributor cheat sheet
 
 - Make the diff smaller.

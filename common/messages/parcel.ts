@@ -127,6 +127,7 @@ export const FullParcelRecord = t.type(
     settings: ParcelSettings,
     brightness: t.union([t.number, t.null, t.undefined]),
     vox: t.union([t.unknown, t.undefined]),
+    environment: t.union([t.string, t.null, t.undefined]),
   },
   'FullParcelRecord',
 )
@@ -286,6 +287,7 @@ export const ParcelContentRecord = t.type(
     tileset: FullParcelRecord.props.tileset,
     brightness: FullParcelRecord.props.brightness,
     palette: FullParcelRecord.props.palette,
+    environment: FullParcelRecord.props.environment,
   },
   'ParcelContentRecord',
 )

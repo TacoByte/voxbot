@@ -320,7 +320,7 @@ iframe,
 canvas,
 .client-placeholder,
 div.map {
-  width: auto;
+  width: 100%;
   height: 80vh;
   max-width: 100%;
 
@@ -688,24 +688,12 @@ small {
 
 div.f {
   position: relative;
-  display: flex;
-  flex-direction: row;
-  gap: 0.5rem;
   margin-bottom: 0.5rem;
+  padding: 0 0 0 5rem;
 
   label {
-    width: 4rem;
-    display: block;
-    text-align: left;
-  }
-
-  & > input,
-  & > select {
-    flex: 1;
-  }
-
-  & > button {
-    align-self: flex-start;
+    position: absolute;
+    left: 0;
   }
 }
 

@@ -124,8 +124,7 @@ export default class Grid extends SocketClient {
     if (environment) {
       this.environment = environment
     } else {
-      const emptyScene = Object.assign(scene, { config: { isGrid: false, isSpace: true } })
-      this.environment = new SpacesEnvironment(parent, emptyScene)
+      this.environment = new SpacesEnvironment(parent, scene)
     }
 
     // Initialize ParcelManager event handlers
@@ -338,45 +337,33 @@ export default class Grid extends SocketClient {
     return this.scene.draw.distance * 1.1
   }
 
-  public loadSpaceFastboot(spaceID: string) {
-    console.debug(`loading space ${spaceID} fastboot via API`)
-    const url = `${process.env.API}/spaces/boot/${spaceID}.json`
-    fetch(url)
-      .then((res) => {
-        if (!res.ok) throw new Error(`could not load space, got non OK response code ${res.status}`)
-        return res.json()
-      })
-      .then((json) => json.space)
-      .then(this.loadSpace.bind(this))
-      .catch((err) => console.info('[grid]', err))
-  }
-
   public async loadFastbootFromHTML() {
-    // Wait for mesher to initialize before loading fastboot parcels
-    if (this.mesherInitPromise) {
-      await this.mesherInitPromise
+    if (this.mesherInitPromise) await this.mesherInitPromise
+
+    const el = document.querySelector('script#parcel') ?? document.querySelector('script#space')
+    if (!el) return
+
+    let desc: any
+    try { desc = JSON.parse(el.innerHTML) } catch { return }
+
+    if (el.id === 'space') {
+      Object.assign(desc, desc.content)
+      desc.x1 = -desc.width / 2
+      desc.x2 = desc.width / 2
+      desc.z1 = -desc.depth / 2
+      desc.z2 = desc.depth / 2
     }
 
-    const getJsonFromHTML = (selector: string) => {
-      const element = document.querySelector(selector)
-      if (!element) return null
-      try {
-        return JSON.parse(element.innerHTML)
-      } catch {
-        return null
-      }
-    }
+    const p = this.loadFastboot(this.parent, desc, this)
+    if (!p) return
 
-    const pDescription = getJsonFromHTML('script#parcel')
-    if (pDescription) {
-      console.debug(`loading parcel #${pDescription.id} as fastboot`)
-      return this.loadParcel(pDescription)
-    }
+    p.generate()
+    this.nearestParcels = [p]
+    this.refreshActiveParcels()
+    this.refreshEnteredParcel()
 
-    const sDescription = getJsonFromHTML('script#space')
-    if (sDescription) {
-      console.debug(`loading space ${sDescription.id} as fastboot`)
-      return this.loadSpace(sDescription)
+    if (el.id === 'space' && this.environment instanceof SpacesEnvironment) {
+      this.environment.applyEnvironment(desc.environment)
     }
   }
 
@@ -693,33 +680,6 @@ export default class Grid extends SocketClient {
   }
 
   // This is to make sure we call the 'onExit' event on tab close or when the user leaves the world
-
-  private loadParcel(description: ParcelRecord) {
-    this.loadFastbootCommon(description)
-  }
-
-  private loadSpace(description: any) {
-    // Transform space description to parcel format
-    Object.assign(description, description.content)
-    description.x1 = -description.width / 2
-    description.x2 = description.width / 2
-    description.z1 = -description.depth / 2
-    description.z2 = description.depth / 2
-    this.loadFastbootCommon(description)
-  }
-
-  private loadFastbootCommon(description: ParcelRecord) {
-    const p = this.loadFastboot(this.parent, description, this)
-    if (!p) return
-    this.loadCommon(p)
-  }
-
-  private loadCommon(p: Parcel) {
-    p.generate().then(/** ignored promise */)
-    this.nearestParcels = [p]
-    this.refreshActiveParcels()
-    this.refreshEnteredParcel()
-  }
 
   private ping() {
     this.sendMessage({ type: 'ping' })

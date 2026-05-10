@@ -28,7 +28,7 @@ export class SpacesEnvironment extends Environment<SpaceScene> {
   }
 
   override get fogDensity() {
-    return 0.069
+    return 0.004
   }
 
   override get ambient() {
@@ -74,6 +74,23 @@ export class SpacesEnvironment extends Environment<SpaceScene> {
 
     if (this.ground) {
       this.ground.material = this.groundMaterial
+    }
+  }
+
+  applyEnvironment(env: string | null | undefined) {
+    if (!this.skyboxMaterial) return
+    if (env === 'night') {
+      // dark blue sky
+      this.skyboxMaterial.emissiveColor.set(0.05, 0.05, 0.15)
+      this.scene.clearColor = new BABYLON.Color4(0.05, 0.05, 0.15, 1)
+    } else if (env === 'void') {
+      // pure white
+      this.skyboxMaterial.emissiveColor.set(1, 1, 1)
+      this.scene.clearColor = new BABYLON.Color4(1, 1, 1, 1)
+    } else {
+      // day - blue sky
+      this.skyboxMaterial.emissiveColor.set(0.4, 0.65, 1)
+      this.scene.clearColor = new BABYLON.Color4(0.4, 0.65, 1, 1)
     }
   }
 

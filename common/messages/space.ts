@@ -28,6 +28,7 @@ export const SpaceRecord = t.type(
       {
         voxels: t.string, // this is also unwrapped into the voxels field in the play endpoint (via a getter...)
         features: t.array(FeatureRecord),
+        environment: t.union([t.literal('day'), t.literal('night'), t.literal('void'), t.null, t.undefined]),
       },
       'Content',
     ),
