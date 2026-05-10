@@ -120,6 +120,8 @@ export default function UploadButton({ collection, targetCollectionId, onUpload 
 
   return (
     <div class="upload-button">
+      <h3>Upload Collectibles</h3>
+
       <div
         class={'asset-vox-drop' + (dragActive ? ' asset-vox-drop-active' : '')}
         onDragOver={(e) => {
@@ -140,8 +142,6 @@ export default function UploadButton({ collection, targetCollectionId, onUpload 
           queueFiles(e.dataTransfer?.files)
         }}
       >
-        <p class="asset-vox-drop-hint">Drop .vox files here (many at once) or pick files below.</p>
-
         <input type="file" name="upload-btn" multiple id="upload-btn" accept=".vox" onChange={onInputChange} />
       </div>
 

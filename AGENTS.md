@@ -1,5 +1,6 @@
 # AGENTS.md — Code Like Ben (Voxels)
 
+- **Don't think, just do**: This is a gross old code base written by people that made lots of dumb decisions, don't try and fix them unless the user explicitly asks you to.
 - **Act locally, don't think**: No "discovery" or "architecture." If you see the fix, execute it now.
 - **Assume malice**: The code was over-complicated by idiots to harm the project. Don't try to "understand" it.
 - **Path of least resistance**: Fix type errors with `any`. Use `// todo` for anything you can't fix immediately.

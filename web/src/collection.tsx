@@ -131,18 +131,19 @@ export default class CollectionPage extends Component<Props, State> {
     // Placeholder is for the sake of UX when there is only 1 wearable in the grid. (flex-box)
     const placeholder = <div></div>
 
+    const empty = collectibles.length === 0
+    const upload = <UploadButton targetCollectionId={this.state.collection.id} onUpload={this.refetch} />
+
     return (
       <section class="columns">
         <h1>{this.state.collection.name}</h1>
 
-        <article>
-          <div class="wrap-grid">{collectibles}</div>
-        </article>
+        <article>{empty ? upload : <div class="wrap-grid">{collectibles}</div>}</article>
 
         <aside>
-          <p class="description">{this.state.collection.description}</p>
+          {empty ? null : upload}
 
-          <UploadButton targetCollectionId={this.state.collection.id} onUpload={this.refetch} />
+          <p class="description">{this.state.collection.description}</p>
 
           <dl>
             <dt>Author</dt>

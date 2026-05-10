@@ -98,7 +98,8 @@ export default function (db: Db, passport: PassportStatic, app: Express) {
     }
 
     try {
-      var insertRes = await db.query('sql/create-collection', `insert into collections (name, description, owner) values ($1, $2, $3) returning id, chainid, slug`, [trimmed, '', wallet])
+      const desc = typeof req.body?.description === 'string' ? req.body.description.trim() : ''
+      var insertRes = await db.query('sql/create-collection', `insert into collections (name, description, owner) values ($1, $2, $3) returning id, chainid, slug`, [trimmed, desc, wallet])
     } catch (e) {
       res.status(500).json({ success: false })
       return
@@ -111,5 +112,24 @@ export default function (db: Db, passport: PassportStatic, app: Express) {
     }
     const id = row.id as number
     res.json({ success: true, collection_id: id })
+  })
+
+  app.put('/api/collections/:id/address', passport.authenticate('jwt', { session: false }), async (req: VoxelsUserRequest, res) => {
+    const wallet = req.user?.wallet
+    const id = parseInt(req.params.id, 10)
+    const address = req.body?.address
+    if (!wallet || isNaN(id) || !address || !ethers.isAddress(address)) {
+      res.status(400).json({ success: false, message: 'Invalid params' })
+      return
+    }
+    try {
+      const r = await pgp.oneOrNone(
+        `update collections set address = $1 where id = $2 and owner = $3 and address is null returning id`,
+        [address, id, wallet],
+      )
+      res.json({ success: !!r })
+    } catch {
+      res.status(500).json({ success: false })
+    }
   })
 }

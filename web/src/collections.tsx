@@ -1,7 +1,6 @@
 import { Component } from 'preact'
 import { fetchOptions } from './utils'
-import UploadButton from './components/upload-button'
-import { SUPPORTED_CHAINS_BY_ID } from '../../common/helpers/chain-helpers'
+import NewCollection from './new-collection'
 import { Collection } from '../../common/helpers/collections-helpers'
 
 export interface Props {}
@@ -172,11 +171,7 @@ export default class ListCollectionsComponent extends Component<Props, State> {
         </article>
 
         <aside>
-          <h3>Upload Collection</h3>
-
-          <p>Drop .vox files here: each upload creates a collection and wearables (plus library assets).</p>
-
-          <UploadButton collection={true} />
+          <NewCollection />
         </aside>
       </section>
     )
