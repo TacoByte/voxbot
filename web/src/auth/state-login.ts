@@ -410,8 +410,6 @@ export class StateLogin {
       // clean name if we dont have a JWT
       this.setState({ name: undefined })
     }
-
-    this.setProvider()
   }
 
   /**
