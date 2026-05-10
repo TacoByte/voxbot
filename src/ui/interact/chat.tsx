@@ -10,11 +10,10 @@ import Avatar from '../../avatar'
 import Connector, { ChatMessageRecord, messageList } from '../../connector'
 import GuestBook from '../../features/guest-book'
 import Persona from '../../persona'
-import type { Scene } from '../../scene'
 import { NearByPlayers } from './nearby-players'
 
 interface Props {
-  scene: Scene
+  scene: BABYLON.Scene
   focusChatInput?: () => void
 }
 

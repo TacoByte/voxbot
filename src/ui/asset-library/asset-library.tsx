@@ -3,7 +3,6 @@ import { Spinner } from '../../../web/src/spinner'
 import { app, AppEvent } from '../../../web/src/state'
 import { fetchAPI } from '../../../web/src/utils'
 import { FeatureAssetCategory, FeatureAssetType, LibraryAsset, ScriptAssetCategory } from '../../library-asset'
-import type { Scene } from '../../scene'
 import { AssetLibrarySearchBar } from '../search-bar'
 import { AssetBrowser, NUMBER_PER_PAGE } from './asset-browser'
 import { AssetBrowserInspector } from './asset-browser-inspector'
@@ -18,7 +17,7 @@ enum Tab {
 
 type Props = {
   onClose?: () => void
-  scene: Scene
+  scene: BABYLON.Scene
 }
 
 type AssetCategory = FeatureAssetCategory | ScriptAssetCategory

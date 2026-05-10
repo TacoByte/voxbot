@@ -5,12 +5,11 @@ import cachedFetch from '../../../web/src/helpers/cached-fetch'
 import Connector from '../../connector'
 import { MinimapSettings } from '../../minimap'
 import Persona from '../../persona'
-import type { Scene } from '../../scene'
 import TakeWomp from '../take-womp'
 
 interface Props {
   onClose?: () => void
-  scene: Scene
+  scene: BABYLON.Scene
   minimapSettings: MinimapSettings
 }
 
@@ -59,7 +58,7 @@ export class WompOverlay extends Component<Props, State> {
   }
 
   onClick = (womp: Womp) => {
-    if (this.props.scene.config.isSpace) {
+    if (window.config.isSpace) {
       //IF we're currently in a space and we click a broadcast womp, take us in-world
       window.ui?.openLink(`/play?coords=${womp.coords}`)
       return

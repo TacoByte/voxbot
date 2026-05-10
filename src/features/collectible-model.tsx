@@ -1,3 +1,4 @@
+import { voxImporter } from '../../common/vox-import/vox-import'
 import type { FeatureTrigger } from './feature'
 import { Feature3D } from './feature'
 import {
@@ -92,7 +93,7 @@ export default class CollectibleModel extends Feature3D<CollectibleModelRecord> 
   async onError() {
     if (this.disposed) return
 
-    const mesh = await this.scene.importVox(`https://www.voxels.com/models/vox-five-broken.vox`, { signal: this.abortController.signal })
+    const mesh = await voxImporter().import(`https://www.voxels.com/models/vox-five-broken.vox`, { signal: this.abortController.signal })
 
     if (this.mesh) {
       this.mesh.dispose()
@@ -118,7 +119,7 @@ export default class CollectibleModel extends Feature3D<CollectibleModelRecord> 
     }
     let mesh
     try {
-      mesh = await this.scene.importVox(url, { signal: this.abortController.signal })
+      mesh = await voxImporter().import(url, { signal: this.abortController.signal })
     } catch (e) {
       await this.onError()
       return Promise.resolve()
@@ -356,7 +357,7 @@ class Editor extends FeatureEditor<CollectibleModel> {
           <Advanced>
             <FeatureID feature={this.props.feature} />
             <SetParentDropdown feature={this.props.feature} />
-            {!this.props.scene.config.isSpace && (
+            {!window.config.isSpace && (
               <div className="f">
                 <label>Interactivity Options</label>
                 <label>
@@ -365,7 +366,7 @@ class Editor extends FeatureEditor<CollectibleModel> {
                 </label>
               </div>
             )}
-            {this.state.tryable && !this.props.scene.config.isSpace && (
+            {this.state.tryable && !window.config.isSpace && (
               <div className="sub-f">
                 <div className="f">
                   <label>Pop up</label>

@@ -8,7 +8,7 @@ import OurCamera from './utils/our-camera'
 import { isLoaded } from '../utils/loading-done'
 import Feature, { MeshExtended } from '../features/feature'
 import Avatar from '../avatar'
-import type { Scene } from '../scene'
+import { cameraPosition, cameraRotation } from '../utils/camera'
 import type { Environment } from '../enviroments/environment'
 import { hasPointerLock } from '../../common/helpers/ui-helpers'
 import { IControls } from './iControls'
@@ -127,7 +127,7 @@ export default abstract class Controls implements IControls {
   private _containingParcels: number[] = []
 
   constructor(
-    protected scene: Scene,
+    protected scene: BABYLON.Scene,
     protected canvas: HTMLCanvasElement,
   ) {
     this.user = window.user
@@ -156,7 +156,7 @@ export default abstract class Controls implements IControls {
     this.reticuleHighlight.setEnabled(false)
     this.reticuleHighlight.parent = this.camera
 
-    if (isDesktop() && this.scene.config.wantsUI) {
+    if (isDesktop() && window.config.wantsUI) {
       this.scene.registerBeforeRender(() => {
         // Show the reticule in 20% visibility in 3rd person mode.
         this.reticuleNormal.visibility = hasPointerLock() || this.hasGamepad ? (this.firstPersonView ? 1 : 0.2) : 0
@@ -164,14 +164,14 @@ export default abstract class Controls implements IControls {
       })
     }
 
-    if (!this.scene.config.isOrbit) {
+    if (!window.config.isOrbit) {
       this.scene.onBeforeRenderObservable.add(() => {
         if (this.initialCameraPos) {
           console.warn('this.initialCameraPos already set in onBeforeRenderObservable(). suspected logic error')
         }
         this.updateConga()
         // let persona update its position from the camera, since we are steering the camera
-        this.persona.update(this.scene.cameraPosition, this.scene.cameraRotation, this)
+        this.persona.update(cameraPosition(this.scene), cameraRotation(this.scene), this)
         this.swimming = this.persona.isSwimming(SWIM_LEVEL) ?? this.swimming
         // store the position before we do camera adjustment in perspectiveAdjustment
         this.initialCameraPos = this.camera.position.clone()
@@ -232,7 +232,7 @@ export default abstract class Controls implements IControls {
       this.enterFirstPerson()
       animateFov(0.45)
     } else {
-      animateFov(this.scene.fov.value)
+      animateFov(window.fov.value)
     }
   }
 
@@ -420,12 +420,12 @@ export default abstract class Controls implements IControls {
 
   // called on spawn and teleport
   public invalidateGroundLoaded() {
-    if (!this.scene.environment) {
+    if (!window.environment) {
       throw new Error('invalidateGroundLoaded() called before attachEnvironment()!')
     }
 
     //TODO: Instead of switching on environment type here, this logic should probably be moved into methods in SpaceEnvironment and WorldEnvironment that override an abstract Environment method
-    if (this.scene.config.isSpace) {
+    if (window.config.isSpace) {
       // Spaces always contain exactly one Parcel with ID 0
       this._containingParcels = [0]
       this._containingParcelsWaitState = 'waiting-for-colliders'
@@ -442,7 +442,7 @@ export default abstract class Controls implements IControls {
       })
     }
 
-    this.scene.environment.invalidateGroundLoaded()
+    window.environment.invalidateGroundLoaded()
   }
 
   // this is called by the render loop in index.ts
@@ -638,7 +638,7 @@ export default abstract class Controls implements IControls {
   }
 
   getCoords() {
-    if (this.scene.config.isSpace) {
+    if (window.config.isSpace) {
       // if we're in a space, we use create coordinates based on the camera position since Spaces are centered at 0,0,0
       return encodeCoords({ position: this.camera.position, rotation: this.camera.rotation })
     }

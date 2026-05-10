@@ -8,13 +8,11 @@ import Panel, { PanelType } from '../../web/src/components/panel'
 import { saveAsset } from '../../web/src/helpers/save-helper'
 import { toggleEventManagerWindow } from '../../web/src/popup-ui/event-manager'
 import { app, AppEvent } from '../../web/src/state'
-import type { Scene } from '../scene'
-
 // Properties of a parcel required by this control
 interface Props {
   parcel: ParcelRecord
   onClose?: () => void
-  scene: Scene
+  scene: BABYLON.Scene
 }
 
 interface State {
@@ -209,7 +207,7 @@ export class ParcelAdminOverlay extends Component<Props, State> {
   }
 }
 
-export function toggleParcelAdminOverlay(parcel: ParcelRecord, scene: Scene, onClose?: () => void) {
+export function toggleParcelAdminOverlay(parcel: ParcelRecord, scene: BABYLON.Scene, onClose?: () => void) {
   if (ParcelAdminOverlay.currentElement?.parentElement) {
     unmountComponentAtNode(ParcelAdminOverlay.currentElement)
     ParcelAdminOverlay.currentElement = null!

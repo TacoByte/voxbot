@@ -11,7 +11,6 @@ import { FeatureEvent, MeshExtended } from './features/feature'
 import type Parcel from './parcel'
 import ParcelScript from './parcel-script'
 import type Persona from './persona'
-import type { Scene } from './scene'
 import { emote } from './utils/emote'
 import { Transform } from './utils/transform'
 import { Bubble } from './chat'
@@ -67,7 +66,7 @@ export default class Avatar extends Entity {
   /** Remote: uuid of the avatar they follow in conga (from multiplayer). Local unused. */
   private _congaFollowsUuid: string | null = null
 
-  constructor(scene: Scene, parent: BABYLON.TransformNode, joined: number, uuid: string, description: AvatarRecord) {
+  constructor(scene: BABYLON.Scene, parent: BABYLON.TransformNode, joined: number, uuid: string, description: AvatarRecord) {
     super(scene, parent, joined)
     this._uuid = uuid
     this._description = description
@@ -222,7 +221,7 @@ export default class Avatar extends Entity {
     return window.main
   }
 
-  static ensureRootAvatar(scene: Scene): Promise<void> {
+  static ensureRootAvatar(scene: BABYLON.Scene): Promise<void> {
     return new Promise((resolve) => {
       if (Avatar.rootAvatarLoadState === LoadState.Loaded) {
         resolve()
@@ -235,7 +234,7 @@ export default class Avatar extends Entity {
     })
   }
 
-  private static async loadRootAvatar(scene: Scene) {
+  private static async loadRootAvatar(scene: BABYLON.Scene) {
     if (Avatar.rootAvatarLoadState !== LoadState.None) return
     Avatar.rootAvatarLoadState = LoadState.Loading
 
@@ -991,12 +990,12 @@ function getLineMaxWidth(ctx: CanvasRenderingContext2D, lines: string[]): number
 }
 
 // factory function to set up and create a avatar representing other players
-export async function LoadAvatar(scene: Scene, parent: BABYLON.TransformNode, joined: number, uuid: string, description: AvatarRecord): Promise<Avatar> {
+export async function LoadAvatar(scene: BABYLON.Scene, parent: BABYLON.TransformNode, joined: number, uuid: string, description: AvatarRecord): Promise<Avatar> {
   await Avatar.ensureRootAvatar(scene)
   return new Avatar(scene, parent, joined, uuid, description)
 }
 
-function loadAvatarContainer(scene: Scene, avatarFile: string): Promise<BABYLON.AssetContainer> {
+function loadAvatarContainer(scene: BABYLON.Scene, avatarFile: string): Promise<BABYLON.AssetContainer> {
   return new Promise((resolve, reject) => {
     BABYLON.SceneLoader.LoadAssetContainer(
       `/models/`,

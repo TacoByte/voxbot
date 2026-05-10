@@ -1,4 +1,4 @@
-import type { Scene } from './scene'
+import { cameraPosition } from './utils/camera'
 import Parcel, { ParcelActivationState } from './parcel'
 import { isMobile, wantsIsolate } from '../common/helpers/detector'
 import { sortBy, throttle } from 'lodash'
@@ -88,7 +88,7 @@ export default class Grid extends SocketClient {
   public parent: BABYLON.TransformNode
   public currentIsland: string | undefined = undefined
   public parcel_events = new TypedEventTarget<{ parcel_entered: Parcel['id']; parcel_exited: Parcel['id'] }>()
-  private readonly scene: Scene
+  private readonly scene: BABYLON.Scene
   private readonly environment: Environment
   static mesher: ParcelMesher
   private lastParcelScanAt?: number
@@ -110,7 +110,7 @@ export default class Grid extends SocketClient {
   private _nextQueryId = 0
   private mesherInitPromise: Promise<void> | undefined = undefined
 
-  constructor(scene: Scene, parent: BABYLON.TransformNode, environment?: Environment, spaceId?: string) {
+  constructor(scene: BABYLON.Scene, parent: BABYLON.TransformNode, environment?: Environment, spaceId?: string) {
     super('grid', () => getGridUrl(spaceId || null))
     this.scene = scene
 
@@ -140,7 +140,7 @@ export default class Grid extends SocketClient {
 
     this.isolateMode = wantsIsolate()
     // listen for graphics level changes, and regen baked parcels on change
-    scene.graphic?.addEventListener(
+    window.graphic?.addEventListener(
       'settingsChanged',
       throttle(
         async () => {
@@ -183,7 +183,7 @@ export default class Grid extends SocketClient {
     }
 
     // Set up ParcelManager event listeners
-    scene.draw?.addEventListener(
+    window.draw?.addEventListener(
       'distance-changed',
       (e) => {
         // update lods
@@ -195,7 +195,7 @@ export default class Grid extends SocketClient {
     )
 
     // refresh shader data (fog distance)
-    scene.environment?.addEventListener(
+    window.environment?.addEventListener(
       'fog-updated',
       throttle(() => {
         this.parcels.forEach((parcel) => {
@@ -207,7 +207,7 @@ export default class Grid extends SocketClient {
   }
 
   get seeksConnection() {
-    return !this.scene.config.isOrbit
+    return !window.config.isOrbit
   }
 
   // ParcelManager methods - folded into Grid
@@ -305,7 +305,7 @@ export default class Grid extends SocketClient {
 
   private get activePoolSize() {
     if (this.isolateMode) return 1
-    const settings = this.scene.graphic?.getSettings()
+    const settings = window.graphic?.getSettings()
 
     if (!settings?.level) {
       return 3
@@ -321,20 +321,20 @@ export default class Grid extends SocketClient {
     }
 
     // Default calculation with a max cap of 30 to prevent performance issues
-    return Math.min(30, Math.ceil(this.scene.draw.distance / 12))
+    return Math.min(30, Math.ceil(window.draw.distance / 12))
   }
 
   private get nearbyDistance() {
     if (this.isolateMode) return 1
-    if (this.scene.config.isOrbit) return 40
+    if (window.config.isOrbit) return 40
     // In Custom mode, parcel activation distance is same as draw distance
-    return this.scene.draw.distance
+    return window.draw.distance
   }
 
   private get unloadDistance() {
-    if (this.scene.config.isOrbit) return 45
+    if (window.config.isOrbit) return 45
     // Unload distance is 10% more than draw distance to avoid flickering
-    return this.scene.draw.distance * 1.1
+    return window.draw.distance * 1.1
   }
 
   public async loadFastbootFromHTML() {
@@ -402,7 +402,7 @@ export default class Grid extends SocketClient {
     if (!this.scene.activeCamera) {
       return undefined
     }
-    const position = this.scene.cameraPosition
+    const position = cameraPosition(this.scene)
     const currentParcel = this.currentOrNearestParcel()
     if (currentParcel && currentParcel.canEdit && (currentParcel.contains(position) || this.length <= 1)) {
       // the easy case!
@@ -435,7 +435,7 @@ export default class Grid extends SocketClient {
     if (this.length === 0 || (this.length === 1 && this.fastbootParcel)) return this.fastbootParcel
 
     // handle selecting spawn parcel when still loading grid
-    if (this.fastbootParcel?.contains(this.scene.cameraPosition)) {
+    if (this.fastbootParcel?.contains(cameraPosition(this.scene))) {
       this.priorParcel = this.fastbootParcel
       return this.priorParcel
     }
@@ -457,7 +457,7 @@ export default class Grid extends SocketClient {
     // (which must be the most nested)
     let containingParcel: Parcel | undefined = undefined
     for (const p of this.nearestParcels) {
-      if (!p.contains(this.scene.cameraPosition)) continue
+      if (!p.contains(cameraPosition(this.scene))) continue
 
       if (!containingParcel || p.footprintCm2 < containingParcel.footprintCm2) {
         containingParcel = p
@@ -465,7 +465,7 @@ export default class Grid extends SocketClient {
     }
 
     // if not inside parcel, but last parcel is less than 2 meters away, stick with that
-    if (!containingParcel && this.priorParcel && distanceToAABB(this.scene.cameraPosition, this.priorParcel.exteriorBounds) < 2) {
+    if (!containingParcel && this.priorParcel && distanceToAABB(cameraPosition(this.scene), this.priorParcel.exteriorBounds) < 2) {
       containingParcel = this.priorParcel
     }
 
@@ -489,7 +489,7 @@ export default class Grid extends SocketClient {
   }
 
   public getTargetParcel(): Parcel | undefined {
-    if (this.scene.config.isSpace) {
+    if (window.config.isSpace) {
       return this.currentOrNearestParcel()
     }
     if (!this.scene.activeCamera) {
@@ -558,14 +558,14 @@ export default class Grid extends SocketClient {
     this.workerAPI.init(10, 20)
 
     this.updateWorkerSettings()
-    this.scene.draw.addEventListener('distance-changed', () => this.updateWorkerSettings(), { passive: true })
+    window.draw.addEventListener('distance-changed', () => this.updateWorkerSettings(), { passive: true })
 
-    const cameraPosition: [number, number, number] = [0, 0, 0]
+    const camArr: [number, number, number] = [0, 0, 0]
     this._workerInterval = setInterval(() => {
-      this.getCameraPosition().toArray(cameraPosition)
+      this.getCameraPosition().toArray(camArr)
       const frustumPlanes = this.calculateFrustumPlanes()
       // This event now drives parcel loading and unloading on the grid worker
-      this.workerAPI?.cameraUpdate(cameraPosition, frustumPlanes)
+      this.workerAPI?.cameraUpdate(camArr, frustumPlanes)
       window.main?.pump.setCurrentParcel(this.currentParcel())
     }, DEFAULT_UPDATE_INTERVAL_MS)
   }
@@ -837,13 +837,13 @@ export default class Grid extends SocketClient {
 
   private refreshActiveParcels() {
     // Reprioritize pump queue based on current camera position
-    const cameraPosition = this.getCameraPosition()
+    const camPos = this.getCameraPosition()
 
     // 3 gives us currentParcel + the one we are looking at + the one you looked at last (bare minimum for smoothness)
     const currentParcel = this.currentOrNearestParcel()
 
     // get parcels near camera (to prioritize things close to player)
-    const allNearest = this.getNearest(this.activePoolSize, cameraPosition)
+    const allNearest = this.getNearest(this.activePoolSize, camPos)
 
     const filteredNearest: Parcel[] = []
     const cap = Math.floor(this.activePoolSize / 2)
@@ -895,7 +895,7 @@ export default class Grid extends SocketClient {
       // The cons: Around small parcels you don't start scripts of features that are somewhat close-ish
       let distanceToPlayer = Infinity
       if (this.scene.activeCamera) {
-        distanceToPlayer = distanceToAABB(this.scene.cameraPosition, parcel.exteriorBounds)
+        distanceToPlayer = distanceToAABB(cameraPosition(this.scene), parcel.exteriorBounds)
       }
       if (this.parcelsWithinProximity.includes(parcel)) {
         // parcel is included in the currently active list of parcel scripts
@@ -925,7 +925,7 @@ export default class Grid extends SocketClient {
   }
 
   private getCameraPosition(): BABYLON.Vector3 {
-    return this.scene.cameraPosition
+    return cameraPosition(this.scene)
   }
 
   private calculateFrustumPlanes(): number[][] | undefined {

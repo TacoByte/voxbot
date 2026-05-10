@@ -7,10 +7,10 @@ import { Animations, isCongaSyncedDance } from './avatar-animations'
 import * as States from './states'
 import { app, AppEvent } from '../web/src/state'
 import { LoadUserAvatar, UserAvatar } from './user-avatar'
-import type { Scene } from './scene'
 import { decodeCoordsFromURL } from './utils/helpers'
 import { wantsXR } from '../common/helpers/detector'
 import { Action } from '../common/messages'
+import { cameraPosition, cameraRotation, setCameraPosition, setCameraRotation } from './utils/camera'
 
 /**
  * The minimal representation of the persona which indicates if the avatar needs to be re-rendered.
@@ -42,12 +42,12 @@ export default class Persona {
   private facingForward: boolean
   // this is in theory a pushdown automata, eg. https://gameprogrammingpatterns.com/state.html#pushdown-automata
   private state: States.CharacterState[] = [new States.Idle()]
-  private readonly scene: Scene
+  private readonly scene: BABYLON.Scene
   private readonly parent: BABYLON.TransformNode
   private readonly wantsXR: boolean
 
   constructor(
-    scene: Scene,
+    scene: BABYLON.Scene,
     parent: BABYLON.TransformNode,
     connector: Connector,
     controls: Controls,
@@ -90,7 +90,7 @@ export default class Persona {
     // Don't load the avatar resources in orbit mode;
     // Login is also not allowed in orbit mode
     // This can be changed in the future when we have readonly mode
-    if (this.scene.config.isOrbit) {
+    if (window.config.isOrbit) {
       return
     }
 
@@ -150,7 +150,7 @@ export default class Persona {
   // teleports a user without adding the previous location to the browser. Might be good for moving players
 
   isMoving() {
-    return !this.scene.cameraPosition.equalsWithEpsilon(this.position, this.wantsXR ? 0.05 : 0.02)
+    return !cameraPosition(this.scene).equalsWithEpsilon(this.position, this.wantsXR ? 0.05 : 0.02)
   }
 
   naviport(value: string) {
@@ -192,10 +192,11 @@ export default class Persona {
     this.audio?.playSound('persona.teleport')
 
     this.controls.resetWorldOffset(coords.position)
-    this.scene.cameraPosition.copyFrom(coords.position)
+    setCameraPosition(this.scene, coords.position)
 
     if (coords.rotation) {
-      this.scene.cameraRotation.y = coords.rotation.y
+      const r = cameraRotation(this.scene)
+      setCameraRotation(this.scene, new BABYLON.Vector3(r.x, coords.rotation.y, r.z))
     }
 
     this.controls.setFlying(coords.flying ?? false)

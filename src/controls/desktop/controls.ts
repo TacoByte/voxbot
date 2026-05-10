@@ -7,15 +7,13 @@ import { unmountComponentAtNode } from 'preact/compat'
 import { createFirstPersonCamera } from '../utils/fps-camera'
 import { decodeCoordsFromURL } from '../../utils/helpers'
 import { hasPointerLock } from '../../../common/helpers/ui-helpers'
-import { Scene } from '../../scene'
-
 const POINTER_WHEEL_MULTIPLIER = 0.001
 export default class DesktopControls extends Controls {
   keyboardInput?: LocaleKeyboardMoveInput
   origUpdatePointerPosition?: () => void
   nerfingClickEvents = false
 
-  constructor(scene: Scene, canvas: HTMLCanvasElement) {
+  constructor(scene: BABYLON.Scene, canvas: HTMLCanvasElement) {
     super(scene, canvas)
 
     // disable picking unless in pointer lock mode

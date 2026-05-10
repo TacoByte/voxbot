@@ -1,4 +1,5 @@
 import * as assert from 'assert'
+import { cameraPosition } from './utils/camera'
 import { isEqual } from 'lodash'
 import type { QuickJSContext, QuickJSRuntime, QuickJSWASMModule } from 'quickjs-emscripten'
 import { getQuickJS } from 'quickjs-emscripten'
@@ -10,7 +11,6 @@ import Avatar from './avatar'
 import Feature from './features/feature'
 import VidScreen from './features/vid-screen'
 import type Parcel from './parcel'
-import type { Scene } from './scene'
 import FeatureBasicGUI from './ui/gui/gui'
 import {
   ScriptingActions,
@@ -55,11 +55,11 @@ export default class ParcelScript {
   connected: boolean = false
   disabled = false
 
-  constructor(scene: Scene, parcel: Parcel) {
+  constructor(scene: BABYLON.Scene, parcel: Parcel) {
     this.parcel = parcel
     this.lastTestBoundResult = 'away'
 
-    if (scene.config.isBot) {
+    if (window.config.isBot) {
       this.disabled = true
     }
 
@@ -159,7 +159,7 @@ export default class ParcelScript {
     if (!this.scene.activeCamera) {
       return false
     }
-    return this.parcel.contains(this.scene.cameraPosition)
+    return this.parcel.contains(cameraPosition(this.scene))
   }
 
   isNearby(): boolean {
@@ -167,7 +167,7 @@ export default class ParcelScript {
   }
 
   isDistant(): boolean {
-    return !this.isWithin() && this.parcel.transform.position.subtract(this.scene.cameraPosition).length() > DISTANT
+    return !this.isWithin() && this.parcel.transform.position.subtract(cameraPosition(this.scene)).length() > DISTANT
   }
 
   parcelOrSpaceId() {
@@ -772,7 +772,7 @@ export default class ParcelScript {
     } else {
       app.showSnackbar(`Parcel ${this.parcelOrSpaceId()} teleported you out.`)
     }
-    if (!this.scene.config.isSpace) {
+    if (!window.config.isSpace) {
       this.persona?.teleportNoHistory({ position: new BABYLON.Vector3(0, 1.5, 0), rotation: new BABYLON.Vector3(0, 0, 0) })
     } else {
       window.location.replace('/')

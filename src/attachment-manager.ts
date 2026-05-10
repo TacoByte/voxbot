@@ -1,7 +1,7 @@
 import { Costume, CostumeAttachment } from '../common/messages/costumes'
 import { app } from '../web/src/state'
+import { voxImporter } from '../common/vox-import/vox-import'
 import type Avatar from './avatar'
-import type { Scene } from './scene'
 
 export interface AttachmentWithMesh extends CostumeAttachment {
   mesh?: BABYLON.Mesh
@@ -17,7 +17,7 @@ export class AvatarAttachmentManager {
   attachments: Array<AttachmentWithMesh> = []
 
   constructor(
-    private scene: Scene,
+    private scene: BABYLON.Scene,
     private avatar: Avatar,
     private readonly avatarViewDistance: number,
   ) {
@@ -149,7 +149,7 @@ export class AvatarAttachmentManager {
     const url = `/api/collectibles/${attachment.wid}/vox`
 
     const opts = { invertX: false, signal: this.abortController.signal }
-    const mesh = await this.scene.importVox(url, opts)
+    const mesh = await voxImporter().import(url, opts)
     mesh.name = 'wearable'
 
     this.attached.push(mesh)

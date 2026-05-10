@@ -1,4 +1,5 @@
 import { ethers } from 'ethers'
+import { cameraPosition } from './utils/camera'
 import { throttle } from 'lodash'
 import type { NdArray } from 'ndarray'
 import ndarray from 'ndarray'
@@ -23,7 +24,6 @@ import ParcelBudget from './parcel-budget'
 import { ParcelMesher } from './parcel-mesher'
 import ParcelScript from './parcel-script'
 import { FeaturePump } from './pump/feature-pump'
-import type { Scene } from './scene'
 import { createEvent, TypedEventTarget } from './utils/EventEmitter'
 import { tidyVec3 } from './utils/helpers'
 import { ParcelEventMap } from './utils/parcel-event-map'
@@ -79,7 +79,7 @@ export default class Parcel extends TypedEventTarget<ParcelEventMap> {
   socketAuth: string | undefined
   label: string | undefined
   featuresActive?: boolean // Are features active for this parcel? IE are we displaying features? May be in generation.
-  readonly scene: Scene
+  readonly scene: BABYLON.Scene
   readonly transform: BABYLON.TransformNode & { parcel?: Parcel }
   readonly x1: number
   readonly y1: number
@@ -118,7 +118,7 @@ export default class Parcel extends TypedEventTarget<ParcelEventMap> {
   lightmap_url: string | null = null
 
   constructor(
-    scene: Scene,
+    scene: BABYLON.Scene,
     parent: BABYLON.TransformNode,
     record: ParcelRecord & {
       spaceId?: string
@@ -778,7 +778,7 @@ export default class Parcel extends TypedEventTarget<ParcelEventMap> {
       return this.transform.position.subtract(this.scene.activeCamera['target'] as BABYLON.Vector3)
     }
     if (this.scene.activeCamera) {
-      return this.transform.position.subtract(this.scene.cameraPosition)
+      return this.transform.position.subtract(cameraPosition(this.scene))
     }
     return new BABYLON.Vector3(0, 0, 0)
   }
@@ -788,7 +788,7 @@ export default class Parcel extends TypedEventTarget<ParcelEventMap> {
       return
     }
 
-    this.scene.environment?.updateShaderProperties(this.voxelMesh.material)
+    window.environment?.updateShaderProperties(this.voxelMesh.material)
   }
 
   onTileSetUpdate: BABYLON.Observable<void> = new BABYLON.Observable<void>()
@@ -1227,7 +1227,7 @@ export default class Parcel extends TypedEventTarget<ParcelEventMap> {
         sound.setPosition(position)
         // or should position be relative to the parcel????
       } else {
-        if (this.scene.activeCamera) sound.setPosition(this.scene.cameraPosition)
+        if (this.scene.activeCamera) sound.setPosition(cameraPosition(this.scene))
       }
 
       // console.log('playing sound', id * SPRITE_SLICE_DURATION, SPRITE_SLICE_DURATION)
@@ -1368,7 +1368,7 @@ export default class Parcel extends TypedEventTarget<ParcelEventMap> {
     // regenerate if we are still using greedy blocks so that we don't change the brightness of surrounding parcels
     if (isShared(material)) return this.refreshVoxels()
 
-    material.setFloat('brightness', this.brightness || this.scene.environment?.brightness || 1.5)
+    material.setFloat('brightness', this.brightness || window.environment?.brightness || 1.5)
   }
 
   /**

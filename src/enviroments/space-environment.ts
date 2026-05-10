@@ -1,18 +1,15 @@
 import { StateObservable } from '../utils/state-observable'
 import { Environment } from './environment'
-import type { Scene } from '../scene'
 import { createEvent } from '../utils/EventEmitter'
 
-type SpaceScene = Scene
-
-export class SpacesEnvironment extends Environment<SpaceScene> {
+export class SpacesEnvironment extends Environment {
   skybox?: BABYLON.Mesh
   skyboxMaterial?: BABYLON.StandardMaterial
   ground?: BABYLON.Mesh
   groundMaterial: BABYLON.StandardMaterial | undefined
   groundTexture: BABYLON.Texture | undefined
 
-  constructor(parent: BABYLON.TransformNode, scene: SpaceScene) {
+  constructor(parent: BABYLON.TransformNode, scene: BABYLON.Scene) {
     console.debug('Creating SpacesEnvironment')
     super(parent, scene)
   }
@@ -43,11 +40,11 @@ export class SpacesEnvironment extends Environment<SpaceScene> {
 
     this.skybox = BABYLON.Mesh.CreateBox('skybox', 1, this.scene)
     const setSkyboxScale = () => {
-      this.skybox?.scaling.setAll(this.scene.draw.distance)
+      this.skybox?.scaling.setAll(window.draw.distance)
     }
     // adjust skybox size to draw distance
     setSkyboxScale()
-    this.scene.draw.addEventListener('distance-changed', setSkyboxScale, { passive: true })
+    window.draw.addEventListener('distance-changed', setSkyboxScale, { passive: true })
 
     this.skybox.infiniteDistance = true
     this.skybox.material = this.skyboxMaterial

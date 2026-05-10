@@ -7,7 +7,6 @@ import { User } from '../user'
 import { AudioEngine } from '../audio/audio-engine'
 import type { Tool } from '../user-interface'
 import { signal } from '@preact/signals'
-import type { Scene } from '../scene'
 import VertexShader from '../shaders/ao-mesh.vsh'
 import FragmentShader from '../shaders/ao-mesh.fsh'
 import { createGlassMaterial } from '../materials/glass'
@@ -128,13 +127,13 @@ export default class Selector implements Tool {
       'palette',
       defaultColors.map((c) => BABYLON.Color3.FromHexString(c)),
     )
-    ;(scene as Scene).environment?.setShaderParameters(material, 1.5)
+    window.environment?.setShaderParameters(material, 1.5)
 
     // Block dirty mechanism to prevent unnecessary shader recompilation
     material.blockDirtyMechanism = true
 
     this.voxelMaterial = material
-    this.glassMaterial = createGlassMaterial(scene as Scene, { name: 'ghost-block' })
+    this.glassMaterial = createGlassMaterial(scene as any, { name: 'ghost-block' })
     this.box.material = material
 
     // No default block

@@ -6,13 +6,11 @@ import { exitPointerLock } from '../../../common/helpers/ui-helpers'
 import { HTMLUi } from './html-ui'
 import { unmountComponentAtNode } from 'preact/compat'
 import { SUPPORTED_CHAINS_BY_ID } from '../../../common/helpers/chain-helpers'
-import type { Scene } from '../../scene'
-
 type Props = {
   collectible: CollectibleModel
   onClose: () => void
   status?: string
-  scene: Scene
+  scene: BABYLON.Scene
 }
 type State = {
   collectible: CollectibleModel
@@ -194,7 +192,7 @@ export class CollectibleHTMLUi extends HTMLUi<Props, State> {
   }
 }
 
-export default function showCollectibleHTMLUi(collectible: CollectibleModel, scene: Scene) {
+export default function showCollectibleHTMLUi(collectible: CollectibleModel, scene: BABYLON.Scene) {
   if (!!CollectibleHTMLUi.currentElement) {
     unmountComponentAtNode(CollectibleHTMLUi.currentElement)
     CollectibleHTMLUi.currentElement = null!

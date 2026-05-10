@@ -1,7 +1,6 @@
 import { Component } from 'preact'
 import { encodeCoords, fetchFromMPServer } from '../../../common/helpers/utils'
 import Connector from '../../connector'
-import type { Scene } from '../../scene'
 
 type UserState = {
   name: string
@@ -19,7 +18,7 @@ type UsersOnlineState = {
 }
 
 type Props = {
-  scene: Scene
+  scene: BABYLON.Scene
 }
 
 export class UsersOnline extends Component<Props, any> {
@@ -88,7 +87,7 @@ export class UsersOnline extends Component<Props, any> {
   }
 }
 
-const UserItem = ({ scene, connector, user, parcelInfo }: { scene: Scene; connector: Connector; user: UserState; parcelInfo?: { name?: string; address?: string } }) => {
+const UserItem = ({ scene, connector, user, parcelInfo }: { scene: BABYLON.Scene; connector: Connector; user: UserState; parcelInfo?: { name?: string; address?: string } }) => {
   const teleportTo = (user: UserState) => {
     const v = BABYLON.Vector3.FromArray(user.position)
     v.z += 1.5
@@ -98,7 +97,7 @@ const UserItem = ({ scene, connector, user, parcelInfo }: { scene: Scene; connec
       flying: true,
     })
     const url = `/play?coords=${coords}`
-    if (scene.config.isGrid) {
+    if (window.config.isGrid) {
       window.persona.teleport(url)
       return
     }

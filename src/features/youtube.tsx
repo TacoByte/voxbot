@@ -4,8 +4,8 @@ import { exitPointerLock } from '../../common/helpers/ui-helpers'
 import { YoutubeRecord } from '../../common/messages/feature'
 import { CSS3DObject, CSS3DRenderer } from '../../vendor/CSS3DRenderer'
 import { Position, Rotation, Scale, Script } from '../../web/src/components/editor'
-import type { Scene } from '../scene'
 import { fetchNoImageTexture, fetchTexture } from '../textures/textures'
+import { cameraPosition } from '../utils/camera'
 import { Advanced, FeatureEditor, FeatureEditorProps, FeatureID, SetParentDropdown, Toolbar, UuidReadOnly } from '../ui/features'
 import { isURL } from '../utils/helpers'
 import { FeatureMetadata, FeatureTemplate } from './_metadata'
@@ -171,7 +171,7 @@ export function buildYoutubeThumbnailUrl(videoId: string | undefined): string | 
   return `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`
 }
 
-export async function loadYoutubeThumbnail(scene: Scene, videoId: string | undefined, signal: AbortSignal): Promise<BABYLON.Texture> {
+export async function loadYoutubeThumbnail(scene: BABYLON.Scene, videoId: string | undefined, signal: AbortSignal): Promise<BABYLON.Texture> {
   const thumbnailUrl = buildYoutubeThumbnailUrl(videoId)
   if (!thumbnailUrl) {
     return fetchNoImageTexture(scene)
@@ -325,7 +325,7 @@ export default class Youtube extends Feature2D<YoutubeRecord> {
 
   onEnter = () => {
     // tablets and mobile devices don't autoplay,
-    if (!this.autoplay || this.scene.config.isOrbit || isMobile()) {
+    if (!this.autoplay || window.config.isOrbit || isMobile()) {
       return
     }
     // disable autoplay in battery saver mode
@@ -340,7 +340,7 @@ export default class Youtube extends Feature2D<YoutubeRecord> {
 
       // fade it back in!
       this.fadeIn(AUTOPLAY_FADE_TIME)
-    } else if (this.autoplay && !this.scene.config.isOrbit) {
+    } else if (this.autoplay && !window.config.isOrbit) {
       this.play()
     }
   }
@@ -775,7 +775,7 @@ class YoutubePlayer {
   static renderer: CSS3DRenderer
   div: HTMLDivElement | undefined = undefined
   iframe: HTMLIFrameElement | undefined = undefined
-  scene: Scene
+  scene: BABYLON.Scene
   CSSobject: CSS3DObject | undefined = undefined
   width = 480
   height = 360 // Twitch minimum height is 300
@@ -788,7 +788,7 @@ class YoutubePlayer {
   fadeState: FadeState | undefined = undefined
   disposed = false
 
-  constructor(feature: Youtube, scene: Scene, ratio: number) {
+  constructor(feature: Youtube, scene: BABYLON.Scene, ratio: number) {
     this.feature = feature
     this.scene = scene
     this.playing = false
@@ -821,7 +821,7 @@ class YoutubePlayer {
   }
 
   // COMMANDER WORF - INITIATE!
-  static initiate(scene: Scene) {
+  static initiate(scene: BABYLON.Scene) {
     if (YoutubePlayer.initiated) {
       return
     }
@@ -909,7 +909,7 @@ class YoutubePlayer {
   }
 
   getVolumeMultiplier() {
-    const distance = this.scene.activeCamera ? this.feature.positionInGrid.subtract(this.scene.cameraPosition).length() : 5.0
+    const distance = this.scene.activeCamera ? this.feature.positionInGrid.subtract(cameraPosition(this.scene)).length() : 5.0
     return Math.pow(Math.max(distance, this.refDistance) / this.refDistance, -this.rolloffFactor)
   }
 

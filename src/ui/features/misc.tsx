@@ -15,7 +15,6 @@ import CollectibleModel from '../../features/collectible-model'
 import Feature from '../../features/feature'
 import Group from '../../features/group'
 import type Parcel from '../../parcel'
-import type { Scene } from '../../scene'
 import { bindGizmosToFeature, unbindGizmosFromFeature } from '../../tools/gizmos'
 import { round, XYZ } from '../../utils/helpers'
 import CreateFeatureAsLibraryAsset from '../create-asset-for-library'
@@ -160,7 +159,7 @@ export function Sound(props: { feature: Feature<ButtonRecord> }) {
 export type FeatureEditorProps<T extends Feature = Feature> = {
   feature: T
   parcel: Parcel
-  scene: Scene
+  scene: BABYLON.Scene
 }
 
 export class FeatureEditor<T extends Feature = Feature> extends Component<FeatureEditorProps<T>, any> {

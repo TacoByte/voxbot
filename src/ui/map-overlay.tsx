@@ -11,7 +11,6 @@ import { fetchAPI, fetchOptions } from '../../web/src/utils'
 import { ExponentialBackoff, handleAll, retry } from 'cockatiel'
 import type { PathOptions } from '../../vendor/library/leaflet'
 import ParcelEvent from '../../web/src/helpers/event'
-import { Scene } from '../scene'
 // Create a retry policy that'll try whatever function with a randomized exponential backoff.
 // to be used by fetch!
 const retryPolicy = retry(handleAll, { backoff: new ExponentialBackoff(), maxAttempts: 5 })
@@ -90,7 +89,7 @@ export default class MapOverlayUI {
   updateAvatarTimer: NodeJS.Timeout | null = null
 
   constructor(
-    private scene: Scene,
+    private scene: BABYLON.Scene,
     private onTeleport: (() => void) | undefined,
   ) {
     ensureMapPatched()
@@ -716,7 +715,7 @@ async function getLiveEvents(signal?: AbortSignal): Promise<Event[] | null> {
 }
 
 type Empty = Record<string, never>
-type BigMapProps = { scene: Scene; onTeleport?: () => void }
+type BigMapProps = { scene: BABYLON.Scene; onTeleport?: () => void }
 
 export class BigMap extends Component<BigMapProps, Empty> {
   private static className = 'map map-overlay'

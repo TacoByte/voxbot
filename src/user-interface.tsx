@@ -18,7 +18,6 @@ import Feature from './features/feature'
 import type Grid from './grid'
 import type { MinimapSettings } from './minimap'
 import Parcel from './parcel'
-import type { Scene } from './scene'
 import { selectCurrentOrNearestParcel, selectNearestEditableParcel, selectSelectedFeature, setCheckedFeatures } from './store'
 import FeatureTool, { templateFromFeature } from './tools/feature'
 import VoxelTool, { SelectionMode, SelectionModeOptions } from './tools/voxel'
@@ -53,7 +52,7 @@ import UploadStatusUI from './ui/upload-status'
 
 const NUMBER_KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'] as const
 
-const Location = (props: { scene: Scene; signedIn: any }) => {
+const Location = (props: { scene: BABYLON.Scene; signedIn: any }) => {
   const currentOrNearestParcel = selectCurrentOrNearestParcel()
   if (!currentOrNearestParcel) {
     return null
@@ -87,7 +86,7 @@ export interface Tool {
 }
 
 export interface UserInterfaceProps {
-  scene: Scene
+  scene: BABYLON.Scene
   parent: BABYLON.TransformNode
   canvas: HTMLCanvasElement
   grid: Grid
@@ -184,7 +183,7 @@ export default class UserInterface extends Component<UserInterfaceProps, UserInt
       onlineCount: 0,
     }
 
-    if (props.scene.config.isOrbit) {
+    if (window.config.isOrbit) {
       return
     }
   }
@@ -229,7 +228,7 @@ export default class UserInterface extends Component<UserInterfaceProps, UserInt
 
     // setInterval(this.updateCanEdit.bind(this), 1000)
 
-    if (this.props.minimapSettings.enabled && !this.props.scene.config.isOrbit && !this.props.scene.config.isSpace) {
+    if (this.props.minimapSettings.enabled && !window.config.isOrbit && !window.config.isSpace) {
       this.pollOnlineCount()
       this.onlineCountPoll = window.setInterval(() => this.pollOnlineCount(), 10000)
     }
@@ -359,7 +358,7 @@ export default class UserInterface extends Component<UserInterfaceProps, UserInt
     }
   }
 
-  takeWomp(scene: Scene) {
+  takeWomp(scene: BABYLON.Scene) {
     if (!app.signedIn) return
     const engine = scene.getEngine()
     TakeWomp.Capture(engine, scene, this.props.minimapSettings)
@@ -682,7 +681,7 @@ export default class UserInterface extends Component<UserInterfaceProps, UserInt
     const active = (pane: string, disabled?: boolean) => (this.state.pane === pane ? 'active' : disabled ? 'disabled' : '')
 
     return (
-      <ViewOnCondition condition={this.props.scene.config.wantsUI}>
+      <ViewOnCondition condition={window.config.wantsUI}>
         <div class={classes}>
           <Snackbar />
 
@@ -843,7 +842,7 @@ export default class UserInterface extends Component<UserInterfaceProps, UserInt
 
           <UploadStatusUI onCompleteUpload={onCompleteUpload} onFailUpload={onFailUpload} onBeginUpload={onBeginUpload} ref={this.uploadStatusRef} />
           <ConnectionStatusUI connector={this.connector} grid={this.grid} scene={this.props.scene} />
-          {this.props.minimapSettings.enabled && !this.props.scene.config.isOrbit && !this.props.scene.config.isSpace && (
+          {this.props.minimapSettings.enabled && !window.config.isOrbit && !window.config.isSpace && (
             <div class="minimap-corner-controls">
               <button type="button" class="iconish minimap-expand" onClick={() => this.showExplorerMap()} title="Open map">
                 M

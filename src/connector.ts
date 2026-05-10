@@ -9,7 +9,6 @@ import { AVATAR_VIEW_DISTANCE } from './constants'
 import type Controls from './controls/controls'
 import type Grid from './grid'
 import Persona from './persona'
-import type { Scene } from './scene'
 import { createEvent, TypedEventTarget } from './utils/EventEmitter'
 import { ConnectionState } from './utils/socket-client'
 import { Transform } from './utils/transform'
@@ -83,7 +82,7 @@ export default class Connector extends TypedEventTarget<{ avatar_joined: string 
   currentParcelId: number | undefined
   multiplayerClient!: WebSocket
   private lazyAvatarDisposer = createLazyDisposer<string>(AVATAR_DISPOSE_DELAY_MS, ({ item: avatarUuid }) => this.disposeAvatar(avatarUuid))
-  private readonly scene: Scene
+  private readonly scene: BABYLON.Scene
   private readonly parent: BABYLON.TransformNode
   grid: Grid
   private nearbyAvatarsToSelfCached: { avatars: Readonly<Avatar[]>; timestamp: number } | null = null
@@ -94,7 +93,7 @@ export default class Connector extends TypedEventTarget<{ avatar_joined: string 
 
   updateAvatarInterval: any
 
-  constructor(scene: Scene, parent: BABYLON.TransformNode, grid: Grid, controls: Controls) {
+  constructor(scene: BABYLON.Scene, parent: BABYLON.TransformNode, grid: Grid, controls: Controls) {
     super()
     this.scene = scene
     this.parent = parent
@@ -190,8 +189,8 @@ export default class Connector extends TypedEventTarget<{ avatar_joined: string 
   get websocketUrl() {
     if (process.env.NODE_ENV === 'development') {
       let url = `ws://localhost:3780/socket?client_uuid=${Connector.clientUUID}`
-      if (this.scene.config.spaceId) {
-        url += `&space_id=${this.scene.config.spaceId}`
+      if (window.config.spaceId) {
+        url += `&space_id=${window.config.spaceId}`
       }
       return url
     }
@@ -200,8 +199,8 @@ export default class Connector extends TypedEventTarget<{ avatar_joined: string 
     url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:'
     url.pathname = '/mp/socket'
     url.search = `?client_uuid=${Connector.clientUUID}`
-    if (this.scene.config.spaceId) {
-      url.search += `&space_id=${this.scene.config.spaceId}`
+    if (window.config.spaceId) {
+      url.search += `&space_id=${window.config.spaceId}`
     }
     url.hash = ''
     return url.toString()

@@ -5,11 +5,10 @@ import { saveAsset } from '../../../web/src/helpers/save-helper'
 import { app } from '../../../web/src/state'
 import type Avatar from '../../avatar'
 import type Grid from '../../grid'
-import type { Scene } from '../../scene'
 
 interface Props {
   avatar: Avatar
-  scene: Scene
+  scene: BABYLON.Scene
 }
 
 export default class ParcelOwnerActions extends Component<Props, any> {
@@ -123,7 +122,7 @@ export default class ParcelOwnerActions extends Component<Props, any> {
           </small>
         </h4>
 
-        {!this.props.scene.config.isSpace &&
+        {!window.config.isSpace &&
           (this.isContributorOfCurrentParcel ? (
             <button
               title="This will add this user as contributor to this parcel."
