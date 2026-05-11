@@ -126,10 +126,7 @@ export default function (db: Db, passport: PassportStatic, app: Express) {
       return
     }
     try {
-      const r = await pgp.oneOrNone(
-        `update collections set address = $1 where id = $2 and owner = $3 and address is null returning id`,
-        [address, id, wallet],
-      )
+      const r = await pgp.oneOrNone(`update collections set address = $1 where id = $2 and owner = $3 and address is null returning id`, [address, id, wallet])
       res.json({ success: !!r })
     } catch {
       res.status(500).json({ success: false })

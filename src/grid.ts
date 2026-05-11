@@ -344,7 +344,11 @@ export default class Grid extends SocketClient {
     if (!el) return
 
     let desc: any
-    try { desc = JSON.parse(el.innerHTML) } catch { return }
+    try {
+      desc = JSON.parse(el.innerHTML)
+    } catch {
+      return
+    }
 
     if (el.id === 'space') {
       Object.assign(desc, desc.content)

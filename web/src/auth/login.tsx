@@ -191,7 +191,9 @@ export const SignIn = () => {
               {status == Status.Sent || status == Status.Submitting ? (
                 <>
                   {status == Status.Submitting ? <button disabled>Submitting...</button> : <button>Log in</button>}
-                  <a href="" role="button" onClick={onReset}>cancel</a>
+                  <a href="" role="button" onClick={onReset}>
+                    cancel
+                  </a>
                 </>
               ) : passkeyBusy ? (
                 <button type="button" disabled>
@@ -200,8 +202,12 @@ export const SignIn = () => {
               ) : (
                 <>
                   {status == Status.Sending ? <button disabled>Submitting...</button> : <button type="submit">Continue</button>}
-                  <button type="button" onClick={onPasskeyLogin} disabled={!passkeyUsername.trim()}>Log in with passkey</button>
-                  <button type="button" onClick={onPasskeyRegister} disabled={!passkeyUsername.trim()}>Create account</button>
+                  <button type="button" onClick={onPasskeyLogin} disabled={!passkeyUsername.trim()}>
+                    Log in with passkey
+                  </button>
+                  <button type="button" onClick={onPasskeyRegister} disabled={!passkeyUsername.trim()}>
+                    Create account
+                  </button>
                 </>
               )}
             </div>

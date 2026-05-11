@@ -23,7 +23,9 @@ export default function EditAccount() {
       setAvatar(data.avatar)
       setDescription(data.avatar?.description ?? '')
       if (data.avatar?.home_id) {
-        cachedFetch(`/api/parcels/${data.avatar.home_id}.json`).then((r) => r.json()).then((d) => setHomeParcel(d.parcel ?? null))
+        cachedFetch(`/api/parcels/${data.avatar.home_id}.json`)
+          .then((r) => r.json())
+          .then((d) => setHomeParcel(d.parcel ?? null))
       }
     })
   }, [wallet])
@@ -53,7 +55,9 @@ export default function EditAccount() {
   const setHomeId = async (parcelId: number | null) => {
     await fetchAPI('/api/avatar', { method: 'POST', credentials: 'include', body: JSON.stringify({ home_id: parcelId }), headers: { 'Content-Type': 'application/json' } })
     if (parcelId) {
-      cachedFetch(`/api/parcels/${parcelId}.json`).then((r) => r.json()).then((d) => setHomeParcel(d.parcel ?? null))
+      cachedFetch(`/api/parcels/${parcelId}.json`)
+        .then((r) => r.json())
+        .then((d) => setHomeParcel(d.parcel ?? null))
     } else {
       setHomeParcel(null)
     }
@@ -75,7 +79,9 @@ export default function EditAccount() {
           <label>Description</label>
           <textarea value={description} rows={5} onInput={(e: any) => setDescription(e.target.value)} />
         </div>
-        <button onClick={saveDescription} disabled={saving}>{saving ? 'Saving...' : 'Save description'}</button>
+        <button onClick={saveDescription} disabled={saving}>
+          {saving ? 'Saving...' : 'Save description'}
+        </button>
 
         <hr />
 
@@ -95,15 +101,16 @@ export default function EditAccount() {
           <div>
             {homeParcel && (
               <p>
-                <a href={`/parcels/${homeParcel.id}`}>{homeParcel.name ?? homeParcel.address ?? `#${homeParcel.id}`}</a>
-                {' '}<a onClick={() => setHomeId(null)}>clear</a>
+                <a href={`/parcels/${homeParcel.id}`}>{homeParcel.name ?? homeParcel.address ?? `#${homeParcel.id}`}</a> <a onClick={() => setHomeId(null)}>clear</a>
               </p>
             )}
             <input ref={homeRef} type="search" placeholder="Search parcels..." onInput={onHomeInput} />
             {parcelOptions.length > 0 && (
               <ul class="datalist">
                 {parcelOptions.map((o) => (
-                  <li key={o.id} onClick={() => setHomeId(o.id)}>{o.label}</li>
+                  <li key={o.id} onClick={() => setHomeId(o.id)}>
+                    {o.label}
+                  </li>
                 ))}
               </ul>
             )}

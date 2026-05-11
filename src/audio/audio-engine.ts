@@ -407,7 +407,8 @@ export class AudioEngine {
   refreshPlayState() {
     let newState: PlayState
 
-    if (window.config.isSpace) {      // suppress music when in spaces unless they are out of bounds
+    if (window.config.isSpace) {
+      // suppress music when in spaces unless they are out of bounds
       const isLost = !this.grid.currentOrNearestParcel()?.isNearby
       newState = isLost ? PlayState.Lost : PlayState.Paused
     } else if (this.isUnderwater) {

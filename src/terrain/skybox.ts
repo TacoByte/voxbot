@@ -1,4 +1,3 @@
-
 export default class Skybox {
   private readonly _mesh: BABYLON.Mesh
   private material: BABYLON.SkyMaterial

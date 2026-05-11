@@ -12,7 +12,10 @@ export function cameraPosition(scene: BABYLON.Scene): BABYLON.Vector3 {
 
 export function setCameraPosition(scene: BABYLON.Scene, position: BABYLON.Vector3) {
   if (!scene.activeCamera) return
-  if (scene.activeCamera instanceof BABYLON.ArcRotateCamera) { scene.activeCamera.target = position; return }
+  if (scene.activeCamera instanceof BABYLON.ArcRotateCamera) {
+    scene.activeCamera.target = position
+    return
+  }
   if (scene.activeCamera instanceof BABYLON.WebXRCamera) {
     const offset = window.environment ? window.environment.parent.position : BABYLON.Vector3.Zero()
     scene.activeCamera.position = position.add(offset)
@@ -31,8 +34,14 @@ export function cameraRotation(scene: BABYLON.Scene): BABYLON.Vector3 {
 
 export function setCameraRotation(scene: BABYLON.Scene, rotation: BABYLON.Vector3) {
   if (!scene.activeCamera) return
-  if (scene.activeCamera instanceof BABYLON.ArcRotateCamera) { scene.activeCamera.rotation = rotation; return }
-  if (scene.activeCamera instanceof OurCamera) { scene.activeCamera.rotation = rotation; return }
+  if (scene.activeCamera instanceof BABYLON.ArcRotateCamera) {
+    scene.activeCamera.rotation = rotation
+    return
+  }
+  if (scene.activeCamera instanceof OurCamera) {
+    scene.activeCamera.rotation = rotation
+    return
+  }
   if (scene.activeCamera instanceof BABYLON.WebXRCamera) {
     scene.activeCamera.rotationQuaternion = BABYLON.Quaternion.FromEulerAngles(rotation.x, rotation.y, rotation.z)
   }

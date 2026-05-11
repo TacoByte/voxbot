@@ -421,7 +421,7 @@ export default class Youtube extends Feature2D<YoutubeRecord> {
 
     const w = 640
     const h = 360
-    const tex = new BABYLON.DynamicTexture(this.uniqueEntityName('tpreview'), { width: w, height: h }, this.scene, false)
+    const tex = new BABYLON.DynamicTexture(this.uniqueEntityName('tpreview' as any), { width: w, height: h }, this.scene, false)
     const ctx = tex.getContext() as CanvasRenderingContext2D
 
     // Background: solid dark. If the Twitch CDN allows CORS (it does for previews),
@@ -578,7 +578,7 @@ export default class Youtube extends Feature2D<YoutubeRecord> {
       // If the PiP is closed externally (X button, fullscreen exit, etc.), sync state
       // so the mesh preview drops the STREAMING badge.
       this.playing = true
-      openTwitchPip(this.videoId, () => {
+      openTwitchPip(this.videoId!, () => {
         if (this.playing) this.stop()
       })
       this.setTwitchPreview()

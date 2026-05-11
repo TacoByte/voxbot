@@ -225,7 +225,15 @@ export default class WebHeader extends Component<Props, State> {
               </li>
               {signedIn && (
                 <li>
-                  <a href="#" onClick={(e) => { e.preventDefault(); this.onSignOut() }}>Log out</a>
+                  <a
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault()
+                      this.onSignOut()
+                    }}
+                  >
+                    Log out
+                  </a>
                 </li>
               )}
 

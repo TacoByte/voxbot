@@ -10,11 +10,7 @@ import { fetchOptions } from './utils'
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const factoryAbi = require('../../common/contracts/collections-factory.json')
 
-const CHAINS = [
-  { id: '1', name: 'Ethereum' },
-  { id: '137', name: 'Polygon' },
-  ...(process.env.NODE_ENV === 'development' ? [{ id: '80001', name: 'Mumbai' }] : []),
-]
+const CHAINS = [{ id: '1', name: 'Ethereum' }, { id: '137', name: 'Polygon' }, ...(process.env.NODE_ENV === 'development' ? [{ id: '80001', name: 'Mumbai' }] : [])]
 
 interface State {
   chainId: number | null
@@ -57,10 +53,22 @@ export default class PublishCollection extends Component<{ mint?: string }, Stat
     this.setState({ error: null })
     const { chainId, contractName, accepted, collectionId } = this.state
 
-    if (!accepted) { this.setState({ error: 'Accept the terms first.' }); return }
-    if (!chainId) { this.setState({ error: 'Select a chain.' }); return }
-    if (!contractName.trim()) { this.setState({ error: 'Contract name required.' }); return }
-    if (!provider.signer) { this.setState({ error: 'Not signed in.' }); return }
+    if (!accepted) {
+      this.setState({ error: 'Accept the terms first.' })
+      return
+    }
+    if (!chainId) {
+      this.setState({ error: 'Select a chain.' })
+      return
+    }
+    if (!contractName.trim()) {
+      this.setState({ error: 'Contract name required.' })
+      return
+    }
+    if (!provider.signer) {
+      this.setState({ error: 'Not signed in.' })
+      return
+    }
 
     const signerChain = await (provider.signer as any).getChainId()
     if (signerChain != chainId) {
@@ -70,7 +78,7 @@ export default class PublishCollection extends Component<{ mint?: string }, Stat
     }
 
     const w3 = provider.ethersWeb3Provider()
-    const bal = w3 ? Number(await w3.getBalance(app.state.wallet)) / 1e18 : 0
+    const bal = w3 && app.state.wallet ? Number(await w3.getBalance(app.state.wallet)) / 1e18 : 0
     if (bal <= 0.0001) {
       this.setState({ error: `Insufficient ${chainId === 1 ? 'ETH' : 'MATIC'} balance.` })
       return
@@ -134,9 +142,14 @@ export default class PublishCollection extends Component<{ mint?: string }, Stat
             <p>Contract deployed for {collectionName}.</p>
           </hgroup>
           <article>
-            <p>Address: <code>{address}</code></p>
-            <a href={explorer} target="_blank">View on {chainId !== 1 ? 'Polygonscan' : 'Etherscan'}</a>
-            <br /><br />
+            <p>
+              Address: <code>{address}</code>
+            </p>
+            <a href={explorer} target="_blank">
+              View on {chainId !== 1 ? 'Polygonscan' : 'Etherscan'}
+            </a>
+            <br />
+            <br />
             <a href={`/collections/${collectionId}`}>Back to collection</a>
           </article>
         </section>
@@ -151,21 +164,27 @@ export default class PublishCollection extends Component<{ mint?: string }, Stat
         </hgroup>
         <article>
           <label>Chain</label>
-          <select value={chainId ?? ''} onChange={(e: any) => {
-            const v = parseInt(e.currentTarget.value)
-            this.setState({ chainId: v || null })
-            if (v) provider.switchNetwork(v)
-          }}>
+          <select
+            value={chainId ?? ''}
+            onChange={(e: any) => {
+              const v = parseInt(e.currentTarget.value)
+              this.setState({ chainId: v || null })
+              if (v) provider.switchNetwork(v)
+            }}
+          >
             <option value="">Select chain</option>
-            {CHAINS.map((c) => <option value={c.id}>{c.name}</option>)}
+            {CHAINS.map((c) => (
+              <option value={c.id}>{c.name}</option>
+            ))}
           </select>
 
-          <label>Contract name <small>(permanent, max 20 chars)</small></label>
+          <label>
+            Contract name <small>(permanent, max 20 chars)</small>
+          </label>
           <input type="text" maxLength={20} value={contractName} onInput={(e: any) => this.setState({ contractName: e.target.value })} />
 
           <label>
-            <input type="checkbox" checked={accepted} onClick={(e: any) => this.setState({ accepted: e.currentTarget.checked })} />
-            {' '}I own or have rights to this collection and agree to the <a href="/terms">terms</a>
+            <input type="checkbox" checked={accepted} onClick={(e: any) => this.setState({ accepted: e.currentTarget.checked })} /> I own or have rights to this collection and agree to the <a href="/terms">terms</a>
           </label>
 
           {error && <p style="color:red">{error}</p>}

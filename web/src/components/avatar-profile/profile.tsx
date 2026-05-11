@@ -31,20 +31,29 @@ export default function Profile(props: Props) {
 
   useEffect(() => {
     fetchAPI(`/api/avatars/${walletOrUUId}.json`).then((data) => setAvatar(data.avatar))
-    cachedFetch(`/api/avatars/${walletOrUUId}/costumes`).then((r) => r.json()).then((data) => setCostumes(data.costumes ?? []))
+    cachedFetch(`/api/avatars/${walletOrUUId}/costumes`)
+      .then((r) => r.json())
+      .then((data) => setCostumes(data.costumes ?? []))
     fetchUsersCollectibles(walletOrUUId).then((results) => setWearables(results.length))
-    cachedFetch(`/api/collections?owner=${walletOrUUId}&limit=50`).then((r) => r.json()).then((data) => setCollections(data.collections ?? []))
+    cachedFetch(`/api/collections?owner=${walletOrUUId}&limit=50`)
+      .then((r) => r.json())
+      .then((data) => setCollections(data.collections ?? []))
   }, [walletOrUUId])
 
   const walletAddress = (() => {
-    try { return ethers.getAddress(walletOrUUId) } catch { return undefined }
+    try {
+      return ethers.getAddress(walletOrUUId)
+    } catch {
+      return undefined
+    }
   })()
 
-  const copyWallet = () => copyTextToClipboard(
-    walletOrUUId,
-    () => app.showSnackbar(`Copied wallet address`, PanelType.Success),
-    () => app.showSnackbar(`Could not copy`, PanelType.Info),
-  )
+  const copyWallet = () =>
+    copyTextToClipboard(
+      walletOrUUId,
+      () => app.showSnackbar(`Copied wallet address`, PanelType.Success),
+      () => app.showSnackbar(`Could not copy`, PanelType.Info),
+    )
 
   const name = avatar?.name ?? (walletOrUUId ? ethTrunc(walletOrUUId) : 'anon')
   const hasWallet = !!walletAddress
@@ -53,7 +62,11 @@ export default function Profile(props: Props) {
     <section class="columns profile">
       <hgroup>
         <h1>{name}</h1>
-        {isOwner && <a href="/account/edit" role="button">Edit account</a>}
+        {isOwner && (
+          <a href="/account/edit" role="button">
+            Edit account
+          </a>
+        )}
       </hgroup>
 
       <article>
@@ -72,7 +85,9 @@ export default function Profile(props: Props) {
             <tbody>
               {collections.map((c) => (
                 <tr key={c.id}>
-                  <td><a href={`/collections/${c.id}`}>{c.name}</a></td>
+                  <td>
+                    <a href={`/collections/${c.id}`}>{c.name}</a>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -87,7 +102,9 @@ export default function Profile(props: Props) {
             <tbody>
               {costumes.map((c) => (
                 <tr key={c.id}>
-                  <td><a href={`/costumer/${c.id}`}>{c.name}</a></td>
+                  <td>
+                    <a href={`/costumer/${c.id}`}>{c.name}</a>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -108,9 +125,13 @@ export default function Profile(props: Props) {
             <>
               <dt>Wallet</dt>
               <dd>
-                <a onClick={copyWallet} title="Click to copy">{ethTrunc(walletOrUUId)}</a>
-                {' '}&mdash;{' '}
-                <a href={`https://etherscan.io/address/${walletOrUUId}`} target="_blank">Etherscan</a>
+                <a onClick={copyWallet} title="Click to copy">
+                  {ethTrunc(walletOrUUId)}
+                </a>{' '}
+                &mdash;{' '}
+                <a href={`https://etherscan.io/address/${walletOrUUId}`} target="_blank">
+                  Etherscan
+                </a>
               </dd>
             </>
           )}
@@ -121,13 +142,17 @@ export default function Profile(props: Props) {
           {avatar?.social_link_1 && (
             <>
               <dt>Link</dt>
-              <dd><SocialLink socialUrl={avatar.social_link_1} maxLength={48} /></dd>
+              <dd>
+                <SocialLink socialUrl={avatar.social_link_1} maxLength={48} />
+              </dd>
             </>
           )}
           {avatar?.social_link_2 && (
             <>
               <dt>Link</dt>
-              <dd><SocialLink socialUrl={avatar.social_link_2} maxLength={48} /></dd>
+              <dd>
+                <SocialLink socialUrl={avatar.social_link_2} maxLength={48} />
+              </dd>
             </>
           )}
 

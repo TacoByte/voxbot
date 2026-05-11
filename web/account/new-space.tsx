@@ -49,7 +49,11 @@ export default class NewSpace extends Component<any, any> {
           <div class="f">
             <label>Size</label>
             <select value={this.state.size} onChange={(e) => this.setSize((e as any).target['value'])}>
-              {SIZES.map((s) => <option key={s.label} value={s.label}>{s.label}</option>)}
+              {SIZES.map((s) => (
+                <option key={s.label} value={s.label}>
+                  {s.label}
+                </option>
+              ))}
             </select>
           </div>
           {custom && (
