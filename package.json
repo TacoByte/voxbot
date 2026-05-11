@@ -5,6 +5,9 @@
   "engines": {
     "node": "25"
   },
+  "pnpm": {
+    "onlyBuiltDependencies": ["babylonjs", "core-js", "esbuild", "msgpackr-extract", "protobufjs", "sharp"]
+  },
   "cacheDirectories": [
     "node_modules",
     ".build"
