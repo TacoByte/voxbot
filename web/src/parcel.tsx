@@ -465,6 +465,21 @@ export default class Parcel extends Component<Props, State> {
     // no-op
   }
 
+  updateStateFromBlockChain() {
+    if (this.state.querying) {
+      return
+    }
+    this.setState({ querying: true })
+    return fetchAPI(`/api/parcels/${this.state.parcelId}/query`, fetchOptions())
+      .then(() => {
+        window.location.reload()
+      })
+      .catch((e) => {
+        console.error(e)
+        this.setState({ querying: false })
+      })
+  }
+
   render() {
     if (!this.map && this.state.viewTab == 'map' && ssrFriendlyWindow && ssrFriendlyWindow['addEventListener']) {
       setTimeout(() => this.addMap(), 50)
@@ -538,6 +553,17 @@ export default class Parcel extends Component<Props, State> {
           </dl>
 
           {this.state.parcel ? <ParcelAttributes parcel={this.state.parcel} /> : <div />}
+          {this.state.parcel ? (
+            <p title="Refresh owner and parcel state from the chain (e.g. after an OpenSea sale)">
+              {this.state.querying ? (
+                <span>🐙 Update</span>
+              ) : (
+                <button type="button" onClick={() => this.updateStateFromBlockChain()}>
+                  🦑 Update
+                </button>
+              )}
+            </p>
+          ) : null}
           <a href={this.visitUrl}>Teleport</a>
           {this.state.parcel ? <Collaborators parcel={this.state.parcel} /> : <div />}
           {this.complete && this.state.parcel ? <ParcelAdminPanel parcelOrSpace={this.state.parcel as any as FullParcelRecord} onSave={this.onSave} onEventCreate={this.eventCreate.bind(this)} /> : <div />}
