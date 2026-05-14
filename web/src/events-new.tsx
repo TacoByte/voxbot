@@ -73,6 +73,11 @@ export default function EventsNew(props: Props) {
             <input type="text" value={name} onInput={(e: any) => setName(e.target.value)} />
           </div>
           <div class="f">
+            <label>Location</label>
+            <ParcelField value={location} onChange={setLocation} />
+            <small>Voxels parcel, or link to substrata, somniumspace, hyperfy, resonite, decentraland</small>
+          </div>
+          <div class="f">
             <label>Description</label>
             <textarea value={description} onInput={(e: any) => setDescription(e.target.value)} />
           </div>
@@ -83,11 +88,6 @@ export default function EventsNew(props: Props) {
           <div class="f">
             <label>Length</label>
             <input type="number" value={duration} style={{ width: '4em' }} min={1} onInput={(e: any) => setDuration(parseInt(e.target.value, 10))} /> minutes
-          </div>
-          <div class="f">
-            <label>Location</label>
-            <ParcelField value={location} onChange={setLocation} />
-            <small>Search for a voxels parcel, or paste a link from oncyber, substrata, somniumspace, hyperfy, resonite, overte, decentraland</small>
           </div>
           {error && <p>{error}</p>}
           <button type="submit" disabled={disabled}>

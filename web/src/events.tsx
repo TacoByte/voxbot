@@ -61,9 +61,8 @@ export default function Events(props: Props) {
               <th scope="col" style="width: 60%">
                 Name
               </th>
-              <th scope="col">Author</th>
               <th scope="col" style="width: 20%">
-                Time, Parcel address
+                Location
               </th>
             </tr>
           </thead>
@@ -81,20 +80,18 @@ export default function Events(props: Props) {
                 return (
                   <>
                     <tr>
-                      <td rowSpan={2} width="120">
+                      <td width="120">
                         <TimeCard date={new Date(event.starts_at)} />
                       </td>
                       <td>
                         <a href={`/events/${event.id}`}>{truncate(event.name)}</a>
+
+                        {event.author_name && (<>by <a href={`/u/${event.author}`}>${event.author_name}</a></>)}
+                        <br />
+                        <small>{truncate(event.description, 80)}</small>
                       </td>
-                      <td>{event.author_name}</td>
                       <td>
                         {time}, {event.parcel_name}
-                      </td>
-                    </tr>
-                    <tr>
-                      <td colSpan={4}>
-                        <small>{truncate(event.description, 80)}</small>
                       </td>
                     </tr>
                   </>
