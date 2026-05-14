@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'preact/hooks'
 import Head from './components/head'
 import { useListControls } from './components/list-controls'
-import NewCollection from './new-collection'
 import { Spinner } from './spinner'
 import { fetchOptions } from './utils'
 import { Collection } from '../../common/helpers/collections-helpers'
@@ -64,7 +63,7 @@ export default function ListCollections() {
       </article>
 
       <aside>
-        <NewCollection />
+        <a href="/collections/new">New collection</a>
       </aside>
     </section>
   )

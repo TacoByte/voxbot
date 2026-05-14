@@ -84,6 +84,9 @@ export default function Events(props: Props) {
             </tbody>
           </table>
       </article>
+      <aside>
+        <a href="/events/new">New event</a>
+      </aside>
     </section>
   )
 }

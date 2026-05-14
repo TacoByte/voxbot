@@ -7,7 +7,6 @@ import { isValidUrl, ssrFriendlyWindow } from '../../../common/helpers/utils'
 import { FullParcelRecord, SingleParcelRecord } from '../../../common/messages/parcel'
 import { SpaceRecord } from '../../../common/messages/space'
 import { AssetType, saveAsset } from '../helpers/save-helper'
-import { CreateEvent } from '../popup-ui/event-manager'
 import { toggleNFTGatingManager } from '../popup-ui/nft-gating-manager'
 import { app } from '../state'
 import { fetchOptions } from '../utils'
@@ -29,7 +28,6 @@ export interface State {
   sandbox?: boolean
   scriptHostUrl?: string
   unlisted?: boolean
-  eventing?: boolean
 }
 
 const defaultScriptHost = (id: string | number) => `wss://grid.cryptovoxels.com/grid/${id}`
@@ -166,9 +164,7 @@ export default class ParcelAdminPanel extends Component<Props, State> {
             <ul>
               <ParcelsOnly parcelOrSpace={this.parcelOrSpace}>
                 <li>
-                  <a onClick={() => this.setState({ eventing: !this.state.eventing })}>Create Event</a>
-
-                  {this.state.eventing && <CreateEvent parcel={this.parcelOrSpace as SingleParcelRecord} />}
+                  <a href={`/events/new?parcel_id=${(this.parcelOrSpace as SingleParcelRecord).id}`}>Create Event</a>
                 </li>
                 <OwnersOnly parcel={this.parcelOrSpace}>
                   <li>

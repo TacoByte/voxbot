@@ -12,7 +12,7 @@
 - **Stay grounded**: If unsure, say so. Never invent file paths or function names.
 - **User is truth**: If corrected, treat it as ground truth. User instructions always override this file.
 
-## UI and naming things
+## UI and "zinestyle" naming things
 
 * direct over fluffy
 * human language, not jargon
@@ -22,6 +22,7 @@
 * zine/diy energy—intimate and community-focused
 * no corporate hedging
 * write like you're talking to someone, not a demographic
+* lower case for subheadings
 
 If you want your PR merged: **code like Ben**.
 

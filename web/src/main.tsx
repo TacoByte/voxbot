@@ -11,18 +11,21 @@ import EditAccount from '../account/edit'
 import NewSpace from '../account/new-space'
 import Asset from './asset'
 import Assets from './assets'
+import AssetsNew from './assets-new'
 import EditAsset from './assets/edit'
-import { SignIn } from './auth/login'
+import { Login } from './auth/login'
 import Avatar from './avatar'
 import Costumer from './costumer'
 import CollectionEditPage from './collection-edit'
 import CollectionPage from './collection'
 import PublishCollection from './collection-publish'
 import Collections from './collections'
+import CollectionsNew from './collections-new'
 import Snackbar from './components/snackbar'
 import Conduct from './conduct'
 import EventPage from './event-page'
 import Events from './events'
+import EventsNew from './events-new'
 import Explore from './explore'
 import Footer from './footer'
 import Home from './home'
@@ -113,6 +116,7 @@ const Main = () => {
           <Search path="/search" />
 
           <Assets path="/assets" />
+          <AssetsNew path="/assets/new" />
           <Asset path="/assets/:id" />
           <EditAsset path="/assets/:id/edit" />
           <RenderAsset path="/assets/:id/render" />
@@ -142,6 +146,7 @@ const Main = () => {
           <Costumer path="/costumer/:costumeId" />
 
           <Collections path="/collections" />
+          <CollectionsNew path="/collections/new" />
           <PublishCollection path="/collections/:mint/publish" />
           <CollectionEditPage path="/collections/:id/edit" />
           <CollectionPage path="/collections/:id" />
@@ -149,6 +154,7 @@ const Main = () => {
 
           <Womp path="/womps/:id" />
           <EventPage path="/events/:id" />
+          <EventsNew path="/events/new" />
           <Events path="/events" />
           <WompsPage path="/womps" />
 
@@ -204,7 +210,7 @@ function AccountRoutes(props: { path?: string }) {
   }, [])
 
   if (!app.signedIn) {
-    return <SignIn />
+    return <Login />
   }
 
   return (

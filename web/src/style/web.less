@@ -404,7 +404,8 @@ table {
     border-top: var(--softborder);
     border-bottom: var(--softborder);
     text-align: left;
-    font-size: 10px;
+    font-size: smaller;
+    font-weight: normal;
     opacity: 0.5;
     // ...
   }
@@ -694,6 +695,11 @@ div.f {
   label {
     position: absolute;
     left: 0;
+    text-transform: lowercase;
+  }
+
+  button{
+    text-transform: lowercase;
   }
 }
 
@@ -911,7 +917,7 @@ p.empty {
 
   h5 {
     margin: 0;
-    font-size: 0.8rem;
+    font-size: smaller;
     opacity: 0.5;
     font-weight: normal;
   }

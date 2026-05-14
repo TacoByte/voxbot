@@ -7,7 +7,6 @@ import Image from './components/image'
 import { InplaceEdit } from './components/inplace-edit'
 import { useListControls } from './components/list-controls'
 import PaginationLinks from './components/pagination-links'
-import UploadButton from './components/upload-button'
 import { invalidateUrl } from './helpers/cached-fetch'
 import { Spinner } from './spinner'
 import { app } from './state'
@@ -130,9 +129,7 @@ export default function Library(props: Props) {
       </article>
 
       <aside>
-        <h3>Upload Asset</h3>
-        <p>Drop many .vox files here or pick files. Two or more files also open a new collection with wearables.</p>
-        <UploadButton />
+        <a href="/assets/new">Upload asset</a>
       </aside>
     </section>
   )

@@ -31,7 +31,7 @@ enum Status {
   Submitting,
 }
 
-export const SignIn = () => {
+export const Login = ({ reason }: { reason?: string }) => {
   const [status, setStatus] = useState(Status.Initial)
   const [email, setEmail] = useState('')
   const [code, setCode] = useState('')
@@ -143,7 +143,7 @@ export const SignIn = () => {
 
   return (
     <section class="login">
-      <h1>Log in to continue</h1>
+      <h1>Log in{reason ? ` to ${reason}` : ''}</h1>
       <div class="login-form">
         <div class="login-block">
           <h1>Wallet</h1>
