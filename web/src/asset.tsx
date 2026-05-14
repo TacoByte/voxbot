@@ -151,19 +151,6 @@ export default class Asset extends Component<Props, State> {
         <h1>{this.state.asset.name}</h1>
 
         <article>
-          {this.canEdit && (
-            <ul class="actions">
-              <li>
-                <button onClick={this.onDelete}>Delete</button>
-              </li>
-              <li>
-                <a class="button" href={`/assets/${this.state.asset.id}/edit`}>
-                  Edit
-                </a>
-              </li>
-            </ul>
-          )}
-
           <figure>
             {this.asset ? (
               <iframe src={iframe} />
@@ -191,6 +178,11 @@ export default class Asset extends Component<Props, State> {
         </article>
 
         <aside>
+          {this.canEdit && (
+            <>
+              <a href={`/assets/${this.state.asset.id}/edit`}>Edit</a>
+            </>
+          )}
           <h3>Details</h3>
 
           <dl>

@@ -1,103 +1,63 @@
-import { Component } from 'preact'
-import { Collection } from '../../common/helpers/collections-helpers'
-import { app, AppEvent } from './state'
+import { useEffect, useState } from 'preact/hooks'
+import { route } from 'preact-router'
+import { Login } from './auth/login'
+import { app } from './state'
 
-export interface Props {
+interface Props {
   path?: string
   id?: string
-  collection?: Collection
 }
 
-export interface State {
-  collection?: Collection
-  signedIn: boolean
-}
+export default function CollectionEdit(props: Props) {
+  if (!app.signedIn) return <Login reason="edit this collection" />
 
-export default class CollectionEditPage extends Component<Props, State> {
-  constructor(props: Props) {
-    super()
-    this.state = {
-      collection: props.collection,
-      signedIn: false,
-    }
-  }
+  const [col, setCol] = useState<any>(null)
+  const [saving, setSaving] = useState(false)
 
-  private get isOwner() {
-    if (!this.state.collection || !app.signedIn) {
-      return false
-    }
-    return this.state.collection?.owner?.toLowerCase() == app.state.wallet?.toLowerCase()
-  }
+  useEffect(() => {
+    fetch(`/api/collections/${props.id}`).then((r) => r.json()).then((d) => setCol(d.collection))
+  }, [props.id])
 
-  private get isMod() {
-    if (!app.signedIn) {
-      return false
-    }
-    return app.state.moderator
-  }
-
-  fetch = async () => {
-    const f = await fetch(`/api/collections/${this.props.id}`)
-    const { collection } = await f.json()
-    this.setState({ collection })
-  }
-
-  componentDidMount() {
-    this.fetch()
-  }
-
-  onSave = async (e: Event) => {
+  async function submit(e: Event) {
     e.preventDefault()
-
-    const f = await fetch(`/api/collections/${this.props.id}`, {
+    setSaving(true)
+    await fetch(`/api/collections/${props.id}`, {
       method: 'PUT',
-      body: JSON.stringify(this.state.collection),
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(col),
     })
+    setSaving(false)
+    route(`/collections/${props.id}`)
   }
 
-  set(key: keyof Collection, value: any) {
-    this.setState({ collection: { ...this.state.collection, [key]: value } })
+  function set(key: string, value: any) {
+    setCol((c: any) => ({ ...c, [key]: value }))
   }
 
-  render() {
-    if (!this.state.collection) {
-      return <p>Loading...</p>
-    }
+  if (!col) return <p>Loading...</p>
 
-    const c = this.state.collection
-    if (!(this.isOwner || this.isMod)) {
-      return (
-        <section>
-          <p>You do not have access to edit this collection.</p>
-          <p>
-            <a href={`/collections/${c.id}`}>Back</a>
-          </p>
-        </section>
-      )
-    }
-
-    return (
-      <section class="columns">
-        <h1>
-          <a href={`/collections/${c.id}`}>{c.name}</a>
-          <span> / settings</span>
-        </h1>
-        <article>
-          <form onSubmit={this.onSave}>
-            <div>
-              <label>Name</label>
-              <input type="text" value={c.name} onChange={(e: any) => this.set('name', e.target.value)} />
-            </div>
-            <div>
-              <label>Description</label>
-              <textarea value={c.description} onChange={(e: any) => this.set('description', e.target.value)} />
-            </div>
-            <div>
-              <button type="submit">Save</button> or <a href={`/collections/${c.id}`}>back</a>
-            </div>
-          </form>
-        </article>
-      </section>
-    )
-  }
+  return (
+    <section class="columns">
+      <hgroup>
+        <h1><a href={`/collections/${props.id}`}>{col.name}</a> / edit</h1>
+      </hgroup>
+      <article>
+        <form onSubmit={submit}>
+          <div class="f">
+            <label>Name</label>
+            <input type="text" value={col.name} onInput={(e: any) => set('name', e.target.value)} />
+          </div>
+          <div class="f">
+            <label>Description</label>
+            <textarea value={col.description} onInput={(e: any) => set('description', e.target.value)} rows={5} />
+          </div>
+          <button type="submit" disabled={saving}>{saving ? 'Saving...' : 'Save'}</button>
+        </form>
+      </article>
+      <aside>
+        {/* <button onClick={onDelete}>Delete</button> */}
+      </aside>
+    </section>
+  )
 }

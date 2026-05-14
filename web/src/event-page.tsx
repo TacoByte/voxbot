@@ -162,14 +162,8 @@ export default class EventPage extends Component<Props, State> {
 
             {!this.helper.isInPast && (
               <div>
-                {this.helper.isOwner && this.parcel?.id && (
-                  <button
-                    onClick={() => {
-                      this.redirect(`/parcels/${this.parcel?.id}?edit_event=1`)
-                    }}
-                  >
-                    Edit event
-                  </button>
+                {this.helper.isOwner && (
+                  <a href={`/events/${this.state.event.id}/edit`}>Edit event</a>
                 )}
                 {isMod && this.state.event?.id && (
                   <button

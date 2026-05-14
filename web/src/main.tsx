@@ -26,6 +26,7 @@ import Conduct from './conduct'
 import EventPage from './event-page'
 import Events from './events'
 import EventsNew from './events-new'
+import EventsEdit from './events-edit'
 import Explore from './explore'
 import Footer from './footer'
 import Home from './home'
@@ -155,6 +156,7 @@ const Main = () => {
           <Womp path="/womps/:id" />
           <EventPage path="/events/:id" />
           <EventsNew path="/events/new" />
+          <EventsEdit path="/events/:id/edit" />
           <Events path="/events" />
           <WompsPage path="/womps" />
 
