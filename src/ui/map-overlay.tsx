@@ -62,14 +62,6 @@ const partyIcon = window.L.divIcon({
   iconUrl: '/images/event_icon.png',
 })
 
-const exhibitionIcon = window.L.divIcon({
-  className: 'css-icon',
-  html: '<div class="exhibition"><div class="inner-circle"></div></div>',
-  iconSize: [22, 22], // size of the icon
-  // iconAnchor: [15, 15], // point of the icon which will correspond to marker's location
-  iconUrl: '/images/event_icon.png',
-})
-
 const AVATAR_UPDATE_INTERVAL = 3000
 
 const LABELS_LIST = ['gallery', 'club', 'bar', 'teleports', 'library', 'park', 'animal', 'shops', 'scenic', 'beach', 'factory', 'sports', 'rest', 'education', 'game', 'music', 'money', 'concert', 'food', 'theater', 'sandbox']
@@ -521,12 +513,11 @@ export default class MapOverlayUI {
     const eventsLayer = window.L.layerGroup()
     for (const event of live) {
       const helper = new ParcelEvent(event)
-      const isExhibition = event.category === 'exhibition'
-      const icon = isExhibition ? exhibitionIcon : partyIcon
+      const icon = partyIcon
       const marker = window.L.marker(helper.latLng, {
         icon,
         renderer: this.mapRenderer ?? undefined,
-        title: `${isExhibition ? 'Exhibition on now:' : 'Event live now!'} \r\n${helper.name}`,
+        title: `Event live now! \r\n${helper.name}`,
       } as L.MarkerOptions)
 
       eventsLayer.addLayer(marker)

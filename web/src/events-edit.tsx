@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'preact/hooks'
 import { route } from 'preact-router'
 import ParcelField from './components/parcel-field'
+import DateField from './components/date-field'
 import { Login } from './auth/login'
 import { app } from './state'
 import { fetchOptions } from './utils'
@@ -95,7 +96,7 @@ export default function EventsEdit(props: Props) {
           </div>
           <div class="f">
             <label>Start</label>
-            <input type="datetime-local" value={startsAt} onInput={(e: any) => setStartsAt(e.target.value)} />
+            <DateField value={startsAt} onChange={setStartsAt} />
           </div>
           <div class="f">
             <label>Duration (minutes)</label>

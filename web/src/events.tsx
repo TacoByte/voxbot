@@ -2,6 +2,7 @@ import { useEffect, useState } from 'preact/hooks'
 import { Event } from '../../common/messages/event'
 import Head from './components/head'
 import { useListControls } from './components/list-controls'
+import { fmt } from './components/date-field'
 import { truncate } from './lib/string-utils'
 import { Spinner } from './spinner'
 import { fetchAPI, fetchOptions } from './utils'
@@ -75,7 +76,7 @@ export default function Events(props: Props) {
               </tr>
             ) : (
               events.slice(0, 10).map((event) => {
-                const time = new Date(event.starts_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }).replace(/^0/, '').toLowerCase()
+                const time = fmt(event.starts_at as any)
 
                 return (
                   <>

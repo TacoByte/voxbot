@@ -143,19 +143,19 @@ export default function loadRoutes(app: Express) {
     })
   })
 
-  app.get('/events/:id', (req, res) => {
-    const id = parseInt(req.params.id, 10)
-    if (isNaN(id)) {
-      return res.status(404).json({ success: false, message: 'event not found' })
-    }
-    queryAndCallback(db, 'events/get-event', 'event', [id], (response) => {
-      if (!response.success) {
-        res.send(renderPage(<NotFound />))
-        return
-      }
-      res.send(renderPage(<EventPage event={response.event} />))
-    })
-  })
+  // app.get('/events/:id', (req, res) => {
+  //   const id = parseInt(req.params.id, 10)
+  //   if (isNaN(id)) {
+  //     return res.status(404).json({ success: false, message: 'event not found' })
+  //   }
+  //   queryAndCallback(db, 'events/get-event', 'event', [id], (response) => {
+  //     if (!response.success) {
+  //       res.send(renderPage(<NotFound />))
+  //       return
+  //     }
+  //     res.send(renderPage(<EventPage event={response.event} />))
+  //   })
+  // })
 
   app.get('/collections/:collection_id/:token_id', cache('1 minute'), (req, res) => {
     const id = parseInt(req.params.collection_id, 10)
@@ -200,6 +200,7 @@ export default function loadRoutes(app: Express) {
     { path: '/spaces/new', cache: '1 minute' },
     { path: '/new', cache: '1 minute' },
     { path: '/events', cache: '1 minute' },
+    { path: '/events/*', cache: '1 minute' },
     { path: '/islands', cache: '1 minute' },
     { path: '/islands/:id', cache: '1 minute' },
     { path: '/parcels/:id', cache: '1 minute' },

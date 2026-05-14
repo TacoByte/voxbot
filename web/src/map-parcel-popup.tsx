@@ -136,13 +136,11 @@ export function mapEventMarkerPopup(event: ParcelEvent, openSpawnUrl: (url: stri
   const div = document.createElement('div')
   div.className = 'map-teleport-popup'
 
-  const isExhibition = event.category === 'exhibition'
-
   // once loaded, show parcel info with spawn
   div.innerHTML = render(
     <div>
       <h2>
-        {isExhibition ? 'Exhibiton now showing ' : 'Event live now '} at {event.parcel_address}
+        {'Event live now '} at {event.parcel_address}
       </h2>
 
       <br />

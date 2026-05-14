@@ -6,6 +6,7 @@ import { Interval, intervalAsString, milliSecondsToInterval, nth } from '../../c
 import { canUseDom, copyTextToClipboard, ssrFriendlyWindow } from '../../common/helpers/utils'
 import { Event } from '../../common/messages/event'
 import Loading from './components/loading'
+import { fmt } from './components/date-field'
 import { PanelType } from './components/panel'
 import ParcelEvent, { removeEvent } from './helpers/event'
 import { app, AppEvent } from './state'
@@ -107,13 +108,7 @@ export default class EventPage extends Component<Props, State> {
       return <Loading />
     }
 
-    const day = this.helper.toLocale({ day: 'numeric' })
-    const ts = `${day}${nth(day)} of ${this.helper.toLocale({ month: 'short' })} @ ${this.helper.toLocaleTimeString({
-      hour: 'numeric',
-      minute: 'numeric',
-      hour12: false,
-      timeZoneName: 'short',
-    })} `
+    const ts = fmt(this.state.event.starts_at as any)
     const title = `${this.state.event.name} - ${ts}`
     const description = this.state.event.description
 

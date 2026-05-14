@@ -29,10 +29,6 @@ export default class ParcelEvent {
     return this.ev.name
   }
 
-  get category() {
-    return this.ev.category
-  }
-
   get author_name() {
     return this.ev.author_name
   }

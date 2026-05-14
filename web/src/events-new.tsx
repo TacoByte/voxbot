@@ -1,6 +1,7 @@
 import { Login } from './auth/login'
 import { useState } from 'preact/hooks'
 import ParcelField from './components/parcel-field'
+import DateField from './components/date-field'
 import { app } from './state'
 import { fetchOptions } from './utils'
 
@@ -53,6 +54,11 @@ export default function EventsNew(props: Props) {
     window.location.href = `/events/${r.parcel_event.id}`
   }
 
+  const isValid = () => {
+    return name.length > 2 && startsAt && duration > 0
+  }
+
+  const disabled = submitting || !isValid()
   return (
     <section>
       <hgroup>
@@ -72,11 +78,11 @@ export default function EventsNew(props: Props) {
           </div>
           <div class="f">
             <label>Start</label>
-            <input type="datetime-local" value={startsAt} onInput={(e: any) => setStartsAt(e.target.value)} />
+            <DateField value={startsAt} onChange={setStartsAt} />
           </div>
           <div class="f">
-            <label>Duration (minutes)</label>
-            <input type="number" value={duration} min={1} onInput={(e: any) => setDuration(parseInt(e.target.value, 10))} />
+            <label>Length</label>
+            <input type="number" value={duration} style={{ width: '4em' }} min={1} onInput={(e: any) => setDuration(parseInt(e.target.value, 10))} /> minutes
           </div>
           <div class="f">
             <label>Location</label>
@@ -84,7 +90,7 @@ export default function EventsNew(props: Props) {
             <small>Search for a voxels parcel, or paste a link from oncyber, substrata, somniumspace, hyperfy, resonite, overte, decentraland</small>
           </div>
           {error && <p>{error}</p>}
-          <button type="submit" disabled={submitting || !name.trim() || !startsAt}>
+          <button type="submit" disabled={disabled}>
             {submitting ? 'Creating...' : 'Create'}
           </button>
         </form>

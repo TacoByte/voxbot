@@ -30,6 +30,7 @@ import ParcelsController from './controllers/parcels'
 import PlayController from './controllers/play'
 import SpacesController from './controllers/spaces'
 import MetricsController from './controllers/metrics'
+import ModelsController from './controllers/models'
 
 import cache, { defaultCache, noCache } from './cache'
 import db, { pgp } from './pg'
@@ -327,6 +328,9 @@ NftController(db, passport, app)
 
 // Scratchpad for all users
 ScratchpadController(app)
+
+// Models (LLM utilities)
+ModelsController(app)
 
 // Metrics controller
 MetricsController(db, app)

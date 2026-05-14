@@ -460,7 +460,8 @@ CREATE TABLE public.parcel_events (
     created_at timestamp without time zone DEFAULT now(),
     starts_at timestamp with time zone DEFAULT now(),
     expires_at timestamp with time zone DEFAULT (now() + '01:00:00'::interval),
-    category character varying(255)
+    category character varying(255),
+    location text
 );
 CREATE SEQUENCE public.parcel_events_id_seq
     START WITH 1
