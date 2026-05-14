@@ -41,10 +41,9 @@ export default function Events(props: Props) {
 
   return (
     <section class="columns">
-      <Head title="Events" url="/events" description="See what running and upcoming events are happening in voxels" />
       <hgroup>
         <h1>Events</h1>
-        <p>See what running and upcoming events are happening in voxels</p>
+        <p>upcoming stuff happening in voxels</p>
       </hgroup>
 
       <article>

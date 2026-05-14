@@ -20,15 +20,15 @@ export function useListControls(initialQuery = ''): [Controls, JSX.Element] {
   const el = (
     <div class="list-controls">
       <div>
-        View as:{' '}
-        {['grid', 'list'].map((v) => (
-          <Link key={v} href={link({ v })} aria-current={v === view ? 'page' : undefined} onClick={() => setView(v)}>{v}</Link>
+        <h5>View as</h5>
+        {['grid', 'list'].map((v, i) => (
+          <>{i > 0 && ' | '}<Link key={v} href={link({ v })} aria-current={v === view ? 'page' : undefined} onClick={() => setView(v)}>{v}</Link></>
         ))}
       </div>
       <div>
-        Sort by:{' '}
-        {['popular', 'newest', 'oldest'].map((s) => (
-          <Link key={s} href={link({ s })} aria-current={s === sort ? 'page' : undefined} onClick={() => setSort(s)}>{s}</Link>
+        <h5>Sort by</h5>
+        {['popular', 'newest', 'oldest'].map((s, i) => (
+          <>{i > 0 && ' | '}<Link key={s} href={link({ s })} aria-current={s === sort ? 'page' : undefined} onClick={() => setSort(s)}>{s}</Link></>
         ))}
       </div>
       <form role="search" onSubmit={(e) => { e.preventDefault(); setSubmitCount((n) => n + 1) }}>

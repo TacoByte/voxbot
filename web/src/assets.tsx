@@ -117,7 +117,7 @@ export default function Library(props: Props) {
     <section class="columns">
       <hgroup>
         <h1>Assets</h1>
-        <p>User generated assets and publicly available</p>
+        <p>handmade things for your voxel world</p>
       </hgroup>
 
       <article>

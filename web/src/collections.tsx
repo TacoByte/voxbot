@@ -46,7 +46,7 @@ export default function ListCollections() {
       <Head title="Collections" url="/collections" description="Asset and wearable collections made by users" />
       <hgroup>
         <h1>Collections</h1>
-        <p>Asset and wearable collections made by users</p>
+        <p>asset and wearable collections from the community</p>
       </hgroup>
 
       <article>
