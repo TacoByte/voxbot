@@ -1,6 +1,8 @@
 import { Component } from 'preact'
-import { fetchOptions } from './utils'
+import Head from './components/head'
 import NewCollection from './new-collection'
+import { Spinner } from './spinner'
+import { fetchOptions } from './utils'
 import { Collection } from '../../common/helpers/collections-helpers'
 
 export interface Props {}
@@ -129,6 +131,7 @@ export default class ListCollectionsComponent extends Component<Props, State> {
 
     return (
       <section class="columns">
+        <Head title="Collections" url="/collections" description="Asset and wearable collections made by users" />
         <hgroup>
           <h1>Collections</h1>
           <p>Asset and wearable collections made by users</p>
@@ -137,37 +140,29 @@ export default class ListCollectionsComponent extends Component<Props, State> {
         <article>
           <div class="sort grid">
             <label>Sort by</label>
-            <button class={outline('popular')} onClick={() => this.setSort('popular')}>
-              Popular
-            </button>
-            <button class={outline('newest')} onClick={() => this.setSort('newest')}>
-              Newest
-            </button>
-            <button class={outline('oldest')} onClick={() => this.setSort('oldest')}>
-              Oldest
-            </button>
+            <button class={outline('popular')} onClick={() => this.setSort('popular')}>Popular</button>
+            <button class={outline('newest')} onClick={() => this.setSort('newest')}>Newest</button>
+            <button class={outline('oldest')} onClick={() => this.setSort('oldest')}>Oldest</button>
           </div>
 
-          {/* <form>
-            <input type="text" placeholder="Search..." onInput={(e) => this.throttledSearch((e as any).target['value'])}></input>
-          </form> */}
           <form role="search" onSubmit={this.onSearch}>
             <input name="search" type="search" value={this.state.query} placeholder="Search" onInput={(e: any) => this.setState({ query: e.target.value })} />
             <button type="submit">Search</button>
           </form>
-          <table>
-            <thead>
-              <tr>
-                <th scope="col" style="width:70%">
-                  Name
-                </th>
-                <th scope="col" style="width:10%">
-                  Collectibles
-                </th>
-              </tr>
-            </thead>
-            <tbody>{this.state.fetching ? 'Fetching...' : this.state.collections.length > 0 ? collections : 'No collections found.'}</tbody>
-          </table>
+
+          {this.state.fetching ? (
+            <Spinner />
+          ) : (
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col" style="width:70%">Name</th>
+                  <th scope="col" style="width:10%">Collectibles</th>
+                </tr>
+              </thead>
+              <tbody>{this.state.collections.length > 0 ? collections : 'No collections found.'}</tbody>
+            </table>
+          )}
         </article>
 
         <aside>

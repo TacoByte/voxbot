@@ -1,7 +1,7 @@
 import { Component, Fragment } from 'preact'
 import { useEffect, useState } from 'preact/hooks'
 import { currentVersion } from '../../common/version'
-import EventsShowcase from './components/events-showcase'
+import { Event } from '../../common/messages/event'
 import Head from './components/head'
 import PopularParcels from './components/popular-parcels'
 import { Womp } from './components/womp-card'
@@ -58,6 +58,14 @@ function FreshlyMinted() {
     </div>
   )
 }
+function EventsList() {
+  const [events, setEvents] = useState<Event[]>([])
+  useEffect(() => {
+    fetch('/api/events.json').then((r) => r.json()).then((d) => setEvents(d.events || []))
+  }, [])
+  return <ul>{events.slice(0, 5).map((e) => <li key={e.id}><a href={`/events/${e.id}`}>{e.name}</a></li>)}</ul>
+}
+
 export default class Explore extends Component<any, Props> {
   componentDidMount() {
     app.on(AppEvent.Logout, this.rerender)
@@ -96,7 +104,7 @@ export default class Explore extends Component<any, Props> {
 
           <h3>Events</h3>
 
-          <EventsShowcase />
+          <EventsList />
         </aside>
       </section>
     )
