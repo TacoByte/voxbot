@@ -1,174 +1,71 @@
-import { Component } from 'preact'
+import { useEffect, useState } from 'preact/hooks'
 import Head from './components/head'
+import { useListControls } from './components/list-controls'
 import NewCollection from './new-collection'
 import { Spinner } from './spinner'
 import { fetchOptions } from './utils'
 import { Collection } from '../../common/helpers/collections-helpers'
 
-export interface Props {}
+const LIMIT = 100
 
-type Sorting = 'popular' | 'newest' | 'oldest'
+export default function ListCollections() {
+  const [collections, setCollections] = useState<Collection[]>([])
+  const [loading, setLoading] = useState(true)
+  const [page] = useState(0)
 
-export interface State {
-  fetching?: boolean
-  page: any
-  query: string
-  collections: Collection[]
-  sort: Sorting
-  asc?: boolean
-  search?: any
-}
+  const [controls, controlsEl] = useListControls()
 
-const NUM_COLLECTIONS = 100
+  async function doFetch() {
+    setLoading(true)
+    let url = `/api/collections?page=${page}&limit=${LIMIT}`
+    if (controls.query) url += '&q=' + controls.query
+    if (controls.sort) url += '&sort=' + controls.sort
 
-export default class ListCollectionsComponent extends Component<Props, State> {
-  constructor(props: any) {
-    super(props)
-    this.state = {
-      fetching: true,
-      query: null!,
-      page: 0,
-      collections: [],
-      sort: 'popular',
-      asc: true,
-      search: null,
-    }
+    const r = await fetch(url, fetchOptions())
+    const data = await r.json()
+    setCollections(data.collections || [])
+    setLoading(false)
   }
 
-  get page() {
-    return this.state.page || 0
-  }
+  useEffect(() => { doFetch() }, [controls.sort, page])
+  useEffect(() => { if (controls.submitCount > 0) doFetch() }, [controls.submitCount])
 
-  get sort() {
-    return this.state.sort
-  }
+  const rows = collections.map((c) => (
+    <tr key={c.id}>
+      <td>
+        <a href={`/collections/${c.id}`}>{c.name}</a>
+        <br />
+        <small>{c.description}&nbsp;</small>
+      </td>
+      <td>{c.total_wearables}</td>
+    </tr>
+  ))
 
-  get ascending() {
-    return !!this.state.asc
-  }
+  return (
+    <section class="columns">
+      <Head title="Collections" url="/collections" description="Asset and wearable collections made by users" />
+      <hgroup>
+        <h1>Collections</h1>
+        <p>Asset and wearable collections made by users</p>
+      </hgroup>
 
-  get query() {
-    return this.state.query
-  }
+      <article>
+        {controlsEl}
 
-  setStateAsync(state: any): Promise<void> {
-    return new Promise((resolve) => {
-      this.setState(state, resolve)
-    })
-  }
+        <table>
+          <thead>
+            <tr>
+              <th scope="col" style="width:70%">Name</th>
+              <th scope="col" style="width:10%">Collectibles</th>
+            </tr>
+          </thead>
+          <tbody>{loading ? <tr><td colSpan={2}><Spinner /></td></tr> : collections.length > 0 ? rows : 'No collections found.'}</tbody>
+        </table>
+      </article>
 
-  async componentDidMount() {
-    await this.setStateAsync({ page: this.state.page, fetching: true })
-    this.fetch()
-  }
-
-  componentDidUpdate(prevProps: any, prevState: any) {
-    if (this.state.search !== prevState.search) {
-      this.fetch()
-    }
-    if (this.state.page !== prevState.page) {
-      this.fetch()
-    }
-  }
-
-  constructURL() {
-    let url = `/api/collections?page=${this.state.page}&limit=${NUM_COLLECTIONS}`
-
-    if (this.query) {
-      url += '&q=' + this.query
-    }
-
-    if (this.state.search) {
-      url += '&q=' + this.state.search
-    }
-
-    if (this.state.sort) {
-      url += '&sort=' + this.state.sort
-    }
-
-    return url
-  }
-
-  fetch() {
-    this.setState({ fetching: true })
-    const url = this.constructURL()
-
-    fetch(url, fetchOptions())
-      .then((r) => r.json())
-      .then((response) => {
-        const { collections } = response
-        this.setState({ collections: collections || [], fetching: false })
-      })
-  }
-
-  setSort(sort: Sorting) {
-    this.setState({ sort, asc: true })
-    this.fetch()
-  }
-
-  onSearch = (e: any) => {
-    e.preventDefault()
-
-    this.setState({ query: e.target.value })
-    this.fetch()
-  }
-
-  render() {
-    const collections = this.state.collections.map((c: Collection) => {
-      return (
-        <tr key={c.id}>
-          <td>
-            <a href={`/collections/${c.id}`}>{c.name}</a>
-            <br />
-            <small>{c.description}&nbsp;</small>
-          </td>
-          <td>{c.total_wearables}</td>
-        </tr>
-      )
-    })
-
-    const outline = (sort: Sorting) => (this.state.sort === sort ? 'outline' : '')
-
-    return (
-      <section class="columns">
-        <Head title="Collections" url="/collections" description="Asset and wearable collections made by users" />
-        <hgroup>
-          <h1>Collections</h1>
-          <p>Asset and wearable collections made by users</p>
-        </hgroup>
-
-        <article>
-          <div class="sort grid">
-            <label>Sort by</label>
-            <button class={outline('popular')} onClick={() => this.setSort('popular')}>Popular</button>
-            <button class={outline('newest')} onClick={() => this.setSort('newest')}>Newest</button>
-            <button class={outline('oldest')} onClick={() => this.setSort('oldest')}>Oldest</button>
-          </div>
-
-          <form role="search" onSubmit={this.onSearch}>
-            <input name="search" type="search" value={this.state.query} placeholder="Search" onInput={(e: any) => this.setState({ query: e.target.value })} />
-            <button type="submit">Search</button>
-          </form>
-
-          {this.state.fetching ? (
-            <Spinner />
-          ) : (
-            <table>
-              <thead>
-                <tr>
-                  <th scope="col" style="width:70%">Name</th>
-                  <th scope="col" style="width:10%">Collectibles</th>
-                </tr>
-              </thead>
-              <tbody>{this.state.collections.length > 0 ? collections : 'No collections found.'}</tbody>
-            </table>
-          )}
-        </article>
-
-        <aside>
-          <NewCollection />
-        </aside>
-      </section>
-    )
-  }
+      <aside>
+        <NewCollection />
+      </aside>
+    </section>
+  )
 }

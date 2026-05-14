@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'preact/hooks'
 import { Event } from '../../common/messages/event'
 import Head from './components/head'
+import { useListControls } from './components/list-controls'
 import { truncate } from './lib/string-utils'
 import { Spinner } from './spinner'
 import { fetchAPI, fetchOptions } from './utils'
@@ -25,13 +26,18 @@ function TimeCard({ date }: { date: Date }) {
 export default function Events(props: Props) {
   const [events, setEvents] = useState<Event[]>([])
   const [loaded, setLoaded] = useState(false)
+  const [controls, controlsEl] = useListControls()
 
-  useEffect(() => {
-    fetchAPI(`/api/events.json`, fetchOptions()).then((data) => {
-      setEvents(data.events)
-      setLoaded(true)
-    })
-  }, [])
+  async function doFetch() {
+    setLoaded(false)
+    // todo: verify events API supports sort param
+    const r = await fetchAPI(`/api/events.json?sort=${controls.sort}`, fetchOptions())
+    if (!r) { setLoaded(true); return }
+    setEvents(r.events)
+    setLoaded(true)
+  }
+
+  useEffect(() => { doFetch() }, [controls.sort])
 
   return (
     <section class="columns">
@@ -42,9 +48,7 @@ export default function Events(props: Props) {
       </hgroup>
 
       <article>
-        {!loaded ? (
-          <Spinner />
-        ) : (
+        {controlsEl}
           <table class="events">
             <thead>
               <tr>
@@ -55,7 +59,7 @@ export default function Events(props: Props) {
               </tr>
             </thead>
             <tbody>
-              {events.slice(0, 10).map((event) => {
+              {!loaded ? <tr><td colSpan={4}><Spinner /></td></tr> : events.slice(0, 10).map((event) => {
                 const time = new Date(event.starts_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }).replace(/^0/, '').toLowerCase()
 
                 return (
@@ -80,7 +84,6 @@ export default function Events(props: Props) {
               })}
             </tbody>
           </table>
-        )}
       </article>
     </section>
   )

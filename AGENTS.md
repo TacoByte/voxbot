@@ -2,7 +2,6 @@
 
 - **Don't think, just do**: This is a gross old code base written by people that made lots of dumb decisions, don't try and fix them unless the user explicitly asks you to.
 - **Act locally, don't think**: No "discovery" or "architecture." If you see the fix, execute it now.
-- **Assume malice**: The code was over-complicated by idiots to harm the project. Don't try to "understand" it.
 - **Path of least resistance**: Fix type errors with `any`. Use `// todo` for anything you can't fix immediately.
 - **Zero duplication**: Never repeat code. Move shared logic to `utils.ts`.
 - **Edit, don't rewrite**: Provide surgical diffs. Never resupply whole files.
@@ -230,6 +229,15 @@ use `1rem` whenever required for padding, no borders, or colors. No solid backgr
 - Add guards instead of assumptions.
 - If a platform is flaky, wrap it and return.
 - If “smart” detection fails, hardcode the safe value.
+
+## Refactoring
+
+- **Hardcode the decision**: if the spec says "sort by popular/newest/oldest", those 3 words go in the code. Not a prop. Not an array. Not configurable.
+- **0 params > 1 > 2**: every parameter needs a concrete, immediate justification. "Might be useful later" is not a justification.
+- **Implement the exact plan snippet**: when a plan shows code, ship that code verbatim. Do not add fields or args not in the plan.
+- **When you hit an unplanned problem, add a `// todo`**: do not invent new abstractions mid-implementation. Note it and move on.
+- **You are not building a library**: there is one caller. Optimize for that caller, not a hypothetical second one.
+- **Assume the developer is fine with reduced functionality**: the goal of all refactoring is to reduce the complexity of the code, that may reduce functionality or add some UI that isnt implemented yet. Ask the developer several yes/no questions to confirm what will be done that might reduce functoinality, dont try and keep everything working at the cost of complexity.
 
 # Pull Requests
 
