@@ -15,7 +15,9 @@ export default function CollectionEdit(props: Props) {
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
-    fetch(`/api/collections/${props.id}`).then((r) => r.json()).then((d) => setCol(d.collection))
+    fetch(`/api/collections/${props.id}`)
+      .then((r) => r.json())
+      .then((d) => setCol(d.collection))
   }, [props.id])
 
   async function submit(e: Event) {
@@ -40,7 +42,9 @@ export default function CollectionEdit(props: Props) {
   return (
     <section class="columns">
       <hgroup>
-        <h1><a href={`/collections/${props.id}`}>{col.name}</a> / edit</h1>
+        <h1>
+          <a href={`/collections/${props.id}`}>{col.name}</a> / edit
+        </h1>
       </hgroup>
       <article>
         <form onSubmit={submit}>
@@ -52,12 +56,12 @@ export default function CollectionEdit(props: Props) {
             <label>Description</label>
             <textarea value={col.description} onInput={(e: any) => set('description', e.target.value)} rows={5} />
           </div>
-          <button type="submit" disabled={saving}>{saving ? 'Saving...' : 'Save'}</button>
+          <button type="submit" disabled={saving}>
+            {saving ? 'Saving...' : 'Save'}
+          </button>
         </form>
       </article>
-      <aside>
-        {/* <button onClick={onDelete}>Delete</button> */}
-      </aside>
+      <aside>{/* <button onClick={onDelete}>Delete</button> */}</aside>
     </section>
   )
 }

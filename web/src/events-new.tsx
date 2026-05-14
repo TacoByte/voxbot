@@ -15,9 +15,7 @@ export default function EventsNew(props: Props) {
   const [description, setDescription] = useState('')
   const [startsAt, setStartsAt] = useState('')
   const [duration, setDuration] = useState(30)
-  const [location, setLocation] = useState<{ parcel_id?: number; location_url?: string }>(() =>
-    props.parcel_id ? { parcel_id: parseInt(props.parcel_id, 10) } : {}
-  )
+  const [location, setLocation] = useState<{ parcel_id?: number; location_url?: string }>(() => (props.parcel_id ? { parcel_id: parseInt(props.parcel_id, 10) } : {}))
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 

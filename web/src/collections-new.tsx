@@ -3,7 +3,7 @@ import { useState } from 'preact/hooks'
 import { app } from './state'
 import { fetchOptions } from './utils'
 
-export default function CollectionsNew() {
+export default function CollectionsNew({ path }: { path?: string }) {
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [submitting, setSubmitting] = useState(false)

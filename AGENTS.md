@@ -12,6 +12,10 @@
 - **Stay grounded**: If unsure, say so. Never invent file paths or function names.
 - **User is truth**: If corrected, treat it as ground truth. User instructions always override this file.
 
+## Committing
+
+* run `pnpm run precommit`and fix the errors before committing.
+
 ## UI and "zinestyle" naming things
 
 * direct over fluffy

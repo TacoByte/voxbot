@@ -4,7 +4,7 @@ import { isMobileMedia } from '../common/helpers/detector'
 import { exitPointerLock, hasPointerLock, requestPointerLock } from '../common/helpers/ui-helpers'
 import { onBeginUpload, onCompleteUpload, onFailUpload } from '../common/helpers/upload-media'
 import { fetchFromMPServer, shorterWallet } from '../common/helpers/utils'
-import { SignIn } from '../web/src/auth/login'
+import { Login } from '../web/src/auth/login'
 import { PanelType } from '../web/src/components/panel'
 import Snackbar from '../web/src/components/snackbar'
 import { app, AppEvent } from '../web/src/state'
@@ -617,7 +617,7 @@ export default class UserInterface extends Component<UserInterfaceProps, UserInt
         pane = <Inspector />
         break
       case 'login':
-        pane = <SignIn />
+        pane = <Login />
         break
       case 'feature-editor':
         // pane = <FeatureEditor feature={this.state.feature!} parcel={currentOrNearestParcel!} scene={this.props.scene} />

@@ -141,9 +141,7 @@ export default class CollectionPage extends Component<Props, State> {
         <article>{empty ? upload : <div class="wrap-grid">{collectibles}</div>}</article>
 
         <aside>
-          {(app.isAdmin() || this.state.collection.owner?.toLowerCase() === app.wallet?.toLowerCase()) && (
-            <a href={`/collections/${this.props.id}/edit`}>Edit</a>
-          )}
+          {(app.isAdmin() || this.state.collection.owner?.toLowerCase() === app.wallet?.toLowerCase()) && <a href={`/collections/${this.props.id}/edit`}>Edit</a>}
           {empty ? null : upload}
 
           <p class="description">{this.state.collection.description}</p>

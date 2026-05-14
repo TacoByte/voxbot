@@ -22,20 +22,22 @@ export default function EventsEdit(props: Props) {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    fetch(`/api/events/${props.id}.json`).then((r) => r.json()).then(({ event }) => {
-      if (!event) return
-      setName(event.name || '')
-      setDescription(event.description || '')
-      if (event.starts_at) {
-        const d = new Date(event.starts_at)
-        setStartsAt(d.toISOString().slice(0, 16))
-      }
-      if (event.starts_at && event.expires_at) {
-        const ms = new Date(event.expires_at).getTime() - new Date(event.starts_at).getTime()
-        setDuration(Math.round(ms / 60000))
-      }
-      if (event.parcel_id) setLocation({ parcel_id: event.parcel_id })
-    })
+    fetch(`/api/events/${props.id}.json`)
+      .then((r) => r.json())
+      .then(({ event }) => {
+        if (!event) return
+        setName(event.name || '')
+        setDescription(event.description || '')
+        if (event.starts_at) {
+          const d = new Date(event.starts_at)
+          setStartsAt(d.toISOString().slice(0, 16))
+        }
+        if (event.starts_at && event.expires_at) {
+          const ms = new Date(event.expires_at).getTime() - new Date(event.starts_at).getTime()
+          setDuration(Math.round(ms / 60000))
+        }
+        if (event.parcel_id) setLocation({ parcel_id: event.parcel_id })
+      })
   }, [props.id])
 
   async function submit(e: Event) {
@@ -77,7 +79,9 @@ export default function EventsEdit(props: Props) {
   return (
     <section class="columns">
       <hgroup>
-        <h1><a href={`/events/${props.id}`}>{name || 'Event'}</a> / edit</h1>
+        <h1>
+          <a href={`/events/${props.id}`}>{name || 'Event'}</a> / edit
+        </h1>
       </hgroup>
       <article>
         <form onSubmit={submit}>

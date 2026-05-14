@@ -162,9 +162,7 @@ export default class EventPage extends Component<Props, State> {
 
             {!this.helper.isInPast && (
               <div>
-                {this.helper.isOwner && (
-                  <a href={`/events/${this.state.event.id}/edit`}>Edit event</a>
-                )}
+                {this.helper.isOwner && <a href={`/events/${this.state.event.id}/edit`}>Edit event</a>}
                 {isMod && this.state.event?.id && (
                   <button
                     onClick={() => {

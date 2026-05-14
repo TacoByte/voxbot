@@ -56,7 +56,9 @@ export default function ParcelField({ value, onChange }: Props) {
       {results.length > 0 && (
         <ul style="position:absolute;background:var(--background-color);border:1px solid var(--muted-border-color);width:100%;margin:0;padding:0;list-style:none;z-index:10">
           {results.map((p) => (
-            <li key={p.id} style="padding:0.5rem 1rem;cursor:pointer" onClick={() => pick(p)}>{p.name}</li>
+            <li key={p.id} style="padding:0.5rem 1rem;cursor:pointer" onClick={() => pick(p)}>
+              {p.name}
+            </li>
           ))}
         </ul>
       )}

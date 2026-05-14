@@ -6,7 +6,6 @@ import { ParcelRecord } from '../../common/messages/parcel'
 import { AssetType } from '../../web/src/components/Editable/editable'
 import Panel, { PanelType } from '../../web/src/components/panel'
 import { saveAsset } from '../../web/src/helpers/save-helper'
-import { toggleEventManagerWindow } from '../../web/src/popup-ui/event-manager'
 import { app, AppEvent } from '../../web/src/state'
 // Properties of a parcel required by this control
 interface Props {
@@ -198,7 +197,7 @@ export class ParcelAdminOverlay extends Component<Props, State> {
             </div>
             <div className="OverlayHighlightContent">
               <h4>Event Management</h4>
-              <button onClick={() => toggleEventManagerWindow(this.parcel)}>Create/Edit parcel event</button>
+              <a href={`/events/new?parcel_id=${(this.parcel as any).id}`}>Create event</a>
             </div>
           </div>
         </section>

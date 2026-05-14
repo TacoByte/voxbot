@@ -7,7 +7,7 @@ import { Collection } from '../../common/helpers/collections-helpers'
 
 const LIMIT = 100
 
-export default function ListCollections() {
+export default function ListCollections({ path }: { path?: string }) {
   const [collections, setCollections] = useState<Collection[]>([])
   const [loading, setLoading] = useState(true)
   const [page] = useState(0)
@@ -26,8 +26,12 @@ export default function ListCollections() {
     setLoading(false)
   }
 
-  useEffect(() => { doFetch() }, [controls.sort, page])
-  useEffect(() => { if (controls.submitCount > 0) doFetch() }, [controls.submitCount])
+  useEffect(() => {
+    doFetch()
+  }, [controls.sort, page])
+  useEffect(() => {
+    if (controls.submitCount > 0) doFetch()
+  }, [controls.submitCount])
 
   const rows = collections.map((c) => (
     <tr key={c.id}>
@@ -54,11 +58,27 @@ export default function ListCollections() {
         <table>
           <thead>
             <tr>
-              <th scope="col" style="width:70%">Name</th>
-              <th scope="col" style="width:10%">Collectibles</th>
+              <th scope="col" style="width:70%">
+                Name
+              </th>
+              <th scope="col" style="width:10%">
+                Collectibles
+              </th>
             </tr>
           </thead>
-          <tbody>{loading ? <tr><td colSpan={2}><Spinner /></td></tr> : collections.length > 0 ? rows : 'No collections found.'}</tbody>
+          <tbody>
+            {loading ? (
+              <tr>
+                <td colSpan={2}>
+                  <Spinner />
+                </td>
+              </tr>
+            ) : collections.length > 0 ? (
+              rows
+            ) : (
+              'No collections found.'
+            )}
+          </tbody>
         </table>
       </article>
 

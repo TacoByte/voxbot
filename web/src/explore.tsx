@@ -61,9 +61,19 @@ function FreshlyMinted() {
 function EventsList() {
   const [events, setEvents] = useState<Event[]>([])
   useEffect(() => {
-    fetch('/api/events.json').then((r) => r.json()).then((d) => setEvents(d.events || []))
+    fetch('/api/events.json')
+      .then((r) => r.json())
+      .then((d) => setEvents(d.events || []))
   }, [])
-  return <ul>{events.slice(0, 5).map((e) => <li key={e.id}><a href={`/events/${e.id}`}>{e.name}</a></li>)}</ul>
+  return (
+    <ul>
+      {events.slice(0, 5).map((e) => (
+        <li key={e.id}>
+          <a href={`/events/${e.id}`}>{e.name}</a>
+        </li>
+      ))}
+    </ul>
+  )
 }
 
 export default class Explore extends Component<any, Props> {

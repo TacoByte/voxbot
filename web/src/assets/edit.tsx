@@ -17,8 +17,12 @@ export default function EditAsset(props: Props) {
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
-    fetch(`/api/assets/${props.id}`).then((r) => r.json()).then((d) => setAsset(d.asset))
-    fetch(`/api/assets/categories`).then((r) => r.json()).then((d) => setCategories(d.categories || []))
+    fetch(`/api/assets/${props.id}`)
+      .then((r) => r.json())
+      .then((d) => setAsset(d.asset))
+    fetch(`/api/assets/categories`)
+      .then((r) => r.json())
+      .then((d) => setCategories(d.categories || []))
   }, [props.id])
 
   async function submit(e: Event) {
@@ -49,7 +53,9 @@ export default function EditAsset(props: Props) {
   return (
     <section class="columns">
       <hgroup>
-        <h1><a href={`/assets/${props.id}`}>{asset.name}</a> / edit</h1>
+        <h1>
+          <a href={`/assets/${props.id}`}>{asset.name}</a> / edit
+        </h1>
       </hgroup>
       <article>
         <form onSubmit={submit}>
@@ -64,14 +70,20 @@ export default function EditAsset(props: Props) {
           <div class="f">
             <label>Category</label>
             <select value={asset.category} onChange={(e: any) => set('category', e.target.value)}>
-              {categories.map((c) => <option key={c} value={c}>{c}</option>)}
+              {categories.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
             </select>
           </div>
           <div class="f">
             <label>Content</label>
             <JsonEditor data={asset.content} setData={(e: any) => set('content', e)} />
           </div>
-          <button type="submit" disabled={saving}>{saving ? 'Saving...' : 'Save'}</button>
+          <button type="submit" disabled={saving}>
+            {saving ? 'Saving...' : 'Save'}
+          </button>
         </form>
       </article>
       <aside>

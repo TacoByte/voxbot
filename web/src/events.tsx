@@ -32,12 +32,17 @@ export default function Events(props: Props) {
     setLoaded(false)
     // todo: verify events API supports sort param
     const r = await fetchAPI(`/api/events.json?sort=${controls.sort}`, fetchOptions())
-    if (!r) { setLoaded(true); return }
+    if (!r) {
+      setLoaded(true)
+      return
+    }
     setEvents(r.events)
     setLoaded(true)
   }
 
-  useEffect(() => { doFetch() }, [controls.sort])
+  useEffect(() => {
+    doFetch()
+  }, [controls.sort])
 
   return (
     <section class="columns">
@@ -48,17 +53,28 @@ export default function Events(props: Props) {
 
       <article>
         {controlsEl}
-          <table class="events">
-            <thead>
+        <table class="events">
+          <thead>
+            <tr>
+              <th scope="col" style="width: 10%"></th>
+              <th scope="col" style="width: 60%">
+                Name
+              </th>
+              <th scope="col">Author</th>
+              <th scope="col" style="width: 20%">
+                Time, Parcel address
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {!loaded ? (
               <tr>
-                <th scope="col" style="width: 10%"></th>
-                <th scope="col" style="width: 60%">Name</th>
-                <th scope="col">Author</th>
-                <th scope="col" style="width: 20%">Time, Parcel address</th>
+                <td colSpan={4}>
+                  <Spinner />
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {!loaded ? <tr><td colSpan={4}><Spinner /></td></tr> : events.slice(0, 10).map((event) => {
+            ) : (
+              events.slice(0, 10).map((event) => {
                 const time = new Date(event.starts_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }).replace(/^0/, '').toLowerCase()
 
                 return (
@@ -71,7 +87,9 @@ export default function Events(props: Props) {
                         <a href={`/events/${event.id}`}>{truncate(event.name)}</a>
                       </td>
                       <td>{event.author_name}</td>
-                      <td>{time}, {event.parcel_name}</td>
+                      <td>
+                        {time}, {event.parcel_name}
+                      </td>
                     </tr>
                     <tr>
                       <td colSpan={4}>
@@ -80,9 +98,10 @@ export default function Events(props: Props) {
                     </tr>
                   </>
                 )
-              })}
-            </tbody>
-          </table>
+              })
+            )}
+          </tbody>
+        </table>
       </article>
       <aside>
         <a href="/events/new">New event</a>

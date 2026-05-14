@@ -2,7 +2,7 @@ import { Login } from './auth/login'
 import UploadButton from './components/upload-button'
 import { app } from './state'
 
-export default function AssetsNew() {
+export default function AssetsNew({ path }: { path?: string }) {
   if (!app.signedIn) return <Login reason="upload an asset" />
   return (
     <section>

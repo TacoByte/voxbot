@@ -56,7 +56,10 @@ export default function Library(props: Props) {
     if (props.wallet) scope.author = props.wallet
 
     const r = await fetchAPI(scope.toString(), fetchOptions(controller.current))
-    if (!r) { setLoading(false); return }
+    if (!r) {
+      setLoading(false)
+      return
+    }
 
     const data = (r.assets || []) as LibraryAsset_Type[]
     controller.current = null
@@ -74,7 +77,9 @@ export default function Library(props: Props) {
 
   useEffect(() => {
     doFetch()
-    return () => { controller.current?.abort('ABORT:Unmounting') }
+    return () => {
+      controller.current?.abort('ABORT:Unmounting')
+    }
   }, [controls.sort, controls.view, props.q])
 
   useEffect(() => {
@@ -92,25 +97,30 @@ export default function Library(props: Props) {
     await refetch()
   }
 
-  const list = controls.view === 'list'
-    ? assets.map((asset) => (
-      <tr class="asset">
-        <td><input type="checkbox" /></td>
-        <td><Image type={asset.type} src={bucketUrl(asset.id!)} altsrc={renderUrl(asset.id!)} /></td>
-        <td>
-          <InplaceEdit value={asset.name} onChange={onRename(asset)}>
-            <a href={`/assets/${asset.id}`}>{asset.name}</a>
-          </InplaceEdit>
-        </td>
-        <td>{canEdit(asset) && <a href={`/assets/${asset.id}/edit`}>Edit</a>}</td>
-      </tr>
-    ))
-    : assets.map((asset) => (
-      <div class="asset" onClick={() => route(`/assets/${asset.id}`)}>
-        <Image src={bucketUrl(asset.id!)} altsrc={renderUrl(asset.id!)} />
-        <p>{asset.name}</p>
-      </div>
-    ))
+  const list =
+    controls.view === 'list'
+      ? assets.map((asset) => (
+          <tr class="asset">
+            <td>
+              <input type="checkbox" />
+            </td>
+            <td>
+              <Image type={asset.type} src={bucketUrl(asset.id!)} altsrc={renderUrl(asset.id!)} />
+            </td>
+            <td>
+              <InplaceEdit value={asset.name} onChange={onRename(asset)}>
+                <a href={`/assets/${asset.id}`}>{asset.name}</a>
+              </InplaceEdit>
+            </td>
+            <td>{canEdit(asset) && <a href={`/assets/${asset.id}/edit`}>Edit</a>}</td>
+          </tr>
+        ))
+      : assets.map((asset) => (
+          <div class="asset" onClick={() => route(`/assets/${asset.id}`)}>
+            <Image src={bucketUrl(asset.id!)} altsrc={renderUrl(asset.id!)} />
+            <p>{asset.name}</p>
+          </div>
+        ))
 
   return (
     <section class="columns">
@@ -122,9 +132,21 @@ export default function Library(props: Props) {
       <article>
         {controlsEl}
 
-        {controls.view === 'list'
-          ? <table class="assets-list">{loading ? <tr><td><Spinner /></td></tr> : list}</table>
-          : <div class="wrap-grid">{loading ? <Spinner /> : list}</div>}
+        {controls.view === 'list' ? (
+          <table class="assets-list">
+            {loading ? (
+              <tr>
+                <td>
+                  <Spinner />
+                </td>
+              </tr>
+            ) : (
+              list
+            )}
+          </table>
+        ) : (
+          <div class="wrap-grid">{loading ? <Spinner /> : list}</div>
+        )}
         <PaginationLinks path="/assets" page={page} limit={100} queryParams={queryParams} description="assets" />
       </article>
 
