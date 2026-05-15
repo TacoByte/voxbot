@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'preact/hooks'
-import Icon, { CubeIcon } from './components/icons/icons'
 
 import { route } from 'preact-router'
 import { ssrFriendlyWindow } from '../../common/helpers/utils'
@@ -126,11 +125,6 @@ export default function Library(props: Props) {
 
   return (
     <section class="columns">
-      <hgroup>
-        <h1><CubeIcon name="assets" /> Assets</h1>
-        <p>handmade things for your voxel world</p>
-      </hgroup>
-
       <article>
         {controlsEl}
 

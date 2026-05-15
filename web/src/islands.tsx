@@ -1,8 +1,6 @@
 import { Component } from 'preact'
 import Head from './components/head'
 import { fetchOptions } from './utils'
-import { CubeIcon } from './components/icons/icons'
-
 type island = {
   id: number
   name: string
@@ -89,11 +87,6 @@ export default class Islands extends Component<Props, State> {
     return (
       <section>
         <Head title={`Islands`} />
-
-        <hgroup>
-          <h1><CubeIcon name="islands" /> Islands</h1>
-          <p>List of islands.</p>
-        </hgroup>
 
         <p>
           Minted Islands | <a href="/propose/islands">Propose new islands</a>

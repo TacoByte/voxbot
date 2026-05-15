@@ -107,6 +107,8 @@ a.buttonish {
 
 // Nav tweaks
 header nav {
+  margin: 5rem 0;
+
   ul {
     display: flex;
     align-items: center;
@@ -118,6 +120,19 @@ header nav {
   }
   li {
     list-style: none;
+  }
+
+  svg{
+    display: inline-block;
+  }
+
+  .active{
+    padding: 0 1rem;
+    font-weight: bold;
+
+    svg{
+      display: none;
+    }
   }
 
   li:last-child {
@@ -545,8 +560,8 @@ small {
   top: -0.5rem;
   display: inline-block;
   --size: 1rem;
-  --fore: #f0a;
-  --back: #808;
+  --fore: #fff;
+  --back: #ccc;
   --half: calc(var(--size) / 2);
   min-width: calc(7 * var(--size));
   min-height: calc(3 * var(--size));
@@ -559,8 +574,8 @@ small {
   }
 
   .box {
-    width: var(--size);
-    height: var(--size);
+    width: ~'calc(var(--size) + 1px)';
+    height: ~'calc(var(--size) + 1px)';
     position: absolute;
     transform-style: preserve-3d;
   }
@@ -575,7 +590,7 @@ small {
     position: absolute;
     inset: 0;
     backface-visibility: hidden;
-    border: 1px solid #333;
+    border: 1px solid #999;
   }
 
   .face-F {

@@ -1,5 +1,4 @@
 import { Component, Fragment } from 'preact'
-import Icon, { CubeIcon } from './components/icons/icons'
 
 import { ssrFriendlyWindow } from '../../common/helpers/utils'
 import Head from './components/head'
@@ -126,10 +125,7 @@ export default class Spaces extends Component<Props, State> {
         <Head title={'Spaces'} />
 
         <div style={{ display: 'flex', flex: 1, width: '100%' }}>
-          <hgroup style={{ flexGrow: 1 }}>
-            <h1><CubeIcon name="spaces" /> Spaces</h1>
-            <p>Browse the public spaces.</p>
-          </hgroup>
+          <div style={{ flexGrow: 1 }} />
           <div>
             {app.state.wallet && (
               <button class="outline" onClick={() => (window.location.href = '/spaces/new')}>

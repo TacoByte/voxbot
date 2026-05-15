@@ -7,8 +7,21 @@ import { hasMetamask } from './auth/login-helper'
 import { login } from './auth/state-login'
 import { PanelType } from './components/panel'
 import { app, AppEvent } from './state'
-import Logo from './components/logo'
-import Icon from './components/icons/icons'
+import Icon, { CubeIcon } from './components/icons/icons'
+
+const ROUTE_ICONS: Record<string, string> = {
+  account: 'account',
+  costumer: 'costume',
+  assets: 'assets',
+  collections: 'collections',
+  events: 'events',
+  islands: 'islands',
+  map: 'map',
+  parcels: 'parcels',
+  spaces: 'spaces',
+  womps: 'womps',
+  scratchpad: 'scratchpad',
+}
 
 function AdminMenu() {
   return (
@@ -140,6 +153,8 @@ export default class WebHeader extends Component<Props, State> {
       return path.includes(`/${label!.toLowerCase()}`)
     }
 
+    const activeIcon = (Object.entries(ROUTE_ICONS).find(([r]) => path?.includes(`/${r}`))?.[1] ?? 'v') as any
+
     const canInstallMetamask = !isMobile() && !hasMetamask()
     const onClick = (e: Event) => {
       if (canInstallMetamask) {
@@ -149,13 +164,18 @@ export default class WebHeader extends Component<Props, State> {
       }
     }
 
+    const navLink = (label: string, href: string, icon: any, active: boolean, extra?: any) =>
+      active
+        ? <span class="active"><Icon name={icon} /> {label}</span>
+        : <Link activeClassName="active" href={href} onClick={extra ?? this.closeMobileMenu}><Icon name={icon} /> {label}</Link>
+
     return (
       <>
         <header>
           <nav>
             <ul>
               <li>
-                <Logo />
+                <a href="/"><CubeIcon name={activeIcon} /></a>
               </li>
               <li>
                 <button onClick={onPlay} class="big-play">
@@ -163,76 +183,25 @@ export default class WebHeader extends Component<Props, State> {
                 </button>
               </li>
 
-              <li>
-                <Link aria-current={isActive('account') ? 'page' : undefined} activeClassName="active" href="/account" onClick={this.closeMobileMenu}>
-                  <Icon name="account" /> {signedIn ? 'Account' : 'Log in'}
-                </Link>
-              </li>
+              <li>{navLink(signedIn ? 'Account' : 'Log in', '/account', 'account', isActive('account'))}</li>
 
-              {signedIn ? (
-                <li>
-                  <Link activeClassName="active" href="/costumer">
-                    <Icon name="costume" /> Costume
-                  </Link>
-                </li>
-              ) : (
-                ''
+              {signedIn && (
+                <li>{navLink('Costume', '/costumer', 'costume', isActive('costumer'))}</li>
               )}
 
-              <li>
-                <Link aria-current={isActive('assets') ? 'page' : undefined} activeClassName="active" href="/assets" onClick={this.closeMobileMenu}>
-                  <Icon name="assets" /> Assets
-                </Link>
-              </li>
-              <li>
-                <Link aria-current={isActive('collections') ? 'page' : undefined} activeClassName="active" href="/collections" onClick={this.closeMobileMenu}>
-                  <Icon name="collections" /> Collections
-                </Link>
-              </li>
-              <li>
-                <Link aria-current={isActive('events') ? 'page' : undefined} activeClassName="active" href="/events" onClick={this.closeMobileMenu}>
-                  <Icon name="events" /> Events
-                </Link>
-              </li>
-              <li>
-                <Link aria-current={isActive('islands') ? 'page' : undefined} activeClassName="active" href="/islands" onClick={this.closeMobileMenu}>
-                  <Icon name="islands" /> Islands
-                </Link>
-              </li>
-              <li>
-                <Link aria-current={isActive('map') ? 'page' : undefined} activeClassName="active" href="/map" onClick={this.closeMobileMenu}>
-                  <Icon name="map" /> Map
-                </Link>
-              </li>
-              <li>
-                <Link aria-current={isActive('parcels') ? 'page' : undefined} activeClassName="active" href="/parcels" onClick={this.closeMobileMenu}>
-                  <Icon name="parcels" /> Parcels
-                </Link>
-              </li>
-              <li>
-                <Link aria-current={isActive('spaces') ? 'page' : undefined} activeClassName="active" href="/spaces" onClick={this.closeMobileMenu}>
-                  <Icon name="spaces" /> Spaces
-                </Link>
-              </li>
-              <li>
-                <Link aria-current={isActive('womps') ? 'page' : undefined} activeClassName="active" href="/womps" onClick={this.closeMobileMenu}>
-                  <Icon name="womps" /> Womps
-                </Link>
-              </li>
-              <li>
-                <Link activeClassName="active" href="/scratchpad">
-                  <Icon name="scratchpad" /> Scratchpad
-                </Link>
-              </li>
+              <li>{navLink('Assets', '/assets', 'assets', isActive('assets'))}</li>
+              <li>{navLink('Collections', '/collections', 'collections', isActive('collections'))}</li>
+              <li>{navLink('Events', '/events', 'events', isActive('events'))}</li>
+              <li>{navLink('Islands', '/islands', 'islands', isActive('islands'))}</li>
+              <li>{navLink('Map', '/map', 'map', isActive('map'))}</li>
+              <li>{navLink('Parcels', '/parcels', 'parcels', isActive('parcels'))}</li>
+              <li>{navLink('Spaces', '/spaces', 'spaces', isActive('spaces'))}</li>
+              <li>{navLink('Womps', '/womps', 'womps', isActive('womps'))}</li>
+              <li>{navLink('Scratchpad', '/scratchpad', 'scratchpad', isActive('scratchpad'))}</li>
+
               {signedIn && (
                 <li>
-                  <a
-                    href="#"
-                    onClick={(e) => {
-                      e.preventDefault()
-                      this.onSignOut()
-                    }}
-                  >
+                  <a href="#" onClick={(e) => { e.preventDefault(); this.onSignOut() }}>
                     <Icon name="logout" /> Log out
                   </a>
                 </li>
