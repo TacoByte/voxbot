@@ -1,4 +1,6 @@
 import { Component, Fragment } from 'preact'
+import Icon, { CubeIcon } from './components/icons/icons'
+
 import { ssrFriendlyWindow } from '../../common/helpers/utils'
 import Head from './components/head'
 import PaginationLinks from './components/pagination-links'
@@ -125,7 +127,7 @@ export default class Spaces extends Component<Props, State> {
 
         <div style={{ display: 'flex', flex: 1, width: '100%' }}>
           <hgroup style={{ flexGrow: 1 }}>
-            <h1>Spaces</h1>
+            <h1><CubeIcon name="spaces" /> Spaces</h1>
             <p>Browse the public spaces.</p>
           </hgroup>
           <div>

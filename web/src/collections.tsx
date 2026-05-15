@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'preact/hooks'
+import Icon, { CubeIcon } from './components/icons/icons'
+
 import Head from './components/head'
 import { useListControls } from './components/list-controls'
 import { Spinner } from './spinner'
@@ -48,7 +50,7 @@ export default function ListCollections({ path }: { path?: string }) {
     <section class="columns">
       <Head title="Collections" url="/collections" description="Asset and wearable collections made by users" />
       <hgroup>
-        <h1>Collections</h1>
+        <h1><CubeIcon name="collections" /> Collections</h1>
         <p>asset and wearable collections from the community</p>
       </hgroup>
 

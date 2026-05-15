@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'preact/hooks'
+import Icon, { CubeIcon } from './components/icons/icons'
+
 import { Event } from '../../common/messages/event'
 import Head from './components/head'
 import { useListControls } from './components/list-controls'
@@ -48,7 +50,7 @@ export default function Events(props: Props) {
   return (
     <section class="columns">
       <hgroup>
-        <h1>Events</h1>
+        <h1><CubeIcon name="events" /> Events</h1>
         <p>upcoming stuff happening in voxels</p>
       </hgroup>
 

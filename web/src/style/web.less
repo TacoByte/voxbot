@@ -525,7 +525,7 @@ small {
 }
 
 // Rocking animation: On hover, boxes rock back and forth with increasing then decreasing amplitude
-@keyframes voxels-rock {
+@keyframes cube-rock {
   0% {
     transform: rotateX(-35.264deg) rotateY(35deg);
   }
@@ -539,7 +539,7 @@ small {
 
 // Logo (CSS 3D voxels)
 
-.voxels-logo {
+.cube-logo {
   box-sizing: border-box;
   position: relative;
   top: -0.5rem;
@@ -555,7 +555,7 @@ small {
   transform: rotateX(-35.264deg) rotateY(35deg);
 
   &:hover {
-    animation: voxels-rock 1s linear infinite;
+    animation: cube-rock 1s linear infinite;
   }
 
   .box {

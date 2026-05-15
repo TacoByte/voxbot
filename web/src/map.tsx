@@ -1,4 +1,6 @@
 import { ExponentialBackoff, handleAll, retry } from 'cockatiel'
+import Icon, { CubeIcon } from './components/icons/icons'
+
 import { maxBy } from 'lodash'
 import { Component } from 'preact'
 import { render } from 'preact/compat'
@@ -578,7 +580,7 @@ export default class WorldMap extends Component<Props, State> {
 
     return (
       <section class="worldmap">
-        <h1>Map</h1>
+        <h1><CubeIcon name="map" /> Map</h1>
         <div class="map map-web" />
       </section>
     )

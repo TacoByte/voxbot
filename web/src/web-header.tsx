@@ -8,6 +8,7 @@ import { login } from './auth/state-login'
 import { PanelType } from './components/panel'
 import { app, AppEvent } from './state'
 import Logo from './components/logo'
+import Icon from './components/icons/icons'
 
 function AdminMenu() {
   return (
@@ -164,14 +165,14 @@ export default class WebHeader extends Component<Props, State> {
 
               <li>
                 <Link aria-current={isActive('account') ? 'page' : undefined} activeClassName="active" href="/account" onClick={this.closeMobileMenu}>
-                  {signedIn ? 'Account' : 'Log in'}
+                  <Icon name="account" /> {signedIn ? 'Account' : 'Log in'}
                 </Link>
               </li>
 
               {signedIn ? (
                 <li>
                   <Link activeClassName="active" href="/costumer">
-                    Costume
+                    <Icon name="costume" /> Costume
                   </Link>
                 </li>
               ) : (
@@ -180,47 +181,47 @@ export default class WebHeader extends Component<Props, State> {
 
               <li>
                 <Link aria-current={isActive('assets') ? 'page' : undefined} activeClassName="active" href="/assets" onClick={this.closeMobileMenu}>
-                  Assets
+                  <Icon name="assets" /> Assets
                 </Link>
               </li>
               <li>
                 <Link aria-current={isActive('collections') ? 'page' : undefined} activeClassName="active" href="/collections" onClick={this.closeMobileMenu}>
-                  Collections
+                  <Icon name="collections" /> Collections
                 </Link>
               </li>
               <li>
                 <Link aria-current={isActive('events') ? 'page' : undefined} activeClassName="active" href="/events" onClick={this.closeMobileMenu}>
-                  Events
+                  <Icon name="events" /> Events
                 </Link>
               </li>
               <li>
                 <Link aria-current={isActive('islands') ? 'page' : undefined} activeClassName="active" href="/islands" onClick={this.closeMobileMenu}>
-                  Islands
+                  <Icon name="islands" /> Islands
                 </Link>
               </li>
               <li>
                 <Link aria-current={isActive('map') ? 'page' : undefined} activeClassName="active" href="/map" onClick={this.closeMobileMenu}>
-                  Map
+                  <Icon name="map" /> Map
                 </Link>
               </li>
               <li>
                 <Link aria-current={isActive('parcels') ? 'page' : undefined} activeClassName="active" href="/parcels" onClick={this.closeMobileMenu}>
-                  Parcels
+                  <Icon name="parcels" /> Parcels
                 </Link>
               </li>
               <li>
                 <Link aria-current={isActive('spaces') ? 'page' : undefined} activeClassName="active" href="/spaces" onClick={this.closeMobileMenu}>
-                  Spaces
+                  <Icon name="spaces" /> Spaces
                 </Link>
               </li>
               <li>
                 <Link aria-current={isActive('womps') ? 'page' : undefined} activeClassName="active" href="/womps" onClick={this.closeMobileMenu}>
-                  Womps
+                  <Icon name="womps" /> Womps
                 </Link>
               </li>
               <li>
                 <Link activeClassName="active" href="/scratchpad">
-                  Scratchpad
+                  <Icon name="scratchpad" /> Scratchpad
                 </Link>
               </li>
               {signedIn && (
@@ -232,7 +233,7 @@ export default class WebHeader extends Component<Props, State> {
                       this.onSignOut()
                     }}
                   >
-                    Log out
+                    <Icon name="logout" /> Log out
                   </a>
                 </li>
               )}
