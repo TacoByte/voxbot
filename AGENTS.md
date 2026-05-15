@@ -248,6 +248,7 @@ use `1rem` whenever required for padding, no borders, or colors. No solid backgr
 
 ## Refactoring
 
+- **Nuke leaky abstraction**: there are a bunch of stupid leaky abstractions, delete them and move the code back to the calling site. Repeat yourself, don't create dispatchers and indirection.
 - **Hardcode the decision**: if the spec says "sort by popular/newest/oldest", those 3 words go in the code. Not a prop. Not an array. Not configurable.
 - **0 params > 1 > 2**: every parameter needs a concrete, immediate justification. "Might be useful later" is not a justification.
 - **Implement the exact plan snippet**: when a plan shows code, ship that code verbatim. Do not add fields or args not in the plan.

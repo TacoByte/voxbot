@@ -1,121 +1,95 @@
-import { useEffect, useRef, useState } from 'preact/hooks'
+import { useEffect, useState } from 'preact/hooks'
 import { ApiAvatar } from '../../common/messages/api-avatars'
-import cachedFetch from '../src/helpers/cached-fetch'
-import { saveAsset, AssetType } from '../src/helpers/save-helper'
-import { EditSocialLink } from '../src/components/avatar-profile/socials'
+import { Login } from '../src/auth/login'
+import ParcelField from '../src/components/parcel-field'
 import { app } from '../src/state'
 import { fetchAPI } from '../src/utils'
-import { PanelType } from '../src/components/panel'
 
 export default function EditAccount() {
-  const [avatar, setAvatar] = useState<ApiAvatar | undefined>(undefined)
+  if (!app.signedIn) return <Login reason="edit your account" />
+
+  const [avatar, setAvatar] = useState<ApiAvatar | null>(null)
+  const [name, setName] = useState('')
   const [description, setDescription] = useState('')
+  const [link1, setLink1] = useState('')
+  const [link2, setLink2] = useState('')
+  const [home, setHome] = useState<{ parcel_id?: number } | null>(null)
   const [saving, setSaving] = useState(false)
-  const [homeParcel, setHomeParcel] = useState<{ id: number; name?: string; address?: string } | null>(null)
-  const [parcelOptions, setParcelOptions] = useState<{ id: number; label: string }[]>([])
-  const homeRef = useRef<HTMLInputElement>(null)
+  const [error, setError] = useState<string | null>(null)
 
   const wallet = app.state?.wallet
 
   useEffect(() => {
     if (!wallet) return
     fetchAPI(`/api/avatars/${wallet}.json`).then((data) => {
-      setAvatar(data.avatar)
-      setDescription(data.avatar?.description ?? '')
-      if (data.avatar?.home_id) {
-        cachedFetch(`/api/parcels/${data.avatar.home_id}.json`)
-          .then((r) => r.json())
-          .then((d) => setHomeParcel(d.parcel ?? null))
-      }
+      const a = data.avatar
+      setAvatar(a)
+      setName(a?.name ?? '')
+      setDescription(a?.description ?? '')
+      setLink1(a?.social_link_1 ?? '')
+      setLink2(a?.social_link_2 ?? '')
+      if (a?.home_id) setHome({ parcel_id: a.home_id })
     })
   }, [wallet])
 
-  const fetchAvatar = () => fetchAPI(`/api/avatars/${wallet}.json?cb=${Date.now()}`).then((d) => setAvatar(d.avatar))
-
-  const saveDescription = async () => {
-    if (!avatar) return
+  async function submit(e: Event) {
+    e.preventDefault()
     setSaving(true)
-    const r = await saveAsset(AssetType.Avatar, avatar.id, { description })
+    setError(null)
+    const r = await fetch('/api/avatar', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: name || undefined,
+        description,
+        social_link_1: link1,
+        social_link_2: link2,
+        home_id: home?.parcel_id ?? null,
+      }),
+    }).then((r) => r.json())
     setSaving(false)
-    if (r.success) app.showSnackbar('Saved!', PanelType.Success)
-    else app.showSnackbar('Could not save', PanelType.Danger)
-  }
-
-  const onHomeInput = async (e: Event) => {
-    const val = (e.target as HTMLInputElement).value
-    if (val.length < 2) return
-    const r = await cachedFetch(`/api/parcels/search.json?q=${encodeURIComponent(val)}&limit=8`)
-    const data = await r.json()
-    const opts = (data.parcels ?? []).map((p: any) => ({ id: p.id, label: p.name ?? p.address ?? `#${p.id}` }))
-    setParcelOptions(opts)
-    const match = opts.find((o: any) => o.label === val)
-    if (match) setHomeId(match.id)
-  }
-
-  const setHomeId = async (parcelId: number | null) => {
-    await fetchAPI('/api/avatar', { method: 'POST', credentials: 'include', body: JSON.stringify({ home_id: parcelId }), headers: { 'Content-Type': 'application/json' } })
-    if (parcelId) {
-      cachedFetch(`/api/parcels/${parcelId}.json`)
-        .then((r) => r.json())
-        .then((d) => setHomeParcel(d.parcel ?? null))
-    } else {
-      setHomeParcel(null)
+    if (!r.success) {
+      setError(r.message || 'Error')
+      return
     }
-    setParcelOptions([])
-    if (homeRef.current) homeRef.current.value = ''
+    window.location.href = `/avatar/${wallet}`
   }
-
-  if (!app.signedIn) return <p>Not signed in.</p>
 
   return (
     <section class="columns">
       <hgroup>
-        <h1>Edit account</h1>
-        <a href={`/avatar/${wallet}`}>Back to profile</a>
+        <h1>edit account</h1>
+        <a href={`/avatar/${wallet}`}>back to profile</a>
       </hgroup>
-
       <article>
-        <div class="f">
-          <label>Description</label>
-          <textarea value={description} rows={5} onInput={(e: any) => setDescription(e.target.value)} />
-        </div>
-        <button onClick={saveDescription} disabled={saving}>
-          {saving ? 'Saving...' : 'Save description'}
-        </button>
-
-        <hr />
-
-        <div class="f">
-          <label>Link 1</label>
-          <EditSocialLink socialLinkNumber={1} avatar={avatar} onSave={fetchAvatar} />
-        </div>
-        <div class="f">
-          <label>Link 2</label>
-          <EditSocialLink socialLinkNumber={2} avatar={avatar} onSave={fetchAvatar} />
-        </div>
-
-        <hr />
-
-        <div class="f">
-          <label>Home parcel</label>
-          <div>
-            {homeParcel && (
-              <p>
-                <a href={`/parcels/${homeParcel.id}`}>{homeParcel.name ?? homeParcel.address ?? `#${homeParcel.id}`}</a> <a onClick={() => setHomeId(null)}>clear</a>
-              </p>
-            )}
-            <input ref={homeRef} type="search" placeholder="Search parcels..." onInput={onHomeInput} />
-            {parcelOptions.length > 0 && (
-              <ul class="datalist">
-                {parcelOptions.map((o) => (
-                  <li key={o.id} onClick={() => setHomeId(o.id)}>
-                    {o.label}
-                  </li>
-                ))}
-              </ul>
-            )}
+        <form onSubmit={submit}>
+          <div class="f">
+            <label>username</label>
+            <input type="text" value={name} onInput={(e: any) => setName(e.target.value)} placeholder="letters and numbers, starts with a letter" disabled={!!avatar?.name} />
+            {!avatar?.name && <small>3-50 chars, letters and numbers only. can only be set once.</small>}
           </div>
-        </div>
+          <div class="f">
+            <label>description</label>
+            <textarea value={description} rows={4} onInput={(e: any) => setDescription(e.target.value)} />
+          </div>
+          <div class="f">
+            <label>link 1</label>
+            <input type="url" value={link1} onInput={(e: any) => setLink1(e.target.value)} placeholder="https://..." />
+          </div>
+          <div class="f">
+            <label>link 2</label>
+            <input type="url" value={link2} onInput={(e: any) => setLink2(e.target.value)} placeholder="https://..." />
+          </div>
+          <div class="f">
+            <label>home parcel</label>
+            <ParcelField value={home ?? undefined} onChange={(r) => setHome(r.parcel_id ? r : null)} />
+          </div>
+          {error && <p>{error}</p>}
+          <button type="submit" disabled={saving}>
+            {saving ? 'Saving...' : 'Save'}
+          </button>
+        </form>
       </article>
     </section>
   )

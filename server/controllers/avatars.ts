@@ -1,7 +1,7 @@
 import { Express } from 'express'
 import { encodeCoords, fetchFromMPServer } from '../../common/helpers/utils'
 import cache from '../cache'
-import updateAvatar, { getAvatarSuspended, suspendAvatar, unsuspendAvatar } from '../handlers/update-avatar'
+import updateAvatar, { getAvatarSuspended, suspendAvatar, unsuspendAvatar, updateAvatarAppearance } from '../handlers/update-avatar'
 import { createRequestHandlerForQuery, queryAndCallback } from '../lib/query-helpers'
 
 import { ethers } from 'ethers'
@@ -154,6 +154,7 @@ export default function AvatarsController(db: Db, passport: PassportStatic, app:
 
   app.get('/api/avatar/:wallet/suspended', passport.authenticate('jwt', { session: false }), getAvatarSuspended)
   app.post('/api/avatar', passport.authenticate('jwt', { session: false }), updateAvatar())
+  app.post('/api/avatar/appearance', passport.authenticate('jwt', { session: false }), updateAvatarAppearance)
   app.post('/api/avatar/:wallet/suspend', passport.authenticate('jwt', { session: false }), suspendAvatar)
   app.post('/api/avatar/:wallet/unsuspend', passport.authenticate('jwt', { session: false }), unsuspendAvatar)
 

@@ -315,7 +315,7 @@ export default class Costumer extends Component<Props, State> {
 
     const body = { costume_id }
 
-    await fetch('/api/avatar', { ...fetchParams, method: 'POST', body: JSON.stringify(body) })
+    await fetch('/api/avatar/appearance', { ...fetchParams, method: 'POST', body: JSON.stringify(body) })
       .then((response) => {
         if (!response.ok) {
           throw new Error(response.status + ' ' + response.statusText)

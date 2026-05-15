@@ -13,8 +13,8 @@ import cachedFetch from '../../helpers/cached-fetch'
 import { app } from '../../state'
 import { fetchAPI } from '../../utils'
 import { PanelType } from '../panel'
-import { SocialLink } from './socials'
 import WompsList from '../../womps-list'
+import { truncate } from 'lodash'
 
 type Props = {
   walletOrUUId: string
@@ -143,7 +143,9 @@ export default function Profile(props: Props) {
             <>
               <dt>Link</dt>
               <dd>
-                <SocialLink socialUrl={avatar.social_link_1} maxLength={48} />
+                <a href={avatar.social_link_1} target="_blank">
+                {truncate(avatar.social_link_1, {length: 48})}
+                </a>
               </dd>
             </>
           )}
@@ -151,7 +153,9 @@ export default function Profile(props: Props) {
             <>
               <dt>Link</dt>
               <dd>
-                <SocialLink socialUrl={avatar.social_link_2} maxLength={48} />
+                <a href={avatar.social_link_2} target="_blank">
+                  {truncate(avatar.social_link_2, {length: 48})}
+                </a>
               </dd>
             </>
           )}
