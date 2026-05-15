@@ -560,14 +560,13 @@ small {
   top: -0.5rem;
   display: inline-block;
   --size: 1rem;
-  --fore: #fff;
-  --back: #ccc;
+  --fore: #ccc;
+  --back: #777;
   --half: calc(var(--size) / 2);
   min-width: calc(7 * var(--size));
   min-height: calc(3 * var(--size));
   transform-style: preserve-3d;
-  perspective: 250px;
-  transform: rotateX(-35.264deg) rotateY(35deg);
+  transform: rotateX(-15deg) rotateY(-35deg);
 
   &:hover {
     animation: cube-rock 1s linear infinite;
@@ -590,7 +589,7 @@ small {
     position: absolute;
     inset: 0;
     backface-visibility: hidden;
-    border: 1px solid #999;
+    border: 1px solid #333;
   }
 
   .face-F {

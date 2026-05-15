@@ -2,153 +2,128 @@
 // # = filled pixel, . = empty
 
 const RAW_ICONS = {
+  // person silhouette - head + shoulders
   account: `
-    ...#....
-    ..#.#...
-    ..#.#...
-    ...#....
-    ..#.#...
-    .#...#..
-    .#.#.#..
-    .#.#.#..
+    .###.
+    .###.
+    ..#..
+    #####
+    #...#
   `,
 
+  // shirt / t-shirt shape
   costume: `
-    ..####..
-    .######.
-    ##....##
-    ##....##
-    .##..##.
-    .##..##.
-    ..####..
-    ........
+    ##.##
+    #####
+    .###.
+    .###.
+    .###.
   `,
 
+  // stacked cubes / blocks
   assets: `
-    .##..##.
-    ########
-    ##..##..
-    ########
-    .##..##.
-    .##..##.
-    ........
-    ........
+    .##..
+    ####.
+    .####
+    .####
+    ..##.
   `,
 
+  // overlapping squares
   collections: `
-    ###.....
-    #.#.###.
-    ###.###.
-    ....###.
-    .###....
-    .#.#....
-    .###....
-    ........
+    ###..
+    ###..
+    .####
+    ..###
+    ..###
   `,
 
+  // calendar / star burst
   events: `
-    #######.
-    #.....#.
-    #..#..#.
-    #..#..#.
-    #.....#.
-    #######.
-    #.....#.
-    #######.
+    ..#..
+    #.#.#
+    .###.
+    #.#.#
+    ..#..
   `,
 
+  // island with palm tree vibe / hill
   islands: `
-    ..###...
-    .#####..
-    #######.
-    ##...##.
-    ##...##.
-    .#####..
-    ..###...
-    ........
+    ..#..
+    .#.#.
+    .....
+    .###.
+    #####
   `,
 
+  // folded map / compass diamond
   map: `
-    ..###...
-    .#####..
-    ##.#.##.
-    ########
-    .##.##..
-    .#...#..
-    ........
-    ........
+    ..#..
+    .###.
+    #####
+    .###.
+    ..#..
   `,
 
+  // package / box with tape
   parcels: `
-    #######.
-    #.....#.
-    #.###.#.
-    #.#.#.#.
-    #.###.#.
-    #.....#.
-    #######.
-    ........
+    #####
+    #.#.#
+    #####
+    #.#.#
+    #####
   `,
 
+  // grid of rooms
   spaces: `
-    #######.
-    #.#.#.#.
-    #######.
-    #.#.#.#.
-    #######.
-    #.#.#.#.
-    #######.
-    ........
+    #####
+    #.#.#
+    ##.##
+    #.#.#
+    #####
   `,
 
+  // creature face / two eyes + mouth
   womps: `
-    ..###...
-    .#####..
-    ##.#.##.
-    ########
-    .##.##..
-    .#...#..
-    ........
-    ........
+    .....
+    #.#.#
+    .....
+    .###.
+    #...#
   `,
 
+  // pencil / notepad
   scratchpad: `
-    #######.
-    #.....#.
-    #.###.#.
-    #.#.#.#.
-    #.###.#.
-    #.....#.
-    #######.
-    ........
+    ####.
+    #..#.
+    #..##
+    ####.
+    ...#.
   `,
 
+  // arrow pointing right out of a doorway
   logout: `
-    ##..###.
-    #.#.#...
-    ##..##..
-    #.#.#...
-    ##..###.
-    ...#....
-    ...##...
-    ........
+    ###..
+    #.#..
+    #.###
+    #.#..
+    ###..
   `,
 
+  // checkmark / V shape
   v: `
-    ........
-    .#...#..
-    .#...#..
-    .#...#..
-    ..#.#...
-    ...#....
-    ........
-    ........
+    .....
+    .#.#.
+    .#.#.
+    ..#..
+    .....
+    .....
   `,
 }
 
-// Parser: convert heredoc strings to Uint8Array (64 bytes for 8x8)
+// Parser: convert heredoc strings to Uint8Array (25 bytes for 5x5)
 function parseIcon(heredocString: string) {
-  const arr = new Uint8Array(64)
+  const arr = new Uint8Array(25)
   let idx = 0
 
   heredocString
@@ -156,8 +131,8 @@ function parseIcon(heredocString: string) {
     .split('\n')
     .forEach((line: string) => {
       const trimmed = line.trim()
-      if (trimmed.length === 8) {
-        for (let i = 0; i < 8; i++) {
+      if (trimmed.length === 5) {
+        for (let i = 0; i < 5; i++) {
           arr[idx++] = trimmed[i] === '#' ? 1 : 0
         }
       }
