@@ -231,3 +231,9 @@ $$
 $$
 );
 
+select apply_migration('parcel-events-location',
+$$
+  ALTER TABLE parcel_events ADD COLUMN IF NOT EXISTS location text;
+$$
+);
+
