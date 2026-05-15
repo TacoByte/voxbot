@@ -99,5 +99,4 @@ export default class ParcelUserRight {
     }
     return { success: true }
   }
-
 }

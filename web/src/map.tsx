@@ -459,8 +459,6 @@ export default class WorldMap extends Component<Props, State> {
           }
         } else if (help.isContributor(userWallet)) {
           contributorParcels.push(parcel)
-        } else if (help.isRenter(userWallet)) {
-          rentedParcels.push(parcel)
         } else {
           otherParcels.push(parcel)
         }

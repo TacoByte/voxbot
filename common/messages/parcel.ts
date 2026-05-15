@@ -90,7 +90,7 @@ export const FullParcelRecord = t.type(
       t.array(
         t.type({
           wallet: t.string,
-          role: t.union([t.literal('owner'), t.literal('contributor'), t.literal('renter'), t.literal('excluded')]),
+          role: t.union([t.literal('owner'), t.literal('contributor'), t.literal('excluded')]),
         }),
       ),
       t.null,

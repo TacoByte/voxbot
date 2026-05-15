@@ -312,7 +312,9 @@ export abstract class AbstractParcel implements ParcelRef {
   async queryContract(): Promise<AbstractParcel> {
     const contract = await getContract('parcel', SUPPORTED_CHAINS['eth'])
     let exists = false
-    try { exists = await contract.exists(this.id) } catch {}
+    try {
+      exists = await contract.exists(this.id)
+    } catch {}
 
     if (exists) {
       if (!this.minted) this._justGotMinted = true
@@ -416,9 +418,7 @@ export abstract class AbstractParcel implements ParcelRef {
      * if a wallet is not present in the new list but present in the old list, we deleted it.
      */
     const findMissingWalletInNewParcelUsersList = () => {
-      return (this.parcel_users?.filter((previousRole) =>
-        !parcel_users.find((u) => u.wallet.toLowerCase() == previousRole.wallet.toLowerCase())
-      ) ?? []) as ParcelUser[]
+      return (this.parcel_users?.filter((previousRole) => !parcel_users.find((u) => u.wallet.toLowerCase() == previousRole.wallet.toLowerCase())) ?? []) as ParcelUser[]
     }
     const usersToBeRemovedFromParcel = findMissingWalletInNewParcelUsersList()
 

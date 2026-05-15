@@ -33,11 +33,6 @@ export default function EditableParcelUsers({ parcel }: { parcel: SingleParcelRe
 
   const toggleEditMode: JSX.MouseEventHandler<HTMLButtonElement> = (e: JSX.TargetedMouseEvent<HTMLButtonElement>) => {
     e.stopPropagation()
-    // Renters are considered owners but shouldn't be allowed to edit the parcel-users
-    if (!editMode && helper.isRenter(app.state.wallet || '')) {
-      app.showSnackbar('Renters cannot edit collaborators', PanelType.Danger)
-      return
-    }
     if (!editMode && ssrFriendlyDocument?.location.pathname.match('/spaces')) {
       app.showSnackbar('Spaces do not support collaborators', PanelType.Danger)
       return

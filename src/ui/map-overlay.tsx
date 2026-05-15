@@ -394,8 +394,6 @@ export default class MapOverlayUI {
         }
       } else if (help.isContributor(user.wallet)) {
         contributorParcels.push({ type: 'Feature' as const, geometry: parcel.geometry, properties: { parcel } })
-      } else if (help.isRenter(user.wallet)) {
-        rentedParcels.push({ type: 'Feature' as const, geometry: parcel.geometry, properties: { parcel } })
       } else {
         otherParcels.push({ type: 'Feature' as const, geometry: parcel.geometry, properties: { parcel } })
       }

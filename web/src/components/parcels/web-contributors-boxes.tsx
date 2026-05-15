@@ -167,9 +167,7 @@ export default class WebContributorsBoxes extends Component<ContributorsBoxesPro
   }
 
   render() {
-    const contributors = this.state.parcelUsers.map((r: ParcelUser) => (
-      <ParcelUserRight key={r.wallet} disabled={!this.isOwner || this.state.saving} onChange={this.onEditUserRole} userRole={r} onRemove={this.removeContributor} />
-    ))
+    const contributors = this.state.parcelUsers.map((r: ParcelUser) => <ParcelUserRight key={r.wallet} disabled={!this.isOwner || this.state.saving} onChange={this.onEditUserRole} userRole={r} onRemove={this.removeContributor} />)
 
     return (
       <div>
