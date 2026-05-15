@@ -165,9 +165,15 @@ export default class WebHeader extends Component<Props, State> {
     }
 
     const navLink = (label: string, href: string, icon: any, active: boolean, extra?: any) =>
-      active
-        ? <span class="active"><Icon name={icon} /> {label}</span>
-        : <Link activeClassName="active" href={href} onClick={extra ?? this.closeMobileMenu}><Icon name={icon} /> {label}</Link>
+      active ? (
+        <span class="active">
+          <Icon name={icon} /> {label}
+        </span>
+      ) : (
+        <Link activeClassName="active" href={href} onClick={extra ?? this.closeMobileMenu}>
+          <Icon name={icon} /> {label}
+        </Link>
+      )
 
     return (
       <>
@@ -175,7 +181,9 @@ export default class WebHeader extends Component<Props, State> {
           <nav>
             <ul>
               <li>
-                <a href="/"><CubeIcon name={activeIcon} /></a>
+                <a href="/">
+                  <CubeIcon name={activeIcon} />
+                </a>
               </li>
               <li>
                 <button onClick={onPlay} class="big-play">
@@ -185,9 +193,7 @@ export default class WebHeader extends Component<Props, State> {
 
               <li>{navLink(signedIn ? 'Account' : 'Log in', '/account', 'account', isActive('account'))}</li>
 
-              {signedIn && (
-                <li>{navLink('Costume', '/costumer', 'costume', isActive('costumer'))}</li>
-              )}
+              {signedIn && <li>{navLink('Costume', '/costumer', 'costume', isActive('costumer'))}</li>}
 
               <li>{navLink('Assets', '/assets', 'assets', isActive('assets'))}</li>
               <li>{navLink('Collections', '/collections', 'collections', isActive('collections'))}</li>
@@ -201,7 +207,13 @@ export default class WebHeader extends Component<Props, State> {
 
               {signedIn && (
                 <li>
-                  <a href="#" onClick={(e) => { e.preventDefault(); this.onSignOut() }}>
+                  <a
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault()
+                      this.onSignOut()
+                    }}
+                  >
                     <Icon name="logout" /> Log out
                   </a>
                 </li>

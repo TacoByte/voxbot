@@ -8,12 +8,11 @@ export default function Icon({ name, size = 16, color = 'currentColor' }: { name
   const rects = []
   for (let i = 0; i < 25; i++) {
     if (icon.bitmap[i]) {
-        const x = (i % 5)
-        const y = Math.floor(i / 5)
+      const x = i % 5
+      const y = Math.floor(i / 5)
 
-        rects.push(<rect x={x} y={y} width={1} height={1} />)
+      rects.push(<rect x={x} y={y} width={1} height={1} />)
     }
-    
   }
   return (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 5 5" width={size} height={size} fill={color}>
@@ -28,8 +27,8 @@ function cubeBoxes(n: name) {
   const boxes = []
   for (let i = 0; i < 25; i++) {
     if (bitmap[i]) {
-        const left = (i % 5)
-        const top = Math.floor(i / 5)
+      const left = i % 5 + 1
+      const top = Math.floor(i / 5)
       boxes.push(
         <div class="box" style={{ left: `${left}rem`, top: `${top}rem` }} key={i}>
           <div class="face-N" />
