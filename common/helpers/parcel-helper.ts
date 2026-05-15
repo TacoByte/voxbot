@@ -29,7 +29,7 @@ const KEYS = [
   'settings',
 ] as const
 
-export type UserRightRole = 'owner' | 'contributor' | 'excluded' | 'renter'
+export type UserRightRole = 'owner' | 'contributor' | 'excluded'
 export type ParcelUser = { wallet: string; role: UserRightRole }
 
 export default class ParcelHelper {
@@ -267,8 +267,7 @@ export default class ParcelHelper {
   }
 
   get owners() {
-    // We add renters as owners so renter have the same permissions. however they can't edit Contributors
-    return this.parcelUsers?.filter((user) => user.role == 'owner' || user.role == 'renter') || []
+    return this.parcelUsers?.filter((user) => user.role == 'owner') || []
   }
 
   isTrueOwner(wallet = '') {
@@ -283,11 +282,6 @@ export default class ParcelHelper {
 
   get contributors() {
     return this.parcelUsers?.filter((user) => user.role == 'contributor') || []
-  }
-
-  isRenter = (wallet: string | null | undefined): boolean => {
-    const renter = (this.parcelUsers?.filter((user) => user.role == 'renter') || [])[0]
-    return renter?.wallet.toLowerCase() === wallet?.toLowerCase()
   }
 
   isContributor = (wallet: string | null | undefined) => {

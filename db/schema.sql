@@ -755,6 +755,5 @@ CREATE INDEX womps_author ON public.womps USING btree (lower(author));
 CREATE UNIQUE INDEX womps_id ON public.womps USING btree (id);
 CREATE INDEX womps_parcel_id ON public.womps USING btree (parcel_id);
 CREATE TRIGGER wearables_recalculate_total_wearables_trigger AFTER INSERT ON public.wearables FOR EACH ROW WHEN ((new.token_id IS NOT NULL)) EXECUTE FUNCTION public.recalculate_total_wearables();
-ALTER TABLE ONLY public.properties
-    ADD CONSTRAINT suburb_cascading_foreign_key FOREIGN KEY (suburb_id) REFERENCES public.suburbs(id) ON DELETE CASCADE;
+
 \unrestrict AMOmwf1LRjL6g9j1NDUfjD9bHTJXFowqEpJdNdzzeTYGcLlCTSaG4rHjuajSXi1

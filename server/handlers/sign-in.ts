@@ -1,4 +1,4 @@
-import { Signature, type SignatureLike, verifyMessage, hashMessage } from 'ethers'
+import { Signature, type SignatureLike, verifyMessage } from 'ethers'
 import type { Request, Response } from 'express'
 import { SignJWT } from 'jose'
 import { ServerClient } from 'postmark'
@@ -7,7 +7,6 @@ import { doesAvatarExist } from '../does-avatar-exist'
 import { ensureAvatarExists } from '../ensure-avatar-exists'
 import { isMod } from '../lib/helpers'
 import { named } from '../lib/logger'
-import { gnosisProxyContract, TokenAddress } from '../lib/utils'
 import db from '../pg'
 
 const log = named('sign_in')
@@ -39,15 +38,6 @@ type SignInOptions = {
   preferredDisplayName?: string
 }
 
-type MultiSigSignIn = {
-  signature: 'multisig'
-  options: SignInOptions & { chain?: number }
-  wallet: TokenAddress
-  message: MessageSignature
-  email: string
-  code: string
-}
-
 type PersonalSignIn = {
   wallet: string
   message: MessageSignature
@@ -57,7 +47,7 @@ type PersonalSignIn = {
   code: string
 }
 
-type SIM = PersonalSignIn | MultiSigSignIn
+type SIM = PersonalSignIn
 
 async function getEmailCode(email: string): Promise<{ code: string; expiry: string }> {
   // fixme - make dates stable in case people submit at midnight UTC
@@ -196,13 +186,7 @@ export async function SignIn(req: Request<any, Params>, res: Response) {
   }
 
   // when personal sign
-  if (params.signature !== 'multisig') {
-    await personalSignIn(res, params.wallet, params.message, params.signature, params.options || {})
-  } else {
-    // when multi sig
-    const multi = params as MultiSigSignIn // :( typescript needs a little help here
-    await multiSigSignIn(res, multi.wallet, multi.message, multi.options)
-  }
+  await personalSignIn(res, params.wallet, params.message, params.signature, params.options || {})
 }
 
 async function personalSignIn(res: Response, wallet: string, message: MessageSignature, signature: SignatureLike, options: SignInOptions) {
@@ -233,42 +217,6 @@ async function personalSignIn(res: Response, wallet: string, message: MessageSig
   const { token, name, isNewUser } = await getUserInfo(res, wallet, options)
 
   res.json({ success: true, token, name, isNewUser })
-}
-
-async function multiSigSignIn(res: Response, wallet: TokenAddress, message: MessageSignature, options?: SignInOptions & { chain?: number }): Promise<void> {
-  const wsSafeProxyContract = await gnosisProxyContract(wallet, options?.chain)
-  if (!wsSafeProxyContract) {
-    res.json({ success: false })
-    return
-  }
-  const msgHash = hashMessage(message)
-  const getMessageHash = await wsSafeProxyContract.getMessageHash(msgHash)
-
-  const waitForSignedEvent = new Promise<boolean>((myResolve, myReject) => {
-    const onMultiSigSigned = () => {
-      myResolve(true)
-    }
-    setTimeout(
-      () => {
-        wsSafeProxyContract.removeListener(wsSafeProxyContract.filters.SignMsg(getMessageHash), onMultiSigSigned)
-        myReject(false)
-      },
-      5 * 60 * 60 * 1000,
-    )
-    // login() only after the _signMessage() txn is mined and SignMsg(msgHash) event emitted
-    wsSafeProxyContract.once(wsSafeProxyContract.filters.SignMsg(getMessageHash), onMultiSigSigned)
-  })
-  waitForSignedEvent
-    .then(async (value) => {
-      if (value) {
-        const { token, name, isNewUser } = await getUserInfo(res, wallet, options || {})
-        res.json({ success: true, token, name, isNewUser })
-      }
-    })
-    .catch((err) => {
-      log.error('failed getting user info', err)
-      res.json({ success: false })
-    })
 }
 
 export async function getUserInfo(res: Response, wallet: string, options: SignInOptions): Promise<{ token: string; name: string; isNewUser: boolean }> {

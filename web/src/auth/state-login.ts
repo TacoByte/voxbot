@@ -210,20 +210,13 @@ export class StateLogin {
       console.warn('Provider missing')
     }
 
-    // only used for metrics
     let providerName = 'Metamask'
-
-    let chain = null
-    if (signature == 'multisig') {
-      chain = await this.getChainId()
-    }
 
     const message = this.message
     const wallet = this.state.unverifiedWallet
     const options = {
       rememberSignIn: app.rememberSignIn,
       providerName,
-      chain,
     }
     let f
     try {

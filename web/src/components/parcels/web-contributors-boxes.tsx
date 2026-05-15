@@ -168,7 +168,7 @@ export default class WebContributorsBoxes extends Component<ContributorsBoxesPro
 
   render() {
     const contributors = this.state.parcelUsers.map((r: ParcelUser) => (
-      <ParcelUserRight key={r.wallet} disabled={!this.isOwner || this.state.saving || r.role == 'renter'} onChange={this.onEditUserRole} userRole={r} onRemove={this.removeContributor} />
+      <ParcelUserRight key={r.wallet} disabled={!this.isOwner || this.state.saving} onChange={this.onEditUserRole} userRole={r} onRemove={this.removeContributor} />
     ))
 
     return (
@@ -299,11 +299,6 @@ class ParcelUserRight extends Component<collaboratorProps, collaboratorStates> {
                 <option value="contributor">Contributor</option>
                 <option value="owner">Admin</option>
               </select>
-            </div>
-          )}
-          {this.state.role == 'renter' && (
-            <div>
-              <b>Renter</b>
             </div>
           )}
           {!this.props.disabled && <button onClick={this.remove}>Remove</button>}

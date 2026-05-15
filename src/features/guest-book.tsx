@@ -28,7 +28,7 @@ export async function signMessage(wallet: string, message: string): Promise<stri
     signature = null
   }
   if (signature == '0x') {
-    signature = 'multisig'
+    signature = null
   }
   return signature
 }

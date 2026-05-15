@@ -82,7 +82,7 @@ export async function signMessage(provider: MetaMaskInpageProvider, wallet: stri
     signature = null
   }
   if (signature == '0x') {
-    signature = 'multisig'
+    signature = null
   }
 
   return signature
