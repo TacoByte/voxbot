@@ -18,10 +18,11 @@ function isAllowedUrl(s: string): boolean {
 export default function ParcelField({ value, onChange }: Props) {
   const [text, setText] = useState('')
   const [results, setResults] = useState<Parcel[]>([])
+  const [picked, setPicked] = useState<{ label: string; url?: string } | null>(null)
   const timer = useRef<any>(null)
 
   useEffect(() => {
-    if (!text || isAllowedUrl(text)) {
+    if (!text || text.startsWith('http') || isAllowedUrl(text)) {
       setResults([])
       return
     }
@@ -36,8 +37,10 @@ export default function ParcelField({ value, onChange }: Props) {
   function onInput(e: any) {
     const v = e.target.value
     setText(v)
+    setPicked(null)
     if (isAllowedUrl(v)) {
       onChange({ location_url: v })
+      setPicked({ label: v, url: v })
       setResults([])
     } else {
       onChange({})
@@ -47,16 +50,36 @@ export default function ParcelField({ value, onChange }: Props) {
   function pick(p: Parcel) {
     setText(p.name)
     setResults([])
+    setPicked({ label: p.name, url: `/parcels/${p.id}` })
     onChange({ parcel_id: p.id })
   }
 
+  if (picked) {
+    return (
+      <div class="parcel-field">
+        <a href={picked.url} target="_blank">
+          {picked.label}
+        </a>{' '}
+        <a
+          onClick={() => {
+            setPicked(null)
+            setText('')
+            onChange({})
+          }}
+        >
+          change
+        </a>
+      </div>
+    )
+  }
+
   return (
-    <div style="position:relative">
+    <div class="parcel-field">
       <input type="text" value={text} onInput={onInput} placeholder="Search parcel name or paste a URL" />
       {results.length > 0 && (
-        <ul style="position:absolute;background:var(--background-color);border:1px solid var(--muted-border-color);width:100%;margin:0;padding:0;list-style:none;z-index:10">
+        <ul>
           {results.map((p) => (
-            <li key={p.id} style="padding:0.5rem 1rem;cursor:pointer" onClick={() => pick(p)}>
+            <li key={p.id} onClick={() => pick(p)}>
               {p.name}
             </li>
           ))}

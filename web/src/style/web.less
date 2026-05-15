@@ -701,8 +701,8 @@ div.f {
   button {
   }
 
-
-  input, textarea {
+  input,
+  textarea {
     font-family: 'source code pro', monospace;
     width: 25rem;
     font-size: 0.9rem;
@@ -926,5 +926,37 @@ p.empty {
     font-size: smaller;
     opacity: 0.5;
     font-weight: normal;
+  }
+}
+
+// parcel search
+
+.parcel-field {
+  position: relative;
+
+  ul {
+    margin: 0;
+    padding: 0;
+    width: 25rem;
+    font-family: 'source code pro', monospace;
+    font-size: small;
+    background: white;
+    border: 1px solid #555;
+    list-style: none;
+    z-index: 100;
+    box-shadow: 0 2px 4px #5555;
+    max-height: 200px;
+    overflow-y: auto;
+
+    li {
+      padding: 0;
+      margin: 0;
+      cursor: pointer;
+    }
+
+    li:hover {
+      background: #555;
+      color: white;
+    }
   }
 }

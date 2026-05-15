@@ -86,7 +86,11 @@ export default function Events(props: Props) {
                       <td>
                         <a href={`/events/${event.id}`}>{truncate(event.name)}</a>
 
-                        {event.author_name && (<>by <a href={`/u/${event.author}`}>${event.author_name}</a></>)}
+                        {event.author_name && (
+                          <>
+                            by <a href={`/u/${event.author}`}>${event.author_name}</a>
+                          </>
+                        )}
                         <br />
                         <small>{truncate(event.description, 80)}</small>
                       </td>
