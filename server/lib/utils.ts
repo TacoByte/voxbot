@@ -1,14 +1,11 @@
-import { ethers, JsonRpcProvider, Interface } from 'ethers'
+import { ethers, AlchemyProvider, Interface } from 'ethers'
 import { tokensToEnter } from '../../common/messages/parcel'
 import log from './logger'
 // import { Alchemy, Network } from 'alchemy-sdk' // REMOVED: Alchemy SDK no longer used
 import { maticChain, SUPPORTED_CHAINS } from '../../common/helpers/chain-helpers'
 
-const ETH_MAINNET_RPC_URL = process.env.ETH_MAINNET_RPC_URL || 'https://mainnet.infura.io/v3/EmvmpW109VE8WSfn1470T'
-const POLYGON_MAINNET_RPC_URL = process.env.POLYGON_MAINNET_RPC_URL || 'https://polygon-mainnet.infura.io/v3/EmvmpW109VE8WSfn1470T'
-
-export const ethAlchemy = new JsonRpcProvider(ETH_MAINNET_RPC_URL)
-export const polygonAlchemy = new JsonRpcProvider(POLYGON_MAINNET_RPC_URL)
+export const ethAlchemy = new AlchemyProvider('homestead', process.env.ALCHEMY_ETH_API_KEY)
+export const polygonAlchemy = new AlchemyProvider('matic', process.env.ALCHEMY_MATIC_API_KEY)
 
 // ETHEREUM UTILS ----------------------------------------
 export const ParcelContractABI = require('../../common/contracts/parcel.json')
