@@ -26,10 +26,7 @@ enum LoadState {
   Loaded,
 }
 
-export interface AvatarRecord {
-  name: string
-  wallet: string | null
-}
+export type AvatarRecord = import('../common/messages').AvatarIdentity
 
 const AVATAR_HEIGHT = 1.6
 const AVATAR_NAME_OFFSET = 0.5
@@ -40,8 +37,6 @@ const CHAT_READ_DURATION = 3500
 
 // distance in meters from camera that we play sounds for this avatar
 const SOUND_DISTANCE = 20
-
-type ActionsMode = 'join' | 'joining' | 'leave' | 'sign-in' | null
 
 export default class Avatar extends Entity {
   private static woody: BABYLON.AssetContainer | undefined
@@ -56,7 +51,6 @@ export default class Avatar extends Entity {
   private nameTexture: BABYLON.DynamicTexture | null = null
   private actionsMesh: BABYLON.Mesh | null = null
   private actionsTexture: BABYLON.GUI.AdvancedDynamicTexture | null = null
-  private actionsMode: ActionsMode = null
   private collider: MeshExtended | undefined
   private clearBubbleTimer: NodeJS.Timeout | undefined
   private typingTimer: NodeJS.Timeout | undefined
@@ -892,60 +886,6 @@ export default class Avatar extends Entity {
     }
 
     this.nameTexture.update(true)
-  }
-
-  private setActions(mode: ActionsMode) {
-    if (this.actionsMode !== mode) {
-      this.actionsMode = mode
-      this.redrawActions()
-    }
-  }
-
-  private refreshActions() {
-    if (!app.signedIn) {
-      this.setActions('sign-in')
-    } else {
-      this.setActions(null)
-    }
-  }
-
-  private redrawActions() {
-    if (!this.actionsTexture) {
-      return
-    }
-    this.actionsTexture.getChildren().forEach((control) => {
-      this.actionsTexture?.removeControl(control)
-      control.dispose()
-    })
-
-    const createButton = (name: string, text: string, background: string, hoverBackground: string, onClick: (() => void) | null) => {
-      const button = BABYLON.GUI.Button.CreateSimpleButton(name, text)
-      const textColor = '#EEE'
-
-      button.fontSize = 40
-      button.background = background
-      button.color = textColor
-      button.isPointerBlocker = true
-      button.cornerRadius = 20
-
-      if (onClick) {
-        button.onPointerUpObservable.add(() => {
-          onClick()
-        })
-
-        button.onPointerEnterObservable.add(() => {
-          button.background = hoverBackground
-        })
-
-        button.onPointerOutObservable.add(() => {
-          button.background = background
-        })
-      } else {
-        button.isEnabled = false
-      }
-
-      return button
-    }
   }
 
   private removeActions() {

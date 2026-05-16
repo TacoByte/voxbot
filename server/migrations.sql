@@ -237,3 +237,50 @@ $$
 $$
 );
 
+select apply_migration('avatars-uuid-identity',
+$$
+  -- 1. Backfill email onto avatars from users BEFORE dropping users
+  ALTER TABLE avatars ADD COLUMN IF NOT EXISTS email text UNIQUE;
+  UPDATE avatars SET email = users.email
+    FROM users
+    WHERE avatars.owner = users.id::text AND users.email IS NOT NULL;
+
+  -- 2. Replace integer id with uuidv7 (no other table FKs to avatars.id)
+  ALTER TABLE avatars DROP CONSTRAINT avatars_pkey;
+  ALTER TABLE avatars DROP COLUMN id;
+  DROP SEQUENCE IF EXISTS avatars_id_seq;
+  ALTER TABLE avatars ADD COLUMN id uuid DEFAULT uuidv7() NOT NULL;
+  ALTER TABLE avatars ADD CONSTRAINT avatars_pkey PRIMARY KEY (id);
+
+  -- 3. Rewrite get_or_create_user_uuid to use avatars directly
+  --    Preserves existing owner for returning email users (keeps JWTs valid)
+  CREATE OR REPLACE FUNCTION get_or_create_user_uuid(_email text, OUT id text)
+    LANGUAGE plpgsql AS $$
+    BEGIN
+      SELECT owner INTO id FROM avatars WHERE lower(email) = lower(_email);
+      IF NOT FOUND THEN
+        id := uuidv7()::text;
+        INSERT INTO avatars (id, owner, email, last_online)
+          VALUES (id::uuid, id, lower(_email), now());
+      END IF;
+    END
+    $$;
+
+  -- 4. Drop users table (email backfilled above, delegations has no FK to it)
+  DROP TABLE IF EXISTS users;
+
+  -- 5. Recreate passkeys with uuid type (no real users yet, safe to drop+recreate)
+  DROP TABLE IF EXISTS passkeys;
+  CREATE TABLE passkeys (
+    username      text PRIMARY KEY,
+    user_uuid     uuid NOT NULL,
+    credential_id bytea NOT NULL UNIQUE,
+    public_key    bytea NOT NULL,
+    counter       bigint NOT NULL DEFAULT 0,
+    transports    text[],
+    created_at    timestamptz NOT NULL DEFAULT now()
+  );
+  CREATE INDEX passkeys_user_uuid_idx ON passkeys (user_uuid);
+$$
+);
+

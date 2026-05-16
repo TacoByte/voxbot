@@ -53,6 +53,7 @@ export default function EditAccount() {
       setError(r.message || 'Error')
       return
     }
+    app.send({ type: 'reconnect' })
     window.location.href = `/avatar/${wallet}`
   }
 

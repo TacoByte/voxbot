@@ -94,8 +94,8 @@ export async function PasskeyRegisterVerify(req: Request, res: Response) {
   const credID = Buffer.from(credential.id, 'base64url')
   const pubKey = Buffer.from(credential.publicKey)
 
-  const r = await db.query('passkey/get-or-create-uuid', 'select get_or_create_user_uuid($1) as uuid', ['passkey:' + name])
-  const wallet: string = r.rows[0].uuid
+  const uuidRow = await db.query('passkey/gen-uuid', 'SELECT uuidv7() as uuid')
+  const wallet: string = uuidRow.rows[0].uuid
 
   await db.query('passkey/insert', 'insert into passkeys (username, user_uuid, credential_id, public_key, counter, transports) values ($1,$2,$3,$4,$5,$6)', [
     name,

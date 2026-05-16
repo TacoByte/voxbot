@@ -5,6 +5,16 @@ import { hasMetamask } from '../auth/login-helper'
 import { login } from '../auth/state-login'
 import { app } from '../state'
 
+async function checkNameAvailable(name: string): Promise<boolean> {
+  const r = await fetch('/api/account/reserve', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name }),
+  })
+  const j = await r.json()
+  return !!j.available
+}
+
 const fetchParams = {
   headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
 } as const
@@ -39,6 +49,10 @@ export const Login = ({ reason }: { reason?: string }) => {
   const [passkeyError, setPasskeyError] = useState('')
   const [passkeyBusy, setPasskeyBusy] = useState(false)
   const [passkeyPhase, setPasskeyPhase] = useState<null | 'login' | 'register'>(null)
+  const [pendingToken, setPendingToken] = useState<string | null>(null)
+  const [chosenName, setChosenName] = useState('')
+  const [nameAvailable, setNameAvailable] = useState<boolean | null>(null)
+  const [nameChecking, setNameChecking] = useState(false)
 
   const finishPasskeySession = (r: { success: boolean; token?: string; name?: string | null; isNewUser?: boolean; error?: string }) => {
     if (!r.success) {
@@ -132,13 +146,63 @@ export const Login = ({ reason }: { reason?: string }) => {
     } else if (status == Status.Sent) {
       setStatus(Status.Submitting)
 
-      login.emailSignin(email, code)
+      const r = await app.emailSignin(email, code)
+      if (!r) {
+        setStatus(Status.Sent)
+        return
+      }
+      if (r.isNewUser) {
+        setPendingToken(r.token)
+        setStatus(Status.Initial)
+      } else {
+        app.onToken(r.token, r.name, false)
+      }
     }
+  }
+
+  const onNameInput = async (name: string) => {
+    setChosenName(name)
+    setNameAvailable(null)
+    if (!name.trim()) return
+    setNameChecking(true)
+    const avail = await checkNameAvailable(name.trim())
+    setNameChecking(false)
+    setNameAvailable(avail)
+  }
+
+  const onConfirmName = async (e: Event) => {
+    e.preventDefault()
+    if (!pendingToken || !chosenName.trim() || !nameAvailable) return
+    app.onToken(pendingToken, chosenName.trim(), true)
+    await fetch('/api/avatar', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: chosenName.trim() }),
+    }).catch(() => {})
   }
 
   const onReset = (e: Event) => {
     setStatus(Status.Initial)
     e.preventDefault()
+  }
+
+  if (pendingToken) {
+    return (
+      <section class="login">
+        <h1>choose a name</h1>
+        <form onSubmit={onConfirmName}>
+          <div class="f">
+            <label>name</label>
+            <input type="text" autofocus value={chosenName} onInput={(e) => onNameInput(e.currentTarget.value)} placeholder="yourname" autocapitalize="none" />
+          </div>
+          {chosenName.trim() && <p>{nameChecking ? 'checking...' : nameAvailable === true ? 'available' : nameAvailable === false ? 'taken' : ''}</p>}
+          <button type="submit" disabled={!nameAvailable || !chosenName.trim()}>
+            create account
+          </button>
+        </form>
+      </section>
+    )
   }
 
   return (
