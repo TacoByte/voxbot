@@ -4,11 +4,11 @@
 const RAW_ICONS = {
   // person silhouette - head + shoulders
   account: `
-    .###.
-    .###.
     ..#..
+    ...#.
     #####
-    #...#
+    ...#.
+    ..#..
   `,
 
   // shirt / t-shirt shape
@@ -22,19 +22,19 @@ const RAW_ICONS = {
 
   // stacked cubes / blocks
   assets: `
-    .##..
-    ####.
-    .####
-    .####
+    ...#.
     ..##.
+    .#.#.
+    #..#.
+    #..#.
   `,
 
   // overlapping squares
   collections: `
     ###..
-    ###..
-    .####
-    ..###
+    #.#..
+    #####
+    ..#.#
     ..###
   `,
 
@@ -51,45 +51,45 @@ const RAW_ICONS = {
   islands: `
     ..#..
     .#.#.
-    .....
-    .###.
-    #####
+    #...#
+    .#.#.
+    ..#..
   `,
 
   // folded map / compass diamond
   map: `
     ..#..
-    .###.
+    ..#..
     #####
-    .###.
+    ..#..
     ..#..
   `,
 
   // package / box with tape
   parcels: `
     #####
-    #.#.#
-    #####
-    #.#.#
+    #...#
+    #...#
+    #...#
     #####
   `,
 
   // grid of rooms
   spaces: `
-    #####
-    #.#.#
-    ##.##
-    #.#.#
-    #####
+    .....
+    .###.
+    .#.#.
+    .###.
+    .....
   `,
 
   // creature face / two eyes + mouth
   womps: `
-    .....
-    #.#.#
-    .....
-    .###.
+    #####
     #...#
+    #.#.#
+    #...#
+    .#.#.
   `,
 
   // pencil / notepad
