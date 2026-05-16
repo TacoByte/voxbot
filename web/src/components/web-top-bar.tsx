@@ -55,7 +55,7 @@ export default class WebTopBar extends Component<unknown, State> {
     if (!this.state.signedIn) {
       return (
         <li>
-          <a href="/account">Log in</a>
+          <a href="/account">Login</a>
         </li>
       )
     }

@@ -166,12 +166,10 @@ export default class WebHeader extends Component<Props, State> {
 
     const navLink = (label: string, href: string, icon: any, active: boolean, extra?: any) =>
       active ? (
-        <span class="active">
-          <Icon name={icon} /> {label}
-        </span>
+        <span class="active">{label}</span>
       ) : (
         <Link activeClassName="active" href={href} onClick={extra ?? this.closeMobileMenu}>
-          <Icon name={icon} /> {label}
+          {label}
         </Link>
       )
 
@@ -191,7 +189,7 @@ export default class WebHeader extends Component<Props, State> {
                 </button>
               </li>
 
-              <li>{navLink(signedIn ? 'Account' : 'Log in', '/account', 'account', isActive('account'))}</li>
+              <li>{navLink(signedIn ? 'Account' : 'Login', '/account', 'account', isActive('account'))}</li>
 
               {signedIn && <li>{navLink('Costume', '/costumer', 'costume', isActive('costumer'))}</li>}
 
