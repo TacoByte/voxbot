@@ -163,7 +163,6 @@ export class StateLogin {
     }
     const prov = this.ethersWeb3Provider()
     this.signer = prov.getSigner() as any
-    this.onSetSigner()
   }
 
   private async setProvider() {
@@ -187,13 +186,9 @@ export class StateLogin {
 
     this.#app.setState({ unverifiedWallet: accounts[0] })
     this.handleEvents()
-    this.setSigner()
+    await this.setSigner()
+    this.signin()
     return true
-  }
-
-  private onSetSigner() {
-    this.#app.emit(AppEvent.Load)
-    this.#app.loadAvatar()
   }
 
   private generateMessage() {

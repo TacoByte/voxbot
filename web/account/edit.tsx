@@ -76,7 +76,8 @@ export default function EditAccount() {
           </div>
           <div class="f">
             <label>External Links</label>
-            <input type="url" value={link1} onInput={(e: any) => setLink1(e.target.value)} placeholder="https://..." /><br />
+            <input type="url" value={link1} onInput={(e: any) => setLink1(e.target.value)} placeholder="https://..." />
+            <br />
             <input type="url" value={link2} onInput={(e: any) => setLink2(e.target.value)} placeholder="https://..." />
           </div>
           <div class="f">
