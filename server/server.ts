@@ -7,8 +7,8 @@ import Parcel, { PARCEL_EVENT_EMITTER } from './parcel'
 // Import handlers
 import BuildRequestHandler, { SpaceBuildRequestHandler } from './handlers/build-parcel'
 import queryParcel, { refreshParcelsByWallet } from './handlers/query-parcel'
-import { CheckNameAvailable, EmailCode, SignIn } from './handlers/sign-in'
-import { PasskeyAvailable, PasskeyLoginOptions, PasskeyLoginVerify, PasskeyRegisterOptions, PasskeyRegisterVerify } from './handlers/passkey'
+import { CheckEmail, CheckNameAvailable, EmailCode, SignIn } from './handlers/sign-in'
+import { PasskeyAddOptions, PasskeyAddVerify, PasskeyAvailable, PasskeyLoginOptions, PasskeyLoginVerify, PasskeyRegisterOptions, PasskeyRegisterVerify } from './handlers/passkey'
 import updateParcel from './handlers/update-parcel'
 
 import { currentVersion } from '../common/version'
@@ -298,7 +298,10 @@ const timeoutMiddleware = (delay: number) => (req: express.Request, res: express
 app.post('/api/signin', signInRateLimit, timeoutMiddleware(5 * 60 * 60 * 1000), SignIn)
 app.post('/api/signin/code', signInRateLimit, timeoutMiddleware(5 * 60 * 60 * 1000), EmailCode)
 app.post('/api/account/reserve', signInRateLimit, CheckNameAvailable)
+app.post('/api/signin/check-email', signInRateLimit, CheckEmail)
 app.post('/api/passkey/available', signInRateLimit, PasskeyAvailable)
+app.post('/api/passkey/add/options', signInRateLimit, PasskeyAddOptions)
+app.post('/api/passkey/add/verify', signInRateLimit, PasskeyAddVerify)
 app.post('/api/passkey/register/options', signInRateLimit, PasskeyRegisterOptions)
 app.post('/api/passkey/register/verify', signInRateLimit, PasskeyRegisterVerify)
 app.post('/api/passkey/login/options', signInRateLimit, PasskeyLoginOptions)

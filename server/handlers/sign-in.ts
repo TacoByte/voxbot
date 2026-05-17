@@ -217,6 +217,23 @@ async function personalSignIn(res: Response, wallet: string, message: MessageSig
   res.json({ success: true, token, name, isNewUser })
 }
 
+export async function CheckEmail(req: Request, res: Response) {
+  const { email } = req.body as { email?: string }
+  if (!email?.trim()) {
+    res.json({ hasPasskey: false })
+    return
+  }
+  const r = await db.query(
+    'signin/check-email-passkey',
+    `SELECT p.username FROM passkeys p
+     JOIN avatars a ON p.user_uuid::text = a.owner
+     WHERE lower(a.email) = lower($1) LIMIT 1`,
+    [email.trim()],
+  )
+  const row = r.rows[0]
+  res.json({ hasPasskey: !!row, passkeyUsername: row?.username ?? null })
+}
+
 export async function CheckNameAvailable(req: Request, res: Response) {
   const { name } = req.body as { name?: string }
   if (!name?.trim()) {

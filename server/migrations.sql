@@ -252,24 +252,10 @@ $$
   ALTER TABLE avatars ADD COLUMN id uuid DEFAULT uuidv7() NOT NULL;
   ALTER TABLE avatars ADD CONSTRAINT avatars_pkey PRIMARY KEY (id);
 
-  -- 3. Rewrite get_or_create_user_uuid to use avatars directly
-  --    Preserves existing owner for returning email users (keeps JWTs valid)
-  CREATE OR REPLACE FUNCTION get_or_create_user_uuid(_email text, OUT id text)
-    LANGUAGE plpgsql AS $$
-    BEGIN
-      SELECT owner INTO id FROM avatars WHERE lower(email) = lower(_email);
-      IF NOT FOUND THEN
-        id := uuidv7()::text;
-        INSERT INTO avatars (id, owner, email, last_online)
-          VALUES (id::uuid, id, lower(_email), now());
-      END IF;
-    END
-    $$;
-
-  -- 4. Drop users table (email backfilled above, delegations has no FK to it)
+  -- 3. Drop users table (email backfilled above, delegations has no FK to it)
   DROP TABLE IF EXISTS users;
 
-  -- 5. Recreate passkeys with uuid type (no real users yet, safe to drop+recreate)
+  -- 4. Recreate passkeys with uuid type (no real users yet, safe to drop+recreate)
   DROP TABLE IF EXISTS passkeys;
   CREATE TABLE passkeys (
     username      text PRIMARY KEY,
@@ -283,4 +269,17 @@ $$
   CREATE INDEX passkeys_user_uuid_idx ON passkeys (user_uuid);
 $$
 );
+
+DROP FUNCTION IF EXISTS get_or_create_user_uuid(text);
+CREATE OR REPLACE FUNCTION get_or_create_user_uuid(_email text, OUT id text)
+  LANGUAGE plpgsql AS $$
+  BEGIN
+    SELECT owner INTO id FROM avatars WHERE lower(email) = lower(_email);
+    IF NOT FOUND THEN
+      id := uuidv7()::text;
+      INSERT INTO avatars (id, owner, email, last_online)
+        VALUES (id::uuid, id, lower(_email), now());
+    END IF;
+  END
+  $$;
 
