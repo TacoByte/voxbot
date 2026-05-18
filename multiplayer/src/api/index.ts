@@ -308,6 +308,20 @@ export default function createWWWServer(
       return
     }
 
+    if (pathname === '/api/avatar-changed' && method === 'POST') {
+      let body = ''
+      req.on('data', (chunk) => (body += chunk))
+      req.on('end', () => {
+        try {
+          const { wallet } = JSON.parse(body)
+          if (wallet) shards.onAvatarChanged(wallet)
+        } catch {}
+        res.statusCode = 200
+        res.end('{"success":true}')
+      })
+      return
+    }
+
     // fallthrough
     res.statusCode = 404
     res.end(NOT_FOUND)

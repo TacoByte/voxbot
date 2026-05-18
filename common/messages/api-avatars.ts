@@ -5,7 +5,7 @@ import * as t from 'io-ts'
 
 export const ApiAvatar = t.type(
   {
-    id: t.number,
+    id: t.string,
     owner: t.string,
     name: t.union([t.string, t.null]),
     type: t.union([t.literal('woody'), t.literal('vidda'), t.literal('zuck'), t.literal('bnolan')]), // all but woody are deprecated

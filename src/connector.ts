@@ -324,9 +324,6 @@ export default class Connector extends TypedEventTarget<{ avatar_joined: string 
         }
 
         this.multiplayerClient.send(messages.encode(loginMessage))
-        this.sendCostume()
-
-        this.costumeInterval = setInterval(this.sendCostume, 1000)
       }
       // this.persona.user.update(name || undefined, wallet || undefined)
 
@@ -346,24 +343,7 @@ export default class Connector extends TypedEventTarget<{ avatar_joined: string 
     this.multiplayerClient.addEventListener('disconnected', () => {
       this.isOpen = false
       this.onConnectionStateChanged.notifyObservers({ status: 'disconnected', lastCloseCode: -1 })
-
-      clearInterval(this.costumeInterval)
     })
-  }
-
-  costumeInterval: any
-
-  sendCostume = () => {
-    const createAvatarMessage: messages.CreateAvatarMessage = {
-      type: messages.MessageType.createAvatar,
-      uuid: Connector.clientUUID,
-      description: {
-        name: app.state.name,
-        wallet: app.state.wallet!,
-      },
-    }
-
-    this.multiplayerClient.send(messages.encode(createAvatarMessage))
   }
 
   async reconnect() {

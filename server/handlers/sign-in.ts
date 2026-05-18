@@ -152,8 +152,6 @@ export async function SignIn(req: Request<any, Params>, res: Response) {
     const r = await db.query('embedded/get-user-uuid', 'select get_or_create_user_uuid($1) as uuid', [email])
     const wallet = r && r.rows[0] && r.rows[0].uuid
 
-    console.log(`non wallet is ${wallet}`)
-
     const { token, name, isNewUser } = await getUserInfo(res, wallet, {})
     res.json({ success: true, token, name, isNewUser })
     return
@@ -219,6 +217,33 @@ async function personalSignIn(res: Response, wallet: string, message: MessageSig
   res.json({ success: true, token, name, isNewUser })
 }
 
+export async function CheckEmail(req: Request, res: Response) {
+  const { email } = req.body as { email?: string }
+  if (!email?.trim()) {
+    res.json({ hasPasskey: false })
+    return
+  }
+  const r = await db.query(
+    'signin/check-email-passkey',
+    `SELECT p.username FROM passkeys p
+     JOIN avatars a ON p.user_uuid::text = a.owner
+     WHERE lower(a.email) = lower($1) LIMIT 1`,
+    [email.trim()],
+  )
+  const row = r.rows[0]
+  res.json({ hasPasskey: !!row, passkeyUsername: row?.username ?? null })
+}
+
+export async function CheckNameAvailable(req: Request, res: Response) {
+  const { name } = req.body as { name?: string }
+  if (!name?.trim()) {
+    res.json({ success: false, error: 'Name required' })
+    return
+  }
+  const r = await db.query('account/check-name', 'SELECT 1 FROM avatars WHERE name ILIKE $1', [name.trim()])
+  res.json({ success: true, available: r.rowCount === 0 })
+}
+
 export async function getUserInfo(res: Response, wallet: string, options: SignInOptions): Promise<{ token: string; name: string; isNewUser: boolean }> {
   if (!wallet) {
     throw new Error('Invalid wallet')
@@ -253,8 +278,9 @@ export async function getUserInfo(res: Response, wallet: string, options: SignIn
     name = await Avatar.setENSNameIfAny(wallet)
   }
 
+  // only apply preferredDisplayName for new users - don't clobber existing names
   const preferred = options.preferredDisplayName?.trim()
-  if (preferred) {
+  if (preferred && !avatarExists) {
     try {
       await db.query('sign-in/avatar-prefer-display-name', 'update avatars set name = $1 where lower(owner) = lower($2)', [preferred, wallet])
       name = preferred

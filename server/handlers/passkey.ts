@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express'
 import { generateRegistrationOptions, verifyRegistrationResponse, generateAuthenticationOptions, verifyAuthenticationResponse } from '@simplewebauthn/server'
 type AuthenticatorTransportFuture = 'ble' | 'cable' | 'hybrid' | 'internal' | 'nfc' | 'smart-card' | 'usb'
+import { decodeJwt } from 'jose'
 import db from '../pg'
 import { getUserInfo } from './sign-in'
 
@@ -94,8 +95,8 @@ export async function PasskeyRegisterVerify(req: Request, res: Response) {
   const credID = Buffer.from(credential.id, 'base64url')
   const pubKey = Buffer.from(credential.publicKey)
 
-  const r = await db.query('passkey/get-or-create-uuid', 'select get_or_create_user_uuid($1) as uuid', ['passkey:' + name])
-  const wallet: string = r.rows[0].uuid
+  const uuidRow = await db.query('passkey/gen-uuid', 'SELECT uuidv7() as uuid')
+  const wallet: string = uuidRow.rows[0].uuid
 
   await db.query('passkey/insert', 'insert into passkeys (username, user_uuid, credential_id, public_key, counter, transports) values ($1,$2,$3,$4,$5,$6)', [
     name,
@@ -195,4 +196,90 @@ export async function PasskeyLoginVerify(req: Request, res: Response) {
 
   const { token, name: avatarName, isNewUser } = await getUserInfo(res, row.user_uuid, { rememberSignIn: true })
   res.json({ success: true, token, name: avatarName, isNewUser })
+}
+
+function getWalletFromCookie(req: Request): string | null {
+  const jwt = (req as any).cookies?.jwt
+  if (!jwt) return null
+  try {
+    const payload = decodeJwt(jwt) as any
+    return payload?.wallet ?? null
+  } catch {
+    return null
+  }
+}
+
+export async function PasskeyAddOptions(req: Request, res: Response) {
+  const { username } = req.body as { username?: string }
+  if (!username?.trim()) {
+    res.json({ success: false, error: 'Username required' })
+    return
+  }
+  const wallet = getWalletFromCookie(req)
+  if (!wallet) {
+    res.json({ success: false, error: 'Not signed in' })
+    return
+  }
+  const name = username.trim().toLowerCase()
+  const exists = await db.query('passkey/check-exists-add', 'select 1 from passkeys where username = $1', [name])
+  if (exists.rowCount! > 0) {
+    res.json({ success: false, error: 'Username taken' })
+    return
+  }
+  const options = await generateRegistrationOptions({
+    rpName: RP_NAME,
+    rpID: RP_ID,
+    userName: name,
+    attestationType: 'none',
+    authenticatorSelection: { residentKey: 'preferred', userVerification: 'preferred' },
+  })
+  storeChallenge(name, options.challenge)
+  res.json({ success: true, options })
+}
+
+export async function PasskeyAddVerify(req: Request, res: Response) {
+  const { username, attResp } = req.body as { username?: string; attResp?: any }
+  if (!username?.trim() || !attResp) {
+    res.json({ success: false, error: 'Missing fields' })
+    return
+  }
+  const wallet = getWalletFromCookie(req)
+  if (!wallet) {
+    res.json({ success: false, error: 'Not signed in' })
+    return
+  }
+  const name = username.trim().toLowerCase()
+  const expectedChallenge = consumeChallenge(name)
+  if (!expectedChallenge) {
+    res.json({ success: false, error: 'Challenge expired or not found' })
+    return
+  }
+  let verification: Awaited<ReturnType<typeof verifyRegistrationResponse>>
+  try {
+    verification = await verifyRegistrationResponse({
+      response: attResp,
+      expectedChallenge,
+      expectedOrigin: ORIGIN,
+      expectedRPID: RP_ID,
+    })
+  } catch (e: any) {
+    res.json({ success: false, error: e?.message || 'Verification failed' })
+    return
+  }
+  if (!verification.verified || !verification.registrationInfo) {
+    res.json({ success: false, error: 'Verification failed' })
+    return
+  }
+  const { credential } = verification.registrationInfo
+  const credID = Buffer.from(credential.id, 'base64url')
+  const pubKey = Buffer.from(credential.publicKey)
+  await db.query('passkey/insert-add', 'insert into passkeys (username, user_uuid, credential_id, public_key, counter, transports) values ($1,$2::uuid,$3,$4,$5,$6)', [
+    name,
+    wallet,
+    credID,
+    pubKey,
+    credential.counter,
+    (credential.transports as string[]) ?? null,
+  ])
+  res.json({ success: true })
 }

@@ -53,14 +53,14 @@ dump_table "islands" "SELECT * FROM islands"
 dump_table "properties" "SELECT * FROM properties WHERE island = '$ISLAND_NAME'"
 dump_table "womps" "SELECT w.* FROM womps w JOIN properties p ON w.parcel_id = p.id WHERE p.island = '$ISLAND_NAME'"
 
-# Updated Users: Grabs Owners OR Wompers on this island
-dump_table "users" "
-  SELECT DISTINCT u.* FROM users u 
-  JOIN properties p ON (u.id::text = p.owner OR u.email = p.owner) 
+# Avatars: owners of parcels or womps on this island
+dump_table "avatars" "
+  SELECT DISTINCT a.* FROM avatars a
+  JOIN properties p ON lower(a.owner) = lower(p.owner)
   WHERE p.island = '$ISLAND_NAME'
   UNION
-  SELECT DISTINCT u.* FROM users u 
-  JOIN womps w ON (u.id::text = w.author OR u.email = w.author)
+  SELECT DISTINCT a.* FROM avatars a
+  JOIN womps w ON lower(a.owner) = lower(w.author)
   JOIN properties p ON w.parcel_id = p.id
   WHERE p.island = '$ISLAND_NAME'
 "

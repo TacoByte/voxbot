@@ -9,25 +9,11 @@ import { app, AppEvent } from '../web/src/state'
 import { LoadUserAvatar, UserAvatar } from './user-avatar'
 import { decodeCoordsFromURL } from './utils/helpers'
 import { wantsXR } from '../common/helpers/detector'
-import { Action } from '../common/messages'
+import { Action, AvatarIdentity } from '../common/messages'
 import { cameraPosition, cameraRotation, setCameraPosition, setCameraRotation } from './utils/camera'
 
-/**
- * The minimal representation of the persona which indicates if the avatar needs to be re-rendered.
- */
-type PersonaAvatarSignature = {
-  wallet: string | null
-  name: string | null
-}
-
-namespace PersonaAvatarSignature {
-  export const equals = (a: PersonaAvatarSignature, b: PersonaAvatarSignature): boolean => a.wallet === b.wallet && a.name === b.name
-
-  export const fromUser = (user: User): PersonaAvatarSignature => ({
-    wallet: user.wallet,
-    name: user.name,
-  })
-}
+const identityEquals = (a: AvatarIdentity, b: AvatarIdentity) => a.wallet === b.wallet && a.name === b.name
+const identityFromUser = (user: User): AvatarIdentity => ({ wallet: user.wallet, name: user.name })
 
 export default class Persona {
   user: User
@@ -37,7 +23,7 @@ export default class Persona {
   position: BABYLON.Vector3
   rotation: BABYLON.Vector3
   avatar: UserAvatar | undefined = undefined
-  avatarSignature: PersonaAvatarSignature | null = null
+  avatarSignature: AvatarIdentity | null = null
   onAnimationChanged: BABYLON.Observable<Animations> = new BABYLON.Observable()
   private facingForward: boolean
   // this is in theory a pushdown automata, eg. https://gameprogrammingpatterns.com/state.html#pushdown-automata
@@ -68,15 +54,15 @@ export default class Persona {
     this.wantsXR = wantsXR() // Cache it
 
     const loadAvatar = debounce(async () => {
-      const avatarSignature = PersonaAvatarSignature.fromUser(this.user)
+      const avatarSignature = identityFromUser(this.user)
 
-      if (this.avatarSignature === null || !PersonaAvatarSignature.equals(avatarSignature, this.avatarSignature)) {
+      if (this.avatarSignature === null || !identityEquals(avatarSignature, this.avatarSignature)) {
         this.avatarSignature = avatarSignature
         const avatar = await LoadUserAvatar(this.scene, this.parent, this.uuid, { name: this.user.name, wallet: this.user.wallet })
 
         // Check that the signature captured in scope is the same as the one stored on the instance. This means
         // `loadAvatar` was not called again in the time between asynchronously loaded the avatar and now.
-        if (PersonaAvatarSignature.equals(avatarSignature, this.avatarSignature)) {
+        if (identityEquals(avatarSignature, this.avatarSignature)) {
           this.avatar?.disposeLocalAndRemote()
           this.avatar = avatar
           this.avatar.nametag = false

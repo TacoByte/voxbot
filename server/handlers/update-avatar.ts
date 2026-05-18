@@ -8,6 +8,14 @@ import { dropConnectionsForWallet } from '../server'
 import { VoxelsUserRequest } from '../user'
 import { postman } from './mails-handler'
 
+const mpHttpUrl = (process.env.MULTIPLAYER_HOST || 'ws://localhost:3780').replace(/^ws/, 'http')
+const notifyAvatarChanged = (wallet: string) =>
+  fetch(`${mpHttpUrl}/api/avatar-changed`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ wallet }),
+  }).catch(() => {})
+
 function validateName(name: string): true | string {
   if (!name) return 'Name is required'
   if (name.length > 50) return 'Name is too long'
@@ -54,6 +62,7 @@ export default function updateAvatar() {
       params,
     )
 
+    notifyAvatarChanged(wallet)
     res.json({ success: true })
   }
 }
@@ -63,6 +72,7 @@ export async function updateAvatarAppearance(req: VoxelsUserRequest, res: Respon
   if (!wallet) return res.status(403).json({ success: false })
   if (!('costume_id' in req.body)) return res.json({ success: true })
   await db.query('embedded/update-avatar-costume', `UPDATE avatars SET costume_id=$1 WHERE lower(owner)=lower($2)`, [req.body.costume_id, wallet])
+  notifyAvatarChanged(wallet)
   res.json({ success: true })
 }
 

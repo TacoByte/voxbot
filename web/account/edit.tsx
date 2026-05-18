@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'preact/hooks'
 import { ApiAvatar } from '../../common/messages/api-avatars'
-import { Login } from '../src/auth/login'
+import { AddPasskey, Login } from '../src/auth/login'
 import ParcelField from '../src/components/parcel-field'
 import { app } from '../src/state'
 import { fetchAPI } from '../src/utils'
@@ -53,6 +53,7 @@ export default function EditAccount() {
       setError(r.message || 'Error')
       return
     }
+    app.send({ type: 'reconnect' })
     window.location.href = `/avatar/${wallet}`
   }
 
@@ -74,11 +75,9 @@ export default function EditAccount() {
             <textarea value={description} rows={4} onInput={(e: any) => setDescription(e.target.value)} />
           </div>
           <div class="f">
-            <label>link 1</label>
+            <label>External Links</label>
             <input type="url" value={link1} onInput={(e: any) => setLink1(e.target.value)} placeholder="https://..." />
-          </div>
-          <div class="f">
-            <label>link 2</label>
+            <br />
             <input type="url" value={link2} onInput={(e: any) => setLink2(e.target.value)} placeholder="https://..." />
           </div>
           <div class="f">
@@ -90,6 +89,11 @@ export default function EditAccount() {
             {saving ? 'Saving...' : 'Save'}
           </button>
         </form>
+        <hr />
+        <div class="f">
+          <label>add passkey</label>
+          <AddPasskey />
+        </div>
       </article>
     </section>
   )
