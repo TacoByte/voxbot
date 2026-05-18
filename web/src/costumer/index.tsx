@@ -784,7 +784,7 @@ export default class Costumer extends Component<Props, State> {
           </div>
           <ul>
             {costumes.map((c) => (
-              <li key={c.id} class={this.costumeId === c.id ? 'active' : ''} onContextMenu={this.onCtxMenu(c.id)}>
+              <li key={c.id} class={this.costumeId === c.id ? 'active' : ''} aria-selected={this.costumeId === c.id} onContextMenu={this.onCtxMenu(c.id)}>
                 <a
                   href={`/costumer/${c.id}`}
                   onClick={(e) => {

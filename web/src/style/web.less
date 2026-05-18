@@ -1059,3 +1059,40 @@ p.empty {
     }
   }
 }
+
+
+// Sidebar columns nav
+
+.columns.nav {
+  nav {
+    ul {
+      margin: 0;
+      padding: 0;
+    }
+
+    li {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+
+      &>a {
+        display: block;
+
+
+        // truncate
+        text-overflow: ellipsis;
+        overflow: hidden;
+        white-space: nowrap;
+      }
+    }
+
+    li[aria-selected="true"] {
+      a {
+        text-decoration: none;
+        color: inherit;
+        font-weight: bold;
+      }
+    }
+
+  }
+}

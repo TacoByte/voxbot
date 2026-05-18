@@ -116,17 +116,17 @@ export default class Avatar extends Component<Props, State> {
 
           const shadow = BABYLON.Mesh.CreatePlane('shadow', 1, scene)
           const m = new BABYLON.StandardMaterial('shadow', scene)
-          m.diffuseTexture = new BABYLON.Texture('/textures/shadow.png?nonce', scene)
-          m.diffuseTexture.hasAlpha = true
+          m.diffuseTexture = new BABYLON.Texture('/textures/shadow-blob.png?nonce', scene)
+          m.diffuseTexture.hasAlpha = false
           m.emissiveColor.set(1, 1, 1)
-          m.alpha = 0.99
-          m.useAlphaFromDiffuseTexture = true
-          m.disableLighting = true
+          m.fogEnabled = false
+          m.alphaMode = BABYLON.Engine.ALPHA_MULTIPLY
+          m.alpha = 0.9
           shadow.material = m
           shadow.rotation.x = Math.PI / 2
-          shadow.scaling.x = 0.7
-          shadow.scaling.y = 0.2
-          shadow.position.y = -0.05
+          shadow.scaling.x = 1
+          shadow.scaling.y = 1
+          shadow.position.y = 0.01
           shadow.setParent(armature) // .attachToBone(hips, armature)
 
           if (!this.props.dance) {
