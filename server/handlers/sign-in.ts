@@ -112,7 +112,7 @@ ps: This code is valid on ${expiry}. If you are not trying to log into voxels.co
 
   console.log('sending email', html)
 
-  const serverToken = 'ab3cbb8b-4211-457c-bd25-e477ca337e27'
+  const serverToken = process.env.POSTMARK_TOKEN!
 
   const client = new ServerClient(serverToken)
 
