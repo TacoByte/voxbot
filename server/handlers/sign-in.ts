@@ -1,7 +1,7 @@
 import { Signature, type SignatureLike, verifyMessage } from 'ethers'
 import type { Request, Response } from 'express'
 import { SignJWT } from 'jose'
-import { ServerClient } from 'postmark'
+import { Resend } from 'resend'
 import Avatar from '../avatar'
 import { doesAvatarExist } from '../does-avatar-exist'
 import { ensureAvatarExists } from '../ensure-avatar-exists'
@@ -111,26 +111,31 @@ ps: This code is valid on ${expiry}. If you are not trying to log into voxels.co
 `
 
   console.log('sending email to', email, 'code:', code)
+  console.log(text)
 
-  const serverToken = process.env.POSTMARK_TOKEN
-  if (!serverToken) {
-    console.error('POSTMARK_TOKEN not set')
+  const resendToken = process.env.RESEND_TOKEN
+  if (!resendToken) {
+    console.error('RESEND_TOKEN not set')
     res.json({ success: true })
     return
   }
 
   try {
-    const client = new ServerClient(serverToken)
-    const result = await client.sendEmail({
-      From: 'Voxels Team<team@voxels.com>',
-      To: email,
-      Subject: `Login code ${code}`,
-      TextBody: text,
-      HtmlBody: html,
+    const resend = new Resend(resendToken)
+    const { error } = await resend.emails.send({
+      from: 'Voxels Team <team@voxels.com>',
+      to: email,
+      subject: `Login code ${code}`,
+      text,
+      html,
     })
-    console.log('Postmark result:', result.ErrorCode, result.Message)
+    if (error) {
+      console.error('Resend error:', error)
+      res.json({ success: false, error: 'Failed to send email' })
+      return
+    }
   } catch (e: any) {
-    console.error('Postmark send failed:', e?.message ?? e)
+    console.error('Resend send failed:', e?.message ?? e)
     res.json({ success: false, error: 'Failed to send email' })
     return
   }

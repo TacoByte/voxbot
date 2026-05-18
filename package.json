@@ -8,7 +8,14 @@
     "pnpm": "9.15.4"
   },
   "pnpm": {
-    "onlyBuiltDependencies": ["babylonjs", "core-js", "esbuild", "msgpackr-extract", "protobufjs", "sharp"]
+    "onlyBuiltDependencies": [
+      "babylonjs",
+      "core-js",
+      "esbuild",
+      "msgpackr-extract",
+      "protobufjs",
+      "sharp"
+    ]
   },
   "cacheDirectories": [
     "node_modules",
@@ -75,9 +82,9 @@
     "@msgpack/msgpack": "^2.7.0",
     "@preact/signals": "^2.3.2",
     "@sh-dave/format-vox": "^0.1.6",
+    "@simonwep/pickr": "^1.9.1",
     "@simplewebauthn/browser": "^13.3.0",
     "@simplewebauthn/server": "^13.3.0",
-    "@simonwep/pickr": "^1.9.1",
     "@turf/turf": "6.5.0",
     "@types/prismjs": "^1.26.5",
     "acorn": "8.14.0",
@@ -179,6 +186,7 @@
     "rate-limiter-flexible": "^2.4.2",
     "rbush-3d": "^0.0.4",
     "redis": "^4.6.7",
+    "resend": "^6.12.3",
     "response-time": "^2.3.2",
     "semver": "^7.5.4",
     "sharp": "^0.34.5",
