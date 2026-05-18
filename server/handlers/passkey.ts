@@ -53,7 +53,7 @@ export async function PasskeyRegisterOptions(req: Request, res: Response) {
     rpID: RP_ID,
     userName: name,
     attestationType: 'none',
-    authenticatorSelection: { residentKey: 'preferred', userVerification: 'preferred' },
+    authenticatorSelection: { residentKey: 'preferred', userVerification: 'discouraged' },
   })
 
   storeChallenge(name, options.challenge)
@@ -135,7 +135,7 @@ export async function PasskeyLoginOptions(req: Request, res: Response) {
   const row = r.rows[0]
   const options = await generateAuthenticationOptions({
     rpID: RP_ID,
-    userVerification: 'preferred',
+    userVerification: 'discouraged',
     allowCredentials: [
       {
         id: row.credential_id.toString('base64url'),
@@ -231,7 +231,7 @@ export async function PasskeyAddOptions(req: Request, res: Response) {
     rpID: RP_ID,
     userName: name,
     attestationType: 'none',
-    authenticatorSelection: { residentKey: 'preferred', userVerification: 'preferred' },
+    authenticatorSelection: { residentKey: 'preferred', userVerification: 'discouraged' },
   })
   storeChallenge(name, options.challenge)
   res.json({ success: true, options })

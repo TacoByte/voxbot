@@ -32,14 +32,13 @@ async function checkNameAvailable(name: string): Promise<boolean> {
 
 type Stage = 'email' | 'passkey' | 'code' | 'name'
 
-export const AddPasskey = ({ onDone }: { onDone?: () => void }) => {
-  const [username, setUsername] = useState('')
+export const AddPasskey = ({ username, onDone }: { username: string; onDone?: () => void }) => {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [done, setDone] = useState(false)
 
   const onAdd = async () => {
-    if (!username.trim() || busy) return
+    if (busy) return
     setBusy(true)
     setError('')
     try {
@@ -67,12 +66,8 @@ export const AddPasskey = ({ onDone }: { onDone?: () => void }) => {
 
   return (
     <>
-      <div class="f">
-        <label>passkey username</label>
-        <input type="text" value={username} onInput={(e) => setUsername(e.currentTarget.value)} placeholder="choose a username" autocapitalize="none" />
-      </div>
       {error && <p>{error}</p>}
-      <button type="button" onClick={onAdd} disabled={busy || !username.trim()}>
+      <button type="button" onClick={onAdd} disabled={busy}>
         {busy ? 'adding...' : 'add passkey'}
       </button>
     </>
@@ -198,10 +193,12 @@ export const Login = ({ reason }: { reason?: string }) => {
             <input type="text" autofocus value={chosenName} onInput={(e) => onNameInput(e.currentTarget.value)} placeholder="yourname" autocapitalize="none" />
           </div>
           {chosenName.trim() && <p>{nameChecking ? 'checking...' : nameAvailable === true ? 'available' : nameAvailable === false ? 'taken' : ''}</p>}
-          <div class="f">
-            <label>passkey</label>
-            <AddPasskey />
-          </div>
+          {chosenName.trim() && nameAvailable && (
+            <div class="f">
+              <label>passkey</label>
+              <AddPasskey username={chosenName.trim()} />
+            </div>
+          )}
           <button type="submit" disabled={!nameAvailable || !chosenName.trim()}>
             done
           </button>

@@ -89,11 +89,15 @@ export default function EditAccount() {
             {saving ? 'Saving...' : 'Save'}
           </button>
         </form>
-        <hr />
-        <div class="f">
-          <label>add passkey</label>
-          <AddPasskey />
-        </div>
+        {name && (
+          <>
+            <hr />
+            <div class="f">
+              <label>add passkey</label>
+              <AddPasskey username={name} />
+            </div>
+          </>
+        )}
       </article>
     </section>
   )

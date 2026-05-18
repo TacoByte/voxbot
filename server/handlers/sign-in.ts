@@ -52,8 +52,10 @@ type SIM = PersonalSignIn
 async function getEmailCode(email: string): Promise<{ code: string; expiry: string }> {
   // fixme - make dates stable in case people submit at midnight UTC
   const date = new Date().toISOString().split('T')[0]
-  const salted = 'rainbox-ass-' + email.toString().replace(/^\s+/, '').replace(/\s+$/, '') + '-' + date.toString()
-  const key = 'vitalik-is-my-homeboy'
+
+  // fixme - dont put the salt in the public codebase? 
+  const salted = 'yarr-the-saltiness-' + email.toString().replace(/^\s+/, '').replace(/\s+$/, '') + '-' + date.toString()
+  const key = JWT_SECRET
 
   const cryptoKey = await globalThis.crypto.subtle.importKey('raw', new TextEncoder().encode(key), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign'])
   const signatureBuffer = await globalThis.crypto.subtle.sign('HMAC', cryptoKey, new TextEncoder().encode(salted))
