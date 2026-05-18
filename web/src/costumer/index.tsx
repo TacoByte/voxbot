@@ -49,6 +49,8 @@ interface State {
   bonePickerLoading: boolean
   bonePickerItems: CollectiblesData[] | null
   wearables: CollectiblesData[]
+  ctxMenu: { id: number; x: number; y: number } | null
+  navOpen: boolean
 }
 
 import { useEffect, useRef, useState } from 'preact/hooks'
@@ -127,6 +129,8 @@ export default class Costumer extends Component<Props, State> {
     bonePickerLoading: false,
     bonePickerItems: null,
     wearables: [],
+    ctxMenu: null,
+    navOpen: true,
   }
 
   componentDidMount() {
@@ -329,13 +333,14 @@ export default class Costumer extends Component<Props, State> {
       })
   }
 
-  deleteCostume = async () => {
-    const answer = confirm(`Are you sure you want to delete costume #${this.props.costumeId}?`)
+  deleteCostume = async (id?: number) => {
+    const cid = id ?? this.props.costumeId
+    const answer = confirm(`Are you sure you want to delete costume #${cid}?`)
     if (!answer) {
       return
     }
     this.setState({ loading: true })
-    fetch(`/api/costumes/${this.props.costumeId}`, { ...fetchParams, method: 'DELETE' })
+    fetch(`/api/costumes/${cid}`, { ...fetchParams, method: 'DELETE' })
       .then((response) => {
         if (!response.ok) throw new Error(response.status + ' ' + response.statusText)
         return response.json()
@@ -395,8 +400,9 @@ export default class Costumer extends Component<Props, State> {
     route(`/costumer/${createdCostume.id}`, true)
   }
 
-  duplicateCostume = async () => {
-    const costume = { ...this.costume }
+  duplicateCostume = async (id?: number) => {
+    const src = id ? this.state.costumes?.find((c) => c.id === id) : this.costume
+    const costume = { ...src }
     if (costume.name) {
       costume.name = costume.name.replace(/ copy/i, '') + ' copy'
     }
@@ -506,6 +512,25 @@ export default class Costumer extends Component<Props, State> {
     }
 
     await this.addAttachment(wearable, bone)
+  }
+
+  onCtxMenu = (id: number) => (e: MouseEvent) => {
+    e.preventDefault()
+    this.setState({ ctxMenu: { id, x: e.clientX, y: e.clientY } })
+  }
+
+  closeCtxMenu = () => this.setState({ ctxMenu: null })
+
+  ctxRename = async () => {
+    const { ctxMenu, costumes } = this.state
+    if (!ctxMenu) return
+    this.closeCtxMenu()
+    const c = costumes?.find((x) => x.id === ctxMenu.id)
+    if (!c) return
+    const name = prompt('Rename costume', c.name ?? '')
+    if (!name) return
+    await this.updateCostume({ ...c, name })
+    await this.fetch()
   }
 
   setName = async (name: string) => {
@@ -708,15 +733,6 @@ export default class Costumer extends Component<Props, State> {
     app.showSnackbar('Wearable added', PanelType.Success)
   }
 
-  private getCostumeForRender() {
-    if (!this.state.costumes) return null
-    return sortBy(this.state.costumes, (c) => c.id).map((c) => {
-      const active = this.costumeId == c.id
-      const flag = this.state.avatarCostumeId == c.id ? '👗 ' : ''
-      return <option value={c.id}>{c.name || `costume#${c.id}`}</option>
-    })
-  }
-
   private getWearablesForRender() {
     return (
       this.costume?.attachments?.map((attachment, idx) => {
@@ -738,11 +754,6 @@ export default class Costumer extends Component<Props, State> {
     )
   }
 
-  onChange = (e: Event) => {
-    let id = (e.target as HTMLSelectElement).value
-    route(`/costumer/${id}`, true)
-  }
-
   render() {
     if (!app.signedIn) {
       return <Redirect to="/account" />
@@ -754,36 +765,68 @@ export default class Costumer extends Component<Props, State> {
       </Avatar>
     )
 
-    const skinKey = `skin-${this.props.costumeId}`
-
     const worn = !this.props.costumeId ? false : this.state.avatarCostumeId == parseInt(this.props.costumeId, 10)
     const editorKey = `editor-${this.state.attachmentIdx ?? 0}-${this.props.costumeId}`
-    const preview = `/u/${app.wallet}/costumes/${this.props.costumeId}`
     const attachments = this.costume?.attachments ?? []
+    const { ctxMenu } = this.state
+    const costumes = sortBy(this.state.costumes, (c) => c.id)
 
     return (
-      <section class="columns costumer-page">
-        <h1>{this.costume?.name || 'New costume'}</h1>
-
-        <article>
-          <figcaption>
+      <section class={`columns nav costumer-page${this.state.navOpen ? '' : ' nav-collapsed'}`}>
+        <nav class="costume-list">
+          <div>
             <button type="button" class="secondary" onClick={pending(this.createCostume)}>
               New
             </button>
-
             <button type="button" disabled={worn} onClick={pending(this.setActive)}>
               Wear
             </button>
-            <button type="button" onClick={pending(this.duplicateCostume)}>
-              Duplicate
+          </div>
+          <ul>
+            {costumes.map((c) => (
+              <li key={c.id} class={this.costumeId === c.id ? 'active' : ''} onContextMenu={this.onCtxMenu(c.id)}>
+                <a
+                  href={`/costumer/${c.id}`}
+                  onClick={(e) => {
+                    e.preventDefault()
+                    route(`/costumer/${c.id}`, true)
+                  }}
+                >
+                  {c.name || `costume#${c.id}`}
+                  {this.state.avatarCostumeId === c.id ? ' *' : ''}
+                </a>
+              </li>
+            ))}
+          </ul>
+          {ctxMenu && (
+            <div onClick={this.closeCtxMenu} style="position:fixed;inset:0;z-index:99">
+              <menu style={{ position: 'absolute', left: ctxMenu.x, top: ctxMenu.y }} onClick={(e) => e.stopPropagation()}>
+                <li onClick={this.ctxRename}>Rename</li>
+                <li
+                  onClick={() => {
+                    this.closeCtxMenu()
+                    void this.duplicateCostume(ctxMenu.id)
+                  }}
+                >
+                  Duplicate
+                </li>
+                <li
+                  onClick={() => {
+                    this.closeCtxMenu()
+                    void this.deleteCostume(ctxMenu.id)
+                  }}
+                >
+                  Delete
+                </li>
+              </menu>
+            </div>
+          )}
+        </nav>
+
+        <article>
+        <button class="hamburger" type="button" onClick={() => this.setState({ navOpen: !this.state.navOpen })}>
+              ☰
             </button>
-            <button type="button" onClick={pending(this.deleteCostume)}>
-              Delete
-            </button>
-            <a class="buttonish" href={preview}>
-              Preview
-            </a>
-          </figcaption>
 
           <figure>
             <div id="gizmos" class={this.state.attachmentIdx !== null ? 'active' : 'inactive'}>
@@ -811,7 +854,6 @@ export default class Costumer extends Component<Props, State> {
               />
             ) : null}
           </figure>
-
           {avatar}
         </article>
 
@@ -847,8 +889,6 @@ export default class Costumer extends Component<Props, State> {
               )
             })}
           </div>
-
-          {false && <Skin key={skinKey} costume={this.costume as any} skin={this.costume?.skin ?? ''} default_color={this.costume?.default_color ?? ''} setSkin={this.setSkin} />}
 
           <h2>Download</h2>
 
