@@ -53,7 +53,7 @@ async function getEmailCode(email: string): Promise<{ code: string; expiry: stri
   // fixme - make dates stable in case people submit at midnight UTC
   const date = new Date().toISOString().split('T')[0]
 
-  // fixme - dont put the salt in the public codebase? 
+  // fixme - dont put the salt in the public codebase?
   const salted = 'yarr-the-saltiness-' + email.toString().replace(/^\s+/, '').replace(/\s+$/, '') + '-' + date.toString()
   const key = JWT_SECRET
 

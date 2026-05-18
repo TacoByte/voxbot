@@ -80,6 +80,7 @@ export async function PasskeyRegisterVerify(req: Request, res: Response) {
       expectedChallenge,
       expectedOrigin: ORIGIN,
       expectedRPID: RP_ID,
+      requireUserVerification: false,
     })
   } catch (e: any) {
     res.json({ success: false, error: e?.message || 'Verification failed' })
@@ -175,6 +176,7 @@ export async function PasskeyLoginVerify(req: Request, res: Response) {
       expectedChallenge,
       expectedOrigin: ORIGIN,
       expectedRPID: RP_ID,
+      requireUserVerification: false,
       credential: {
         id: (row.credential_id as Buffer).toString('base64url'),
         publicKey: new Uint8Array(row.public_key as Buffer),
@@ -261,6 +263,7 @@ export async function PasskeyAddVerify(req: Request, res: Response) {
       expectedChallenge,
       expectedOrigin: ORIGIN,
       expectedRPID: RP_ID,
+      requireUserVerification: false,
     })
   } catch (e: any) {
     res.json({ success: false, error: e?.message || 'Verification failed' })
