@@ -304,6 +304,7 @@ main {
 
   &>nav {
     grid-area: nav;
+    margin-top: 4rem;
     overflow: hidden;
     max-width: 10rem;
     transition: max-width 200ms ease-in-out;
@@ -357,6 +358,17 @@ button.hamburger {
   &>article {
     grid-area: main;
     min-width: 300px;
+    position: relative;
+
+    h1 {
+      margin-top: 0;
+    }
+
+    .hamburger {
+      position: absolute;
+      left: -2rem;
+      top: 0.5rem;
+    }
   }
 
   &>aside {

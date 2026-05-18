@@ -824,9 +824,11 @@ export default class Costumer extends Component<Props, State> {
         </nav>
 
         <article>
-        <button class="hamburger" type="button" onClick={() => this.setState({ navOpen: !this.state.navOpen })}>
-              ☰
-            </button>
+          <button class="hamburger" type="button" onClick={() => this.setState({ navOpen: !this.state.navOpen })}>
+            ☰
+          </button>
+
+          <h1>{this.costume?.name}</h1>
 
           <figure>
             <div id="gizmos" class={this.state.attachmentIdx !== null ? 'active' : 'inactive'}>
@@ -858,8 +860,12 @@ export default class Costumer extends Component<Props, State> {
         </article>
 
         <aside>
-          <h2>Name</h2>
-          <input type="text" value={this.costume?.name ? this.costume.name : ``} />
+          <form>
+            <div class='f'>
+              <label>Name</label>
+              <input type="text" value={this.costume?.name ? this.costume.name : ``} />
+            </div>
+          </form>
 
           <h2>Wearables</h2>
 
@@ -889,8 +895,6 @@ export default class Costumer extends Component<Props, State> {
               )
             })}
           </div>
-
-          <h2>Download</h2>
 
           <button type="button" onClick={this.downloadCostume}>
             costume-{this.costume?.id ?? 'new'}.json

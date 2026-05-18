@@ -8,7 +8,7 @@ guidelines.
 [![Open in GitHub Codespaces](https://img.shields.io/badge/Open_in-GitHub_Codespaces-238636?style=for-the-badge&logo=github&logoColor=white)](https://codespaces.new/cryptovoxels/retro)
 
 * `pnpm install`
-* `psql voxels < db/import.sql`
+* `cat db/import.sql.gz | gunzip | psql voxels`
 * `pnpm run dev`
 * Open port 9000
 
