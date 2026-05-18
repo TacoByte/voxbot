@@ -73,7 +73,7 @@ export class Client {
       return this.avatarState.payload.identity as any
     }
 
-    return { name: 'anon' }
+    return { name: 'anon', wallet: null }
   }
 
   constructor(
@@ -325,7 +325,7 @@ export class Client {
     const identity =
       this.avatarState.type === AvatarStateType.afterLogin || this.avatarState.type === AvatarStateType.afterFirstUpdate
         ? this.avatarState.payload.identity
-        : { name: 'anon' }
+        : { name: 'anon', wallet: null }
 
     this.avatarState = {
       type: AvatarStateType.afterFirstUpdate,

@@ -284,8 +284,8 @@ export class Shard {
           type: messages.MessageType.createAvatar,
           uuid: clientState.clientUUID,
           description: {
-            name: clientState.identity?.name,
-            wallet: clientState.identity?.wallet,
+            name: clientState.identity?.name ?? undefined,
+            wallet: clientState.identity?.wallet ?? undefined,
           },
         }
 

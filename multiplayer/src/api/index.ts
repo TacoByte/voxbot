@@ -28,7 +28,7 @@ export const tryMapAvatarResourceFromClientState = (c: ClientState): AvatarResou
     : {
         id: c.clientUUID,
         name: c.identity?.name,
-        wallet: c.identity?.wallet,
+        wallet: c.identity?.wallet ?? undefined,
         description: {
           animation: c.avatar.animation,
           position: c.avatar.position,
@@ -48,7 +48,7 @@ type UserResource = {
 export const mapUserResourceFromClientState = (c: ClientState, space?: SpaceId): UserResource => ({
   lastSeen: c.lastSeen,
   name: c.identity?.name,
-  wallet: c.identity?.wallet,
+  wallet: c.identity?.wallet ?? undefined,
   animation: c.avatar !== null ? c.avatar.animation : null,
   position: c.avatar !== null ? c.avatar.position : null,
   space,
