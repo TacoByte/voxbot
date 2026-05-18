@@ -110,22 +110,27 @@ Your voxels login code is: ${code}
 ps: This code is valid on ${expiry}. If you are not trying to log into voxels.com with this email, please ignore this message.
 `
 
-  console.log('sending email', html)
+  const serverToken = process.env.POSTMARK_TOKEN
+  if (!serverToken) {
+    console.error('POSTMARK_TOKEN not set - code:', code)
+    res.json({ success: true })
+    return
+  }
 
-  const serverToken = process.env.POSTMARK_TOKEN!
-
-  const client = new ServerClient(serverToken)
-
-  client.sendEmail({
-    From: 'Voxels Team<team@voxels.com>',
-    To: email,
-    Subject: `Login code ${code}`,
-    TextBody: text,
-    HtmlBody: html,
-  })
-
-  // fs.writeFileSync('/Users/ben/Desktop/email.eml', message)
-  // exec('open /Users/ben/Desktop/email.eml')
+  try {
+    const client = new ServerClient(serverToken)
+    await client.sendEmail({
+      From: 'Voxels Team<team@voxels.com>',
+      To: email,
+      Subject: `Login code ${code}`,
+      TextBody: text,
+      HtmlBody: html,
+    })
+  } catch (e: any) {
+    console.error('Postmark send failed:', e?.message ?? e)
+    res.json({ success: false, error: 'Failed to send email' })
+    return
+  }
 
   res.json({ success: true })
 }
