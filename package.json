@@ -173,7 +173,6 @@
     "pg-boss": "^10.3.2",
     "pg-promise": "^12.2.0",
     "pluralize": "^8.0.0",
-    "postmark": "^4.0.7",
     "preact": "^10.16.0",
     "preact-markdown": "^2.1.0",
     "preact-render-to-string": "^6.1.0",
