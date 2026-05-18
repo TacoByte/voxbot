@@ -4,6 +4,12 @@ import { compressQuaternion, decompressQuaternion, Quaternion } from './utils'
 
 export { Emotes } from './constant'
 
+/** Shared identity type used across avatar, persona, and multiplayer layers */
+export type AvatarIdentity = {
+  name: string | null
+  wallet: string | null
+}
+
 const extensionCodec = new ExtensionCodec()
 
 const msgPacker = new Encoder(extensionCodec, null, 100, 1024, false, false, true)

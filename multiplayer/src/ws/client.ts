@@ -274,10 +274,6 @@ export class Client {
         this.handleMetric(msg)
         break
 
-      case messages.MessageType.createAvatar:
-        // Deprecated
-        break
-
       default:
         this.logger.error(`unknown message type ${(msg as any).type}`, this.whois())
         break
@@ -404,7 +400,7 @@ export class Client {
       this.avatarState = {
         type: AvatarStateType.afterLogin,
         payload: {
-          identity: { name: 'anon' },
+          identity: { name: 'anon', wallet: null },
         },
       }
     } else {
@@ -414,7 +410,7 @@ export class Client {
         type: AvatarStateType.afterLogin,
         payload: {
           identity: {
-            name: row.name,
+            name: row.name ?? null,
             wallet,
           },
         },
@@ -427,7 +423,7 @@ export class Client {
     this.avatarState = {
       type: AvatarStateType.afterLogin,
       payload: {
-        identity: { name: 'anon' },
+        identity: { name: 'anon', wallet: null },
       },
     }
 
@@ -538,8 +534,8 @@ function avatarStateToCreateMessage(
   const description: messages.CreateAvatarMessage['description'] = {}
 
   if (avatarState.payload.identity) {
-    description.name = avatarState.payload.identity.name
-    description.wallet = avatarState.payload.identity.wallet
+    if (avatarState.payload.identity.name) description.name = avatarState.payload.identity.name
+    if (avatarState.payload.identity.wallet) description.wallet = avatarState.payload.identity.wallet
   }
 
   return {
@@ -553,8 +549,8 @@ function avatarStateToLoginCompleteMessage(avatarState: AvatarState.AfterLogin):
   return {
     type: messages.MessageType.loginComplete,
     user: {
-      name: avatarState.payload.identity.name,
-      wallet: avatarState.payload.identity.wallet,
+      name: avatarState.payload.identity.name ?? undefined,
+      wallet: avatarState.payload.identity.wallet ?? undefined,
     },
   }
 }

@@ -34,6 +34,7 @@ export type Shards = {
   handleDrain(shardID: ShardId, clientUUID: ClientUUID): Error | void
   handleMessage(shardID: ShardId, clientUUID: ClientUUID, message: ArrayBuffer, isBinary: boolean): Error | void
   handleMessageDropped(shardID: ShardId, clientUUID: ClientUUID, message: ArrayBuffer, isBinary: boolean): Error | void
+  onAvatarChanged(wallet: string): void
 }
 
 const HEALTHY_UPDATE_HZ = 5
@@ -196,22 +197,18 @@ export default async function createShards(
     return client
   }
 
-  const onAvatarChanged = (worldShard: Shard, spaceShards: Map<string, Shard>, wallet: string): void => {
+  const onAvatarChanged = (wallet: string): void => {
     const changedWallet = wallet.toLowerCase()
-
-    const shardsHostingChangedWallet = [worldShard, ...spaceShards.values()].filter((shard) =>
-      Array.from(shard.getClients()).some((client) => client.identity?.wallet?.toLowerCase() === changedWallet),
-    )
-
     const message: AvatarChangedMessage = {
       type: MessageType.avatarChanged,
       wallet,
       cacheKey: Date.now(),
     }
-
-    shardsHostingChangedWallet.forEach((shard) => {
-      shard.broadcastFromServer(message)
-    })
+    ;[worldShard, ...spaceShards.values()]
+      .filter((shard) =>
+        Array.from(shard.getClients()).some((c) => c.identity?.wallet?.toLowerCase() === changedWallet),
+      )
+      .forEach((shard) => shard.broadcastFromServer(message))
   }
 
   const onUserSuspended = (
@@ -251,6 +248,7 @@ export default async function createShards(
     handleDrain,
     handleMessage,
     handleMessageDropped,
+    onAvatarChanged,
   }
 }
 

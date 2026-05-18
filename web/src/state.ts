@@ -6,10 +6,13 @@ import { ApiAvatar, type ApiAvatarMessage } from '../../common/messages/api-avat
 import Snackbar from './components/snackbar'
 import { fetchAPI } from './utils'
 
-const NAME_KEY = 'cv-name-key'
+const jsonHeaders = {
+  Accept: 'application/json, text/plain, */*',
+  'Content-Type': 'application/json',
+}
 
 export interface Message {
-  type: 'visit' | 'chat' | 'join' | 'leave' | 'navigate' | 'teleport'
+  type: 'visit' | 'chat' | 'join' | 'leave' | 'navigate' | 'teleport' | 'reconnect'
   sender?: string
   createdAt?: Date
   data?: string
@@ -29,6 +32,7 @@ export enum AppEvent {
   Login = 'login',
   Logout = 'logout',
   AvatarLoad = 'avatar-load', // event for when we got all the user info from the db
+  ErrorLogin = 'error-login',
   Change = 'change',
   ProviderMessage = 'provider-message',
 }
@@ -141,6 +145,10 @@ export class Appstate extends State {
         const coords = msg.data.slice(5)
         window.persona.teleport(coords)
       }
+      if (msg.type == 'reconnect') {
+        this.loadAvatar()
+        ;(window as any).connector?.reconnect()
+      }
     }
   }
 
@@ -210,8 +218,7 @@ export class Appstate extends State {
   }
 
   signout() {
-    this.localStorage?.removeItem(NAME_KEY)
-    this.localStorage?.removeItem('cv-wearables-owned') // remove localstorage for wearables owned
+    this.localStorage?.removeItem('cv-wearables-owned')
 
     Cookies.remove('jwt')
 
@@ -311,14 +318,43 @@ export class Appstate extends State {
     })
   }
 
+  onToken(key: string, name: string | null, isNewUser: boolean): void {
+    const payload = decodeJwt(key) as any
+    if (!payload || typeof payload !== 'object') {
+      console.error('Invalid JWT')
+      return
+    }
+    const wallet = payload.wallet.toLowerCase()
+    this.setState({ key, name: name ?? undefined, wallet })
+    this.loadAvatar()
+    this.emit(AppEvent.Login, isNewUser)
+  }
+
+  async emailSignin(email: string, code: string): Promise<{ token: string; name: string | null; isNewUser: boolean } | null> {
+    let f
+    try {
+      f = await fetch(`${process.env.API}/signin`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: jsonHeaders,
+        body: JSON.stringify({ email, code }),
+      })
+    } catch {
+      this.emit(AppEvent.ErrorLogin)
+      console.error('Network Error, please try again a few minutes')
+      return null
+    }
+    const r = (await f.json()) as { success: boolean; name: string | null; token: string; isNewUser: boolean }
+    if (!r.success) {
+      this.emit(AppEvent.ErrorLogin)
+      return null
+    }
+    return { token: r.token, name: r.name, isNewUser: r.isNewUser }
+  }
+
   private async _initiate() {
     if (!document['addEventListener']) {
       return
-    }
-
-    const name = this.localStorage?.getItem(NAME_KEY)
-    if (name) {
-      this.setState({ name })
     }
 
     try {

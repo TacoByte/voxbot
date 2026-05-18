@@ -38,10 +38,7 @@ export namespace AvatarStateFacets {
   export type Empty = {}
 
   export type AfterLogin = {
-    identity: {
-      name: string
-      wallet?: string
-    }
+    identity: import('../../../common/messages').AvatarIdentity
   }
 
   export type AfterFirstUpdate = {

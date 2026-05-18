@@ -24,130 +24,252 @@ async function postJSON(url: string, body: unknown) {
   return data
 }
 
-enum Status {
-  Initial,
-  Sending,
-  Sent,
-  Submitting,
+async function checkNameAvailable(name: string): Promise<boolean> {
+  const r = await fetch('/api/account/reserve', { ...fetchParams, method: 'POST', body: JSON.stringify({ name }) })
+  const j = await r.json()
+  return !!j.available
 }
 
-export const Login = ({ reason }: { reason?: string }) => {
-  const [status, setStatus] = useState(Status.Initial)
-  const [email, setEmail] = useState('')
-  const [code, setCode] = useState('')
-  const [passkeyUsername, setPasskeyUsername] = useState('')
-  const [passkeyError, setPasskeyError] = useState('')
-  const [passkeyBusy, setPasskeyBusy] = useState(false)
-  const [passkeyPhase, setPasskeyPhase] = useState<null | 'login' | 'register'>(null)
+type Stage = 'email' | 'passkey' | 'code' | 'name'
 
-  const finishPasskeySession = (r: { success: boolean; token?: string; name?: string | null; isNewUser?: boolean; error?: string }) => {
-    if (!r.success) {
-      setPasskeyError(r.error || 'Something went wrong')
-      return
-    }
-    if (!r.token) {
-      setPasskeyError('No session token from server')
-      return
-    }
-    login.onToken(r.token, r.name ?? null, !!r.isNewUser)
-    if (!app.signedIn) {
-      setPasskeyError('Could not start your session. Try again or use email or wallet.')
-    }
-  }
+export const AddPasskey = ({ onDone }: { onDone?: () => void }) => {
+  const [username, setUsername] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+  const [done, setDone] = useState(false)
 
-  const onPasskeyRegister = async () => {
-    if (!passkeyUsername.trim() || passkeyBusy) return
-    setPasskeyBusy(true)
-    setPasskeyPhase('register')
-    setPasskeyError('')
+  const onAdd = async () => {
+    if (!username.trim() || busy) return
+    setBusy(true)
+    setError('')
     try {
-      const opts = await postJSON('/api/passkey/register/options', { username: passkeyUsername })
+      const opts = await postJSON('/api/passkey/add/options', { username })
       if (!opts.success) {
-        setPasskeyError(opts.error || 'Failed')
+        setError(opts.error || 'Failed')
         return
       }
       const attResp = await startRegistration({ optionsJSON: opts.options })
-      const r = await postJSON('/api/passkey/register/verify', { username: passkeyUsername, attResp })
-      finishPasskeySession(r)
+      const r = await postJSON('/api/passkey/add/verify', { username, attResp })
+      if (!r.success) {
+        setError(r.error || 'Failed')
+        return
+      }
+      setDone(true)
+      onDone?.()
     } catch (e: any) {
-      setPasskeyError(e?.message || 'Cancelled')
+      setError(e?.message || 'Cancelled')
     } finally {
-      setPasskeyBusy(false)
-      setPasskeyPhase(null)
+      setBusy(false)
+    }
+  }
+
+  if (done) return <p>passkey added</p>
+
+  return (
+    <>
+      <div class="f">
+        <label>passkey username</label>
+        <input type="text" value={username} onInput={(e) => setUsername(e.currentTarget.value)} placeholder="choose a username" autocapitalize="none" />
+      </div>
+      {error && <p>{error}</p>}
+      <button type="button" onClick={onAdd} disabled={busy || !username.trim()}>
+        {busy ? 'adding...' : 'add passkey'}
+      </button>
+    </>
+  )
+}
+
+export const Login = ({ reason }: { reason?: string }) => {
+  const [stage, setStage] = useState<Stage>('email')
+  const [email, setEmail] = useState('')
+  const [code, setCode] = useState('')
+  const [error, setError] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [passkeyUsername, setPasskeyUsername] = useState('')
+  const [pendingToken, setPendingToken] = useState<string | null>(null)
+  const [pendingName, setPendingName] = useState<string | null>(null)
+  const [chosenName, setChosenName] = useState('')
+  const [nameAvailable, setNameAvailable] = useState<boolean | null>(null)
+  const [nameChecking, setNameChecking] = useState(false)
+
+  const onContinue = async (e: Event) => {
+    e.preventDefault()
+    if (!email.trim() || busy) return
+    setBusy(true)
+    setError('')
+    try {
+      const r = await postJSON('/api/signin/check-email', { email })
+      if (r.hasPasskey) {
+        setPasskeyUsername(r.passkeyUsername)
+        setStage('passkey')
+      } else {
+        await postJSON('/api/signin/code', { email })
+        setStage('code')
+      }
+    } catch (e: any) {
+      setError(e?.message || 'Error')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const onSubmitCode = async (e: Event) => {
+    e.preventDefault()
+    if (!code.trim() || busy) return
+    setBusy(true)
+    setError('')
+    const r = await app.emailSignin(email, code)
+    setBusy(false)
+    if (!r) {
+      setError('Invalid code')
+      return
+    }
+    if (r.isNewUser) {
+      setPendingToken(r.token)
+      setPendingName(r.name)
+      setStage('name')
+    } else {
+      app.onToken(r.token, r.name, false)
     }
   }
 
   const onPasskeyLogin = async () => {
-    if (!passkeyUsername.trim() || passkeyBusy) return
-    setPasskeyBusy(true)
-    setPasskeyPhase('login')
-    setPasskeyError('')
+    if (!passkeyUsername || busy) return
+    setBusy(true)
+    setError('')
     try {
       const opts = await postJSON('/api/passkey/login/options', { username: passkeyUsername })
       if (!opts.success) {
-        setPasskeyError(opts.error || 'Failed')
+        setError(opts.error || 'Failed')
         return
       }
       const authResp = await startAuthentication({ optionsJSON: opts.options })
       const r = await postJSON('/api/passkey/login/verify', { username: passkeyUsername, authResp })
-      finishPasskeySession(r)
+      if (!r.success) {
+        setError(r.error || 'Failed')
+        return
+      }
+      login.onToken(r.token, r.name ?? null, !!r.isNewUser)
     } catch (e: any) {
-      setPasskeyError(e?.message || 'Cancelled')
+      setError(e?.message || 'Cancelled')
     } finally {
-      setPasskeyBusy(false)
-      setPasskeyPhase(null)
+      setBusy(false)
     }
   }
 
-  const pattern = '[a-z0-9._%+-]+@[a-z0-9.-]+\\.[a-z]{2,}$'
+  const onNameInput = async (name: string) => {
+    setChosenName(name)
+    setNameAvailable(null)
+    if (!name.trim()) return
+    setNameChecking(true)
+    const avail = await checkNameAvailable(name.trim())
+    setNameChecking(false)
+    setNameAvailable(avail)
+  }
 
-  const onClick = (e: Event) => {
-    const canInstallMetamask = !isMobile() && !hasMetamask()
-    if (canInstallMetamask) {
+  const onConfirmName = async (e: Event) => {
+    e.preventDefault()
+    if (!pendingToken || !chosenName.trim() || !nameAvailable) return
+    app.onToken(pendingToken, chosenName.trim(), true)
+    await fetch('/api/avatar', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: chosenName.trim() }),
+    }).catch(() => {})
+  }
+
+  const onMetamask = () => {
+    const canInstall = !isMobile() && !hasMetamask()
+    if (canInstall) {
       window.open('https://chrome.google.com/webstore/detail/metamask/nkbihfbeogaeaoehlefnkodbefgpgknn', '_blank', 'noopener')
     } else {
       login.signin()
     }
   }
 
-  const onSubmit = async (e: Event) => {
-    e.preventDefault()
-
-    if (status == Status.Sending) {
-      return
-    } else if (status == Status.Initial) {
-      setStatus(Status.Sending)
-
-      const body = JSON.stringify({ email })
-      const f = await fetch('/api/signin/code', { ...fetchParams, method: 'POST', body })
-      const j = await f.json()
-
-      if (j.success) {
-        setStatus(Status.Sent)
-      } else {
-        setStatus(Status.Initial)
-
-        alert(j.message)
-      }
-    } else if (status == Status.Sent) {
-      setStatus(Status.Submitting)
-
-      login.emailSignin(email, code)
-    }
+  if (stage === 'name' && pendingToken) {
+    return (
+      <section class="login">
+        <h1>choose a name</h1>
+        <form onSubmit={onConfirmName}>
+          <div class="f">
+            <label>username</label>
+            <input type="text" autofocus value={chosenName} onInput={(e) => onNameInput(e.currentTarget.value)} placeholder="yourname" autocapitalize="none" />
+          </div>
+          {chosenName.trim() && <p>{nameChecking ? 'checking...' : nameAvailable === true ? 'available' : nameAvailable === false ? 'taken' : ''}</p>}
+          <div class="f">
+            <label>passkey</label>
+            <AddPasskey />
+          </div>
+          <button type="submit" disabled={!nameAvailable || !chosenName.trim()}>
+            done
+          </button>
+        </form>
+      </section>
+    )
   }
 
-  const onReset = (e: Event) => {
-    setStatus(Status.Initial)
-    e.preventDefault()
+  if (stage === 'passkey') {
+    return (
+      <section class="login">
+        <h1>log in with passkey</h1>
+        <p>{email}</p>
+        {error && <p>{error}</p>}
+        <button type="button" onClick={onPasskeyLogin} disabled={busy}>
+          {busy ? 'authenticating...' : 'use passkey'}
+        </button>
+        <a
+          href=""
+          role="button"
+          onClick={(e) => {
+            e.preventDefault()
+            setStage('code')
+            postJSON('/api/signin/code', { email }).catch(() => {})
+          }}
+        >
+          use email code instead
+        </a>
+      </section>
+    )
+  }
+
+  if (stage === 'code') {
+    return (
+      <section class="login">
+        <h1>enter code</h1>
+        <p>sent to {email}</p>
+        <form onSubmit={onSubmitCode}>
+          <div class="f">
+            <label>code</label>
+            <input maxLength={6} autofocus type="text" onInput={(e: any) => setCode(e.target.value)} />
+          </div>
+          {error && <p>{error}</p>}
+          <button type="submit" disabled={busy}>
+            {busy ? 'checking...' : 'log in'}
+          </button>
+          <a
+            href=""
+            role="button"
+            onClick={(e) => {
+              e.preventDefault()
+              setStage('email')
+            }}
+          >
+            back
+          </a>
+        </form>
+      </section>
+    )
   }
 
   return (
     <section class="login">
-      <h1>Log in{reason ? ` to ${reason}` : ''}</h1>
+      <h1>log in{reason ? ` to ${reason}` : ''}</h1>
       <div class="login-form">
         <div class="login-block">
-          <h1>Wallet</h1>
-          <button type="button" onClick={onClick}>
+          <h1>wallet</h1>
+          <button type="button" onClick={onMetamask}>
             <img src={'/images/metamask.png'} width={30} height={30} title={'Metamask'} alt="" />
             &nbsp;Metamask
           </button>
@@ -156,61 +278,16 @@ export const Login = ({ reason }: { reason?: string }) => {
         <hr class="login-form-divider" />
 
         <div class="login-block">
-          <h1>Email / Passkey</h1>
-          <form onSubmit={onSubmit}>
-            <fieldset>
-              <label>
-                Username or email
-                <input
-                  value={email || passkeyUsername}
-                  onInput={(e) => {
-                    const v = e.currentTarget.value
-                    setEmail(v)
-                    setPasskeyUsername(v)
-                  }}
-                  type="text"
-                  autocomplete="username email"
-                  autocapitalize="none"
-                  placeholder="username or email@example.com"
-                />
-              </label>
-            </fieldset>
-
-            {(status == Status.Sent || status == Status.Submitting) && (
-              <fieldset>
-                <label>
-                  Code
-                  <input maxLength={6} autofocus onInput={(e: any) => setCode(e.target.value)} type="text" />
-                </label>
-              </fieldset>
-            )}
-
-            {passkeyError ? <p class="login-error">{passkeyError}</p> : null}
-
-            <div class="login-passkey-actions">
-              {status == Status.Sent || status == Status.Submitting ? (
-                <>
-                  {status == Status.Submitting ? <button disabled>Submitting...</button> : <button>Log in</button>}
-                  <a href="" role="button" onClick={onReset}>
-                    cancel
-                  </a>
-                </>
-              ) : passkeyBusy ? (
-                <button type="button" disabled>
-                  {passkeyPhase === 'register' ? 'Creating account...' : 'Logging in...'}
-                </button>
-              ) : (
-                <>
-                  {status == Status.Sending ? <button disabled>Submitting...</button> : <button type="submit">Continue</button>}
-                  <button type="button" onClick={onPasskeyLogin} disabled={!passkeyUsername.trim()}>
-                    Log in with passkey
-                  </button>
-                  <button type="button" onClick={onPasskeyRegister} disabled={!passkeyUsername.trim()}>
-                    Create account
-                  </button>
-                </>
-              )}
+          <h1>email login</h1>
+          <form onSubmit={onContinue}>
+            <div class="f">
+              <label>email</label>
+              <input type="email" value={email} onInput={(e) => setEmail(e.currentTarget.value)} autocomplete="email" autocapitalize="none" placeholder="you@example.com" />
             </div>
+            {error && <p>{error}</p>}
+            <button type="submit" disabled={busy || !email.trim()}>
+              {busy ? 'checking...' : 'continue'}
+            </button>
           </form>
         </div>
       </div>

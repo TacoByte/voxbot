@@ -141,20 +141,14 @@ export default function Profile(props: Props) {
 
           {avatar?.social_link_1 && (
             <>
-              <dt>Link</dt>
+              <dt>External Links</dt>
               <dd>
                 <a href={avatar.social_link_1} target="_blank">
                   {truncate(avatar.social_link_1, { length: 48 })}
                 </a>
-              </dd>
-            </>
-          )}
-          {avatar?.social_link_2 && (
-            <>
-              <dt>Link</dt>
-              <dd>
-                <a href={avatar.social_link_2} target="_blank">
-                  {truncate(avatar.social_link_2, { length: 48 })}
+                <br />
+                <a href={avatar.social_link_2!} target="_blank">
+                  {truncate(avatar.social_link_2!, { length: 48 })}
                 </a>
               </dd>
             </>

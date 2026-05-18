@@ -1,11 +1,9 @@
+import { AvatarIdentity } from '../../../common/messages'
 import { ClientUUID } from './clientUUID'
 
 export type ClientState = {
   lastSeen: number | null
-  identity: {
-    name: string
-    wallet?: string
-  }
+  identity: AvatarIdentity
   avatar: {
     animation: number
     position: [x: number, y: number, z: number]
