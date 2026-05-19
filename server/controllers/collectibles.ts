@@ -6,20 +6,33 @@ import { parseQueryInt } from '../lib/query-parsing-helpers'
 import { Db } from '../pg'
 
 export default function (db: Db, passport: any, app: any) {
-  app.get('/api/wearables/all', cache('5 seconds'), async (req: Request, res: Response) => {
+  app.get('/api/wearables/suggest', cache('5 seconds'), async (req: Request, res: Response) => {
+    const bone = req.query.bone || ''
     const result = await db.query(
-      'sql/get-wearables',
-      `
-      select id,
-        token_id,
-        name,
-        author,
-        collection_id
-      from 
-        wearables
-      limit
-        100;
-      `,
+      'embedded/wearables-suggest',
+      `select id, name, is_free from wearables
+       where suppressed is not true
+         and token_id is not null
+       order by
+         case when lower(default_bone) ilike lower($1) then 0 else 1 end,
+         is_free desc, name
+       limit 30`,
+      [bone],
+    )
+    res.json({ success: true, wearables: result.rows })
+  })
+
+  app.get('/api/wearables/search', cache('5 seconds'), async (req: Request, res: Response) => {
+    const q = `%${req.query.q || ''}%`
+    const result = await db.query(
+      'embedded/wearables-search',
+      `select id, name, is_free from wearables
+       where name ilike $1
+         and suppressed is not true
+         and token_id is not null
+       order by is_free desc, name
+       limit 50`,
+      [q],
     )
     res.json({ success: true, wearables: result.rows })
   })

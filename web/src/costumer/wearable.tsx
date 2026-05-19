@@ -1,13 +1,12 @@
 import { Component } from 'preact'
 import voxImport from '../../../common/vox-import/sync-vox-import'
-import { CostumeAttachment } from '../../../common/messages/costumes'
+import { Attachment } from './index'
 
 interface Props {
-  attachment: CostumeAttachment
+  attachment: Attachment
   selected: boolean
   scene: BABYLON.Scene | null
   gizmoManager?: BABYLON.GizmoManager | null
-  updateAttachment?: (attachment: CostumeAttachment) => void
   onSelect?: (evt: BABYLON.ActionEvent) => void
   onLoad?: (uuid: string, mesh: BABYLON.Mesh) => void
 }
@@ -105,14 +104,15 @@ export class Wearable extends Component<Props, State> {
   private bone(bone: string): BABYLON.Bone | null {
     if (!this.skeleton) return null
 
-    const index = this.skeleton.getBoneIndexByName(`mixamorig:${bone}`)
+    const lower = bone.toLowerCase()
+    const found = this.skeleton.bones.find((b) => b.name.toLowerCase() === `mixamorig:${lower}`)
 
-    if (index == -1) {
+    if (!found) {
       console.error(`Bad bone name "${bone}"`)
       return null
     }
 
-    return this.skeleton.bones[index]
+    return found
   }
 
   private focus(on: boolean) {
@@ -153,6 +153,8 @@ export class Wearable extends Component<Props, State> {
       throw new Error('No scene')
     }
 
+    if (!this.props.attachment.wid) return
+
     const mat = new BABYLON.StandardMaterial(`material`, this.scene)
     mat.emissiveColor.set(0.3, 0.3, 0.3) // need a little light otherwise dark wearables
     mat.diffuseColor.set(1, 1, 1)
@@ -163,8 +165,6 @@ export class Wearable extends Component<Props, State> {
       this.mesh.dispose()
       return
     }
-
-    console.log(this.mesh)
 
     this.mesh.name = 'vox-instance'
     this.mesh.id = this.props.attachment.wid
@@ -194,7 +194,7 @@ export class Wearable extends Component<Props, State> {
 
     this.setTransform()
 
-    if (this.props.onLoad) {
+    if (this.props.onLoad && this.props.attachment.wid) {
       this.props.onLoad(this.props.attachment.wid, this.mesh)
     }
   }

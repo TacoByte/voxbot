@@ -211,8 +211,7 @@ export default class WebHeader extends Component<Props, State> {
                       e.preventDefault()
                       this.onSignOut()
                     }}
-                  >
-                  </a>
+                  ></a>
                 </li>
               )}
 
