@@ -189,7 +189,7 @@ export default class ParcelEvent {
   }
 
   authorNameOrAddress(maxChars?: number) {
-    const n = avatarName(this.ev.author)
+    const n = avatarName(this.ev.author) || ''
     if (!maxChars || n.length < maxChars) return n
     return n.slice(0, maxChars)
   }
