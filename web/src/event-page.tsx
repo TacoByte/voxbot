@@ -10,6 +10,7 @@ import { fmt } from './components/date-field'
 import { PanelType } from './components/panel'
 import ParcelEvent, { removeEvent } from './helpers/event'
 import { app, AppEvent } from './state'
+import cachedFetch from './helpers/cached-fetch'
 import { fetchAPI, fetchOptions } from './utils'
 
 export interface Props {
@@ -67,7 +68,8 @@ export default class EventPage extends Component<Props, State> {
     this.controller?.abort('ABORT:starting new request')
     this.controller = new AbortController()
     this.setState({ loading: true })
-    return fetchAPI(`/api/events/${this.props.id}.json`, fetchOptions(this.controller))
+    return cachedFetch(`/api/events/${this.props.id}.json`, fetchOptions(this.controller))
+      .then((r) => r.json())
       .then((r) => {
         this.setEventHelpers(r.event)
         this.setState({ event: r.event }, () => {
@@ -115,8 +117,12 @@ export default class EventPage extends Component<Props, State> {
     const isMod = app.state?.moderator || this.helper.isOwner
 
     return (
-      <section class="columns">
-        <h1>{this.state.event.name}</h1>
+      <section class="columns nav">
+        <EventsNav activeId={this.props.id} />
+
+        <hgroup>
+          <h1>{this.state.event.name}</h1>
+        </hgroup>
 
         <article>
           <figcaption>
@@ -303,6 +309,27 @@ const copyToClipboard = (text: string) => {
     text,
     () => app.showSnackbar(`Copied wallets address to clipboard`, PanelType.Success),
     () => app.showSnackbar(`Could not copy wallets`, PanelType.Info),
+  )
+}
+
+function EventsNav({ activeId }: { activeId?: string }) {
+  const [events, setEvents] = useState<Event[]>([])
+  useEffect(() => {
+    fetchAPI('/api/events.json', fetchOptions()).then((r) => r && setEvents(r.events))
+  }, [])
+  return (
+    <nav>
+      <p>
+        <a class="buttonish" href="/events/new">New event</a>
+      </p>
+      <ul>
+        {events.map((e) => (
+          <li key={e.id} aria-selected={String(e.id) === activeId}>
+            <a href={`/events/${e.id}`}>{e.name}</a>
+          </li>
+        ))}
+      </ul>
+    </nav>
   )
 }
 

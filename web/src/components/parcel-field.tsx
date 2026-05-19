@@ -22,6 +22,19 @@ export default function ParcelField({ value, onChange }: Props) {
   const timer = useRef<any>(null)
 
   useEffect(() => {
+    if (value?.parcel_id && !picked) {
+      fetch(`/api/parcels/${value.parcel_id}.json`)
+        .then((r) => r.json())
+        .then(({ parcel }) => {
+          if (!parcel) return
+          const label = parcel.name || parcel.address
+          setPicked({ label, url: `/parcels/${parcel.id}` })
+          setText(label)
+        })
+    }
+  }, [value?.parcel_id])
+
+  useEffect(() => {
     if (!text || text.startsWith('http') || isAllowedUrl(text)) {
       setResults([])
       return

@@ -3,6 +3,7 @@ import { route } from 'preact-router'
 import ParcelField from './components/parcel-field'
 import DateField from './components/date-field'
 import { Login } from './auth/login'
+import { invalidateUrl } from './helpers/cached-fetch'
 import { app } from './state'
 import { fetchOptions } from './utils'
 
@@ -50,11 +51,12 @@ export default function EventsEdit(props: Props) {
     const start = new Date(startsAt)
     const expires = new Date(start.getTime() + duration * 60000)
 
-    const r = await fetch(`/api/events/${props.id}`, {
+    const r = await fetch(`/api/events/update`, {
       ...fetchOptions(),
-      method: 'PUT',
+      method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
+        id: props.id,
         name: name.trim(),
         description,
         starts_at: start.toISOString(),
@@ -68,6 +70,7 @@ export default function EventsEdit(props: Props) {
       setError(r.message || 'Error')
       return
     }
+    await invalidateUrl(`/api/events/${props.id}.json`, true)
     route(`/events/${props.id}`)
   }
 
@@ -81,7 +84,7 @@ export default function EventsEdit(props: Props) {
     <section class="columns">
       <hgroup>
         <h1>
-          <a href={`/events/${props.id}`}>{name || 'Event'}</a> / edit
+          Edit Event
         </h1>
       </hgroup>
       <article>
