@@ -482,7 +482,6 @@ div.magic-frame {
 table {
   width: 100%;
   border-collapse: collapse;
-  border-bottom: var(--border);
 
   th,
   td {
@@ -500,7 +499,9 @@ table {
     // ...
   }
 
-  td {}
+  tr:first-child td {
+    border-bottom: none;
+  }
 }
 
 /* Rendering */
@@ -596,21 +597,6 @@ dl {
 small {
   color: var(--soft);
   font-size: small;
-}
-
-// Table column sizings
-
-.parcels-table,
-.spaces-table {
-  td {
-    min-width: 4rem;
-    max-width: 8rem;
-  }
-
-  td:nth-child(2) {
-    max-width: unset;
-    width: 100%;
-  }
 }
 
 // Rocking animation: On hover, boxes rock back and forth with increasing then decreasing amplitude
@@ -1128,7 +1114,6 @@ table.parcels,
 table.spaces {
   td {
     vertical-align: top;
-    ;
   }
 
   td:first-child {
