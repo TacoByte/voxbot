@@ -124,25 +124,6 @@ export default function ParcelEdit(props: Props) {
     loadVersions()
   }
 
-  async function toggleSnapshot(v: Version) {
-    if (v.is_snapshot) {
-      await fetch(`/api/parcels/snapshot/remove`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ version: v }),
-      })
-    } else {
-      await fetch(`/api/parcels/snapshot`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(v),
-      })
-    }
-    loadVersions()
-  }
-
   async function download(v: Version) {
     const r = await fetch(`/api/parcels/${v.parcel_id}/history/${v.id}.json`, { credentials: 'include' })
     const d = await r.json()
@@ -259,34 +240,45 @@ export default function ParcelEdit(props: Props) {
           </button>
         </form>
 
-        <h3>history</h3>
+        <h3>edit history</h3>
         <div class="f">
-          <label>Snapshots</label>
           <button type="button" onClick={takeSnapshot}>
             Take snapshot
           </button>
-        </div>
-
-        <div class="f">
-          <label>Import</label>
           <input ref={fileRef} type="file" accept=".json" onChange={importJson} />
         </div>
-        <ul>
-          {versions.map((v) => (
-            <li key={v.id}>
-              {format(v.updated_at)} {v.is_snapshot && <small>snapshot{v.snapshot_name ? `: ${v.snapshot_name}` : ''}</small>}{' '}
-              <button type="button" onClick={() => revert(v)}>
-                Revert
-              </button>{' '}
-              <button type="button" onClick={() => toggleSnapshot(v)}>
-                {v.is_snapshot ? 'Unmark' : 'Mark snapshot'}
-              </button>{' '}
-              <button type="button" onClick={() => download(v)}>
-                Download
-              </button>
-            </li>
-          ))}
-        </ul>
+
+        <table>
+          <tbody>
+            {versions.map((v) => (
+              <tr key={v.id}>
+                <td>
+                  <a
+                    href="#"
+                    onClick={(e: Event) => {
+                      e.preventDefault()
+                      revert(v)
+                    }}
+                  >
+                    {format(v.updated_at)}
+                  </a>
+                </td>
+                <td>{v.is_snapshot && <small>snapshot{v.snapshot_name ? `: ${v.snapshot_name}` : ''}</small>}</td>
+                <td>
+                  <a
+                    href="#"
+                    onClick={(e: Event) => {
+                      e.preventDefault()
+                      download(v)
+                    }}
+                  >
+                    download
+                  </a>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </article>
 
       <aside>
