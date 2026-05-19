@@ -681,8 +681,8 @@ export default class Connector extends TypedEventTarget<{ avatar_joined: string 
       case messages.MessageType.avatarChanged:
         this.onAvatarChanged(msg)
         break
+      case messages.MessageType.loginComplete:
       case messages.MessageType.point:
-        // to be nerfed
         break
       default: {
         // const _never: never = msg
@@ -713,13 +713,9 @@ export default class Connector extends TypedEventTarget<{ avatar_joined: string 
     return null
   }
 
-  onChat(message: messages.ChatMessage, messageTimestamp = Date.now(), deliverQuietly = false) {
+  onChat(message: messages.ChatMessage) {
     const avatar = this._avatarsByUuid.get(message.uuid)
-    if (!avatar) {
-      console.warn('Cannot find avatar')
-      return
-    }
-    avatar.addChat(message.text)
+    avatar?.addChat(message.text)
     this.addChat(message.text, avatar, message.avatar)
   }
 
@@ -769,8 +765,7 @@ export default class Connector extends TypedEventTarget<{ avatar_joined: string 
     // Show speech bubble?
     this.persona.avatar?.addChat(text)
 
-    const localRef = app.state.name ?? app.state.wallet ?? null
-    this.addChat(text, this.persona.avatar, localRef ?? undefined)
+    this.addChat(text, this.persona.avatar, app.state.name ?? app.state.wallet ?? undefined)
 
     // For scripting purposes:
     // const parcel = this.currentParcel()
