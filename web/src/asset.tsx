@@ -151,7 +151,7 @@ export default class Asset extends Component<Props, State> {
         <h1>{this.state.asset.name}</h1>
 
         <article>
-          <figure>
+          <figure class='shortie'>
             {this.asset ? (
               <iframe src={iframe} />
             ) : (

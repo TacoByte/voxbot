@@ -117,7 +117,7 @@ export default class EventPage extends Component<Props, State> {
     const isMod = app.state?.moderator || this.helper.isOwner
 
     return (
-      <section class="columns nav event-page">
+      <section class="columns nav">
         <EventsNav activeId={this.props.id} />
 
         <hgroup>
@@ -131,7 +131,7 @@ export default class EventPage extends Component<Props, State> {
             </a>
           </figcaption>
 
-          <figure>
+          <figure class="shortie">
             <iframe id="ParcelorbitView" key={this.parcel?.orbitUrl} scrolling="no" src={this.parcel?.orbitUrl} />
           </figure>
 
