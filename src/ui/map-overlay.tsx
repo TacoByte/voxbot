@@ -660,7 +660,8 @@ export function SearchMap({ mapContext }: { mapContext: MapOverlayUI }) {
     if (value) {
       clearMarkers()
       const searchRegex = new RegExp(value, 'i')
-      const list = mapContext.parcels.filter((p) => p.name?.match(searchRegex) || p.label?.match(searchRegex) || p.address?.match(searchRegex) || p.owner_name?.match(searchRegex))
+      const ownerStr = (p: any) => (typeof p.owner === 'string' ? p.owner : (p.owner?.name ?? ''))
+      const list = mapContext.parcels.filter((p) => p.name?.match(searchRegex) || p.label?.match(searchRegex) || p.address?.match(searchRegex) || ownerStr(p).match(searchRegex))
 
       m.current = window.L.featureGroup(
         list.map((p) => {

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'preact/hooks'
 
 import { Event } from '../../common/messages/event'
 import Head from './components/head'
+import { AvatarLink } from './components/avatar-link'
 import { useListControls } from './components/list-controls'
 import { fmt } from './components/date-field'
 import { truncate } from './lib/string-utils'
@@ -83,11 +84,8 @@ export default function Events(props: Props) {
                       <td>
                         <a href={`/events/${event.id}`}>{truncate(event.name)}</a>
 
-                        {event.author_name && (
-                          <>
-                            by <a href={`/u/${event.author}`}>${event.author_name}</a>
-                          </>
-                        )}
+                        {' by '}
+                        <AvatarLink avatar={event.author} />
                         <br />
                         <small>{truncate(event.description, 80)}</small>
                       </td>

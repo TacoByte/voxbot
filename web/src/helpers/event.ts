@@ -5,6 +5,7 @@ import ParcelHelper from '../../../common/helpers/parcel-helper'
 import { fetchFromMPServer } from '../../../common/helpers/utils'
 import { PanelType } from '../components/panel'
 import { Event } from '../../../common/messages/event'
+import { avatarName, avatarSlug } from '../../../common/messages/avatar-ref'
 
 export default class ParcelEvent {
   ev: Event
@@ -22,15 +23,15 @@ export default class ParcelEvent {
   }
 
   get author() {
-    return this.ev.author
+    return this.ev.author // AvatarRef
+  }
+
+  get authorSlug() {
+    return avatarSlug(this.ev.author)
   }
 
   get name() {
     return this.ev.name
-  }
-
-  get author_name() {
-    return this.ev.author_name
   }
 
   get parcel_id() {
@@ -104,10 +105,7 @@ export default class ParcelEvent {
   }
 
   get isOwner() {
-    if (!app.signedIn) {
-      return false
-    }
-    return this.ev.author.toLowerCase() === app.state.wallet?.toLowerCase()
+    return app.isOwner(this.ev.author)
   }
 
   get getContrastColor() {
@@ -191,7 +189,7 @@ export default class ParcelEvent {
   }
 
   authorNameOrAddress(maxChars?: number) {
-    const n = this.author_name || this.author
+    const n = avatarName(this.ev.author)
     if (!maxChars || n.length < maxChars) return n
     return n.slice(0, maxChars)
   }

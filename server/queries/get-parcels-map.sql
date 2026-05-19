@@ -10,8 +10,10 @@ select properties.id                                                            
        properties.settings,
        island,
        geometry_json                                                                                                                    as geometry,
-       lower(properties.owner)                                                                                                          as owner,
-       avatars.name                                                                                                                     as owner_name,
+       COALESCE(
+         (SELECT row_to_json(sub) FROM (SELECT a.id, a.name, a.owner, a.created_at FROM avatars a WHERE lower(a.owner) = lower(properties.owner) LIMIT 1) sub),
+         to_json(lower(properties.owner))
+       )                                                                                                                                as owner,
        properties.x1,
        properties.x2,
        label,
@@ -21,7 +23,5 @@ select properties.id                                                            
        (listed_at >= (NOW() - interval '4 days')) ::boolean as on_sale
 from properties
          left join suburbs on properties.suburb_id = suburbs.id
-         left join
-     avatars on avatars.owner = lower(properties.owner)
 where minted = true
 order by ID asc;

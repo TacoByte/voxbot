@@ -4,6 +4,7 @@ import { isInFuture } from '../../../common/helpers/time-helpers'
 import ParcelEvent from '../helpers/event'
 import ParcelHelper from '../../../common/helpers/parcel-helper'
 import { EventTime } from './event-time'
+import { AvatarLink } from './avatar-link'
 
 export interface Props {
   parcel: any
@@ -96,7 +97,7 @@ export default class ParcelEvents extends Component<Props, State> {
               <div>
                 <div>{this.event.description}</div>
                 <div>
-                  Hosted by <a href={`/u/${this.event.author}`}>{this.event.author_name}</a>
+                  Hosted by <AvatarLink avatar={this.event.author} />
                 </div>
               </div>
             </div>

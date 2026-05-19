@@ -5,6 +5,7 @@ import { MapParcelRecord } from '../../common/messages/api-parcels'
 import { PanelType } from './components/panel'
 import ParcelEvent from './helpers/event'
 import { app } from './state'
+import { AvatarLink } from './components/avatar-link'
 
 const copyToClipboard = (playCoords: string | null) => {
   if (!playCoords) return
@@ -43,10 +44,7 @@ export function mapParcelPopup(
       </strong>
       <div>at {parcel.address}</div>
       <div>
-        Owned by{' '}
-        <a href={`/u/${parcel.owner}`} target="_blank">
-          {parcel.owner_name || parcel.owner.substring(0, 10) + '...'}
-        </a>
+        Owned by <AvatarLink avatar={parcel.owner} />
       </div>
       {/* container used for popup on-click of the map.  */}
       <div id="popup-buttonContainer" role="group"></div>

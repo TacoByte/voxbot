@@ -128,8 +128,11 @@ export default function (db: Db, passport: any, app: any) {
       'embedded/get-wearables-by-collection-paged',
       `
     select
-      *,
-      (select name from avatars where avatars.owner = w.author) as author_name
+      w.*,
+      COALESCE(
+        (SELECT row_to_json(sub) FROM (SELECT a.id, a.name, a.owner, a.created_at FROM avatars a WHERE lower(a.owner) = lower(w.author) LIMIT 1) sub),
+        to_json(w.author)
+      ) as author
     from
       wearables w
     where
@@ -178,8 +181,11 @@ export default function (db: Db, passport: any, app: any) {
       'embedded/get-wearables-by-wallet-2',
       `
     select
-      *,
-      (select name from avatars where avatars.owner = w.author) as author_name
+      w.*,
+      COALESCE(
+        (SELECT row_to_json(sub) FROM (SELECT a.id, a.name, a.owner, a.created_at FROM avatars a WHERE lower(a.owner) = lower(w.author) LIMIT 1) sub),
+        to_json(w.author)
+      ) as author
     from
       wearables w
     where

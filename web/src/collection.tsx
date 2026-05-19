@@ -12,6 +12,8 @@ import Pagination from './components/pagination'
 import UploadButton from './components/upload-button'
 import { app, AppEvent } from './state'
 import { getWearableGif } from './helpers/wearable-helpers'
+import { AvatarLink } from './components/avatar-link'
+import { avatarName } from '../../common/messages/avatar-ref'
 
 export interface Props {
   path?: string
@@ -49,7 +51,8 @@ export default class CollectionPage extends Component<Props, State> {
   }
 
   private get creatorName() {
-    return this.isQueryAUser && this.state.collectibles?.length > 0 && this.state.collectibles[0]?.author_name !== 'null' ? this.state.collectibles[0]?.author_name : this.state.collectibles[0]?.author.substr(0, 8) + `...`
+    const c = this.state.collectibles?.[0]
+    return c?.author ? avatarName(c.author) : ''
   }
 
   private get isQueryAUser() {
@@ -149,7 +152,7 @@ export default class CollectionPage extends Component<Props, State> {
           <dl>
             <dt>Author</dt>
             <dd>
-              <a href={`/avatar/${this.state.collection.owner}`}>{this.state.collection.owner_name ? this.state.collection.owner_name : this.state.collection.owner?.substring(0, 10) + '...' || ''}</a>
+              <AvatarLink avatar={this.state.collection.owner} />
             </dd>
 
             {this.publicCanSubmit && (

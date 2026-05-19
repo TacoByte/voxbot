@@ -20,8 +20,10 @@ select p.id,
        suburbs.name                                                                                                            as suburb,
 
        is_common,
-       lower(p.owner)                                                                                                          as owner,
-       a.name                                                                                                                  as owner_name,
+       COALESCE(
+         (SELECT row_to_json(sub) FROM (SELECT a.id, a.name, a.owner, a.created_at FROM avatars a WHERE lower(a.owner) = lower(p.owner) LIMIT 1) sub),
+         to_json(lower(p.owner))
+       )                                                                                                                       as owner,
        p.updated_at,
        (select array_to_json(array_agg(row_to_json(t)))
         from (select wallet, role from parcel_users where parcel_id = p.id) t)                                                 as parcel_users,
@@ -34,7 +36,6 @@ select p.id,
        p.kind                                                                                                                  as kind,
        p.minted                                                                                                                as minted
 from properties p
-         left join avatars a on lower(a.owner) = lower(p.owner)
          left join suburbs on suburbs.id = p.suburb_id
 where p.id = $1
   AND (p.minted = true OR p.visible or $2)

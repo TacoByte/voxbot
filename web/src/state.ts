@@ -3,6 +3,7 @@ import { EventEmitter } from 'events'
 import Cookies from 'js-cookie'
 import { decodeJwt } from 'jose'
 import { ApiAvatar, type ApiAvatarMessage } from '../../common/messages/api-avatars'
+import type { AvatarRef } from '../../common/messages/avatar-ref'
 import Snackbar from './components/snackbar'
 
 const jsonHeaders = {
@@ -135,6 +136,12 @@ export class Appstate extends State {
 
   get wallet() {
     return this.state.wallet
+  }
+
+  isOwner(ref: AvatarRef | null | undefined): boolean {
+    if (!this.state.wallet || !ref) return false
+    const w = typeof ref === 'object' ? ref.owner : ref
+    return w.toLowerCase() === this.state.wallet.toLowerCase()
   }
 
   onStorage = (e: StorageEvent) => {

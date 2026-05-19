@@ -10,10 +10,9 @@ select spaces.*,
        'The void'     as suburb,
        'Nowhere near' as address,
        memoized_hash  as hash,
-       a.name         as owner_name
+       COALESCE(
+         (SELECT row_to_json(sub) FROM (SELECT av.id, av.name, av.owner, av.created_at FROM avatars av WHERE lower(av.owner) = lower(spaces.owner) LIMIT 1) sub),
+         to_json(spaces.owner)
+       )              as owner
 from spaces
-         left join
-     avatars a
-     on
-         lower(a.owner) = lower(spaces.owner)
 where spaces.id = $1;

@@ -47,7 +47,7 @@ function FreshlyMinted() {
 
             <ul>
               {s.parcels.map((p) => (
-                <li key={p.id} class={`owner-${p.owner.toLowerCase()}`}>
+                <li key={p.id} class={`owner-${(p.owner && typeof p.owner === 'object' ? (p.owner as any).owner : (p.owner ?? '')).toLowerCase()}`}>
                   <a href={`/parcels/${p.id}`}>{p.address.slice(0, 2).trim()}</a>
                 </li>
               ))}

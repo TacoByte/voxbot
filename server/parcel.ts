@@ -46,8 +46,6 @@ const loadQuery = () => {
       label,
       p.description,
       p.owner,
-      -- Optimize: Use subquery to force index usage on avatars lookup
-      (SELECT name FROM avatars WHERE lower(owner) = lower(p.owner) LIMIT 1) as owner_name,
       p.settings
     FROM
       properties p
@@ -86,7 +84,6 @@ export class ParcelRef {
   kind: ParcelKind = 'plot'
   suburb: string
   owner: string
-  owner_name: string
   parcel_users: ParcelUser[] | null
   settings: ParcelSettings
   is_common: boolean // needed for parcel_auth
@@ -102,7 +99,6 @@ export class ParcelRef {
     this.hash = row.hash
     this.island = row.island
     this.owner = row.owner
-    this.owner_name = row.owner_name ?? ''
     this.parcel_users = row.parcel_users
     this.settings = row.settings
     this.lightmap_url = row.lightmap_url
@@ -122,7 +118,6 @@ export abstract class AbstractParcel implements ParcelRef {
   geometry: any
   content!: Record<string, any>
   owner!: string
-  owner_name!: string
   kind: ParcelKind = 'plot'
   parcel_users!: ParcelUser[] | null
   description!: string
@@ -255,7 +250,6 @@ export abstract class AbstractParcel implements ParcelRef {
       settings: this.settings,
       voxels: this.voxels,
       owner: this.owner,
-      owner_name: this.owner_name ?? '',
       lightmap_url: this.lightmap_url,
       parcel_users: this.parcel_users,
       description: this.description,

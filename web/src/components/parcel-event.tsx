@@ -85,7 +85,7 @@ export default class ParcelEventItem extends Component<Props, State> {
       return
     }
 
-    const isParcelOwner = app.state.wallet && app.state.wallet.localeCompare(this.props.parcel.owner, undefined, { sensitivity: 'accent' }) === 0
+    const isParcelOwner = app.isOwner(this.props.parcel.owner)
     const eventAdmin = this.props.showEventManager && isParcelOwner && <a href={`/events/new?parcel_id=${(this.props.parcel as any).id}`}>{this.state.event ? 'Manage' : 'Create'} event</a>
 
     if (!this.state.event) {

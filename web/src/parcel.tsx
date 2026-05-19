@@ -13,6 +13,7 @@ import { Spinner } from './spinner'
 import { app, AppEvent } from './state'
 import { fetchOptions } from './utils'
 import WompsList from './womps-list'
+import { AvatarLink } from './components/avatar-link'
 import { ParcelMetrics as Metrics } from './components/metrics'
 
 type FrameProps = {
@@ -525,7 +526,7 @@ export default class Parcel extends Component<Props, State> {
                   </dd>
                   <dt>Owner</dt>
                   <dd>
-                    <a href={`/u/${p.owner}`}>{p.owner.substring(0, 10)}...</a>
+                    <AvatarLink avatar={p.owner} />
                   </dd>
                   <dt>Token ID</dt>
                   <dd>

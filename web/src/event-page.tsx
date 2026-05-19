@@ -196,7 +196,6 @@ export default class EventPage extends Component<Props, State> {
     this.parcel = new ParcelHelper({
       id: event.parcel_id,
       owner: event.parcel_owner,
-      owner_name: event.parcel_owner_name,
       name: event.parcel_name,
       description: event.parcel_description,
       address: event.parcel_address,
@@ -218,7 +217,7 @@ function SummaryPast({ event, anons, wallets, isMod }: SummaryProps) {
     <>
       <dt>Host</dt>
       <dd>
-        <a href={`/u/${event.author}`}>{event.authorNameOrAddress(34)}</a>
+        <a href={`/u/${event.authorSlug}`}>{event.authorNameOrAddress(34)}</a>
       </dd>
       <dt>Location</dt>
       <dd>
@@ -242,7 +241,7 @@ function SummaryFuture({ event, anons, wallets, isMod }: SummaryProps) {
       </dd>
       <dt>Host</dt>
       <dd>
-        <a href={`/u/${event.author}`}>{event.authorNameOrAddress(34)}</a>
+        <a href={`/u/${event.authorSlug}`}>{event.authorNameOrAddress(34)}</a>
       </dd>
       <dt>Location</dt>
       <dd>
@@ -275,7 +274,7 @@ function SummaryLive({ event, anons, wallets, isMod }: SummaryProps) {
       </dd>
       <dt>Host</dt>
       <dd>
-        <a href={`/u/${event.author}`}>{event.authorNameOrAddress(34)}</a>
+        <a href={`/u/${event.authorSlug}`}>{event.authorNameOrAddress(34)}</a>
       </dd>
       <dt>Location</dt>
       <dd>
