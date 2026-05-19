@@ -70,6 +70,25 @@ Voxels is being open-sourced so it can live, **not** so it can be bloated.
 - **Can it be done in less lines of code**
   - If your new code adds 10 lines when the same thing could be achieved with a single line of code, it will not be merged.
 
+## Client-side data fetching
+
+Web pages use `cachedFetch` from `web/src/helpers/cached-fetch.ts` instead of raw `fetch`. It caches responses in memory (default 60s TTL) so navigating back to a page doesn't re-hit the server.
+
+If you save/mutate data and then `route()` back to the view page, call `invalidateUrl` first or the user will see stale data:
+
+```ts
+import { invalidateUrl } from './helpers/cached-fetch'
+
+// drop from cache, next visit re-fetches from server:
+invalidateUrl(`/api/parcels/${id}.json`)
+route(`/parcels/${id}`)
+
+// drop and immediately re-fetch (bypasses network cache via cache: 'reload'):
+await invalidateUrl(`/api/parcels/${id}.json`, true)
+```
+
+Pass `true` as the second arg to also immediately re-fetch so the next render is instant and warm. `invalidateUrl` also accepts a wildcard prefix (`/api/parcels/123/*`) to nuke all related cache keys at once.
+
 ## Ben fix patterns (copy/paste mentality)
 
 ### Guard against `undefined` / garbage input

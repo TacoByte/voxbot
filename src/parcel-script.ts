@@ -53,7 +53,7 @@ export default class ParcelScript {
   runtime: QuickJSRuntime | null = null
   context: QuickJSContext | null = null
   connected: boolean = false
-  disabled = false
+  disabled = true
 
   constructor(scene: BABYLON.Scene, parcel: Parcel) {
     this.parcel = parcel
@@ -477,10 +477,10 @@ export default class ParcelScript {
         feature:
           featureOrAvatar instanceof Feature
             ? {
-                uuid: featureOrAvatar.uuid,
-                id: featureOrAvatar.description.id,
-                type: featureOrAvatar.type,
-              }
+              uuid: featureOrAvatar.uuid,
+              id: featureOrAvatar.description.id,
+              type: featureOrAvatar.type,
+            }
             : null,
         metadata,
         event_type: 'click',
@@ -641,8 +641,8 @@ export default class ParcelScript {
       return 1.2
     }
 
-    ;(f.description as any).rolloffFactor = setRollOffFactor(f) || 1.0
-    ;(f as any)['play']?.()
+      ; (f.description as any).rolloffFactor = setRollOffFactor(f) || 1.0
+      ; (f as any)['play']?.()
   }
 
   handlePause(msg: ScriptingMessage) {
@@ -651,7 +651,7 @@ export default class ParcelScript {
     if (!f) return
 
     if ((f as any)['pause']) {
-      ;(f as any)['pause']()
+      ; (f as any)['pause']()
     }
   }
 
@@ -661,7 +661,7 @@ export default class ParcelScript {
     if (!f) return
 
     if ((f as any)['unpause']) {
-      ;(f as any)['unpause']()
+      ; (f as any)['unpause']()
     }
   }
 
@@ -671,7 +671,7 @@ export default class ParcelScript {
     if (!f) return
 
     if ((f as any)['stop']) {
-      ;(f as any)['stop']()
+      ; (f as any)['stop']()
     }
   }
 

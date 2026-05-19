@@ -4,6 +4,7 @@ import * as strftime from 'strftime'
 import { blocks } from '../../common/content/blocks'
 import { Login } from './auth/login'
 import SelectUser from './components/select-user'
+import cachedFetch, { invalidateUrl } from './helpers/cached-fetch'
 import { app } from './state'
 
 type ParcelUser = { wallet: string; role: string }
@@ -32,10 +33,14 @@ export default function ParcelEdit(props: Props) {
   const fileRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    fetch(`/api/parcels/${props.id}.json`)
-      .then((r) => r.json())
-      .then((d) => setParcel(d.parcel))
-    loadVersions()
+    async function load() {
+      const r = await cachedFetch(`/api/parcels/${props.id}.json`, { cache: 'reload' })
+      const { parcel } = await r.json()
+      setParcel(parcel)
+      loadVersions()
+    }
+
+    load()
   }, [props.id])
 
   async function loadVersions() {
@@ -67,6 +72,7 @@ export default function ParcelEdit(props: Props) {
       }),
     })
     setSaving(false)
+    await invalidateUrl(`/api/parcels/${props.id}.json`, true)
     route(`/parcels/${props.id}`)
   }
 
@@ -177,7 +183,7 @@ export default function ParcelEdit(props: Props) {
     <section class="columns">
       <hgroup>
         <h1>
-          <a href={`/parcels/${props.id}`}>{parcel.name || parcel.address}</a> / edit
+          Edit Parcel
         </h1>
       </hgroup>
 
