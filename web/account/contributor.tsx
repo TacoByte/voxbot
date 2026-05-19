@@ -95,7 +95,7 @@ export class Contributor extends Component<Props, State> {
       .map((p: any) => <PropertyItem record={p} helper={new ParcelHelper(p)} />)
 
     return contributorsParcels.length > 0 ? (
-      <table>
+      <table class='parcels'>
         <tbody>{contributorsParcels}</tbody>
       </table>
     ) : (

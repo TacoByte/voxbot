@@ -50,7 +50,7 @@ export default class PropertyItem extends Component<Props, State> {
           <br />
           <small>{this.props.helper.island}</small>
         </td>
-        <td>{this.props.record.emoji_list ? this.props.record.emoji_list.map((e: { emoji: string; total: number }) => e.emoji + e.total + ' ') : ''}</td>
+        <td></td>
       </tr>
     )
   }
