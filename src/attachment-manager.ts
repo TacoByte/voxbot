@@ -43,16 +43,16 @@ export class AvatarAttachmentManager {
    * If isUser, the costume is already stored in app state, and won't fetch it.
    * @see /web/src/state.ts
    */
-  async loadCostume(costume?: Costume) {
+  async loadCostume(costume?: Costume, costumeId?: number) {
     if (costume) {
       this.costume_id = costume.id
       this.generateCostume(costume)
     } else if (this.avatar.isUser) {
-      // use the local state for avatar costume if this avatar is us (no need to fetch twice)
       const state = await app.getState()
       this.generateCostume(state.costume)
     } else {
-      this.fetchCostume()
+      if (costumeId) this.costume_id = costumeId
+      this.fetchCostume(this.costume_id ?? undefined)
     }
   }
 
@@ -80,30 +80,21 @@ export class AvatarAttachmentManager {
     this.loadAttachments()
   }
 
-  /**
-   * Dispose the current costume and fetch new costume.
-   * @param {string} cacheKey an additional key to pass to request to bust cache
-   * @returns {void} void
-   */
-  refreshCostume(cacheKey?: number) {
+  changeCostume(costumeId?: number) {
     if (this.attached) {
       this.attached.forEach((a) => a.dispose())
     }
-    this.fetchCostume(cacheKey)
+    if (costumeId) this.costume_id = costumeId
+    this.fetchCostume(this.costume_id ?? undefined)
   }
 
-  async fetchCostume(cacheKey?: number) {
-    let url = `${process.env.API}/avatars/${this.wallet}/costume.json`
-    // allow synchronized cache busting when loading new costumes
-    if (cacheKey) {
-      url += `?${cacheKey}`
-    }
+  async fetchCostume(costumeId?: number) {
+    const url = costumeId ? `${process.env.API}/costumes/${costumeId}` : `${process.env.API}/avatars/${this.wallet}/costume.json`
 
     const r = await fetch(url)
     const { success, costume } = await r.json()
 
     if (success && costume) {
-      // set the state for costume
       this.costume = costume
       this.generateCostume(costume)
     }

@@ -279,7 +279,7 @@ export default class Avatar extends Entity {
     //any changes in the costume?
     if (!!updates.costume_id && this._attachmentManager) {
       this._attachmentManager.costume_id = updates.costume_id
-      this._attachmentManager.refreshCostume(cacheKey)
+      this._attachmentManager.changeCostume(cacheKey)
     }
   }
 
@@ -730,7 +730,7 @@ export default class Avatar extends Entity {
     this._attachmentManager = new AvatarAttachmentManager(this.scene, this, AVATAR_VIEW_DISTANCE - 1)
 
     if (this.wallet) {
-      this._attachmentManager.loadCostume()
+      this._attachmentManager.loadCostume(undefined, this._description.costumeId)
       this.addEvents()
     }
 

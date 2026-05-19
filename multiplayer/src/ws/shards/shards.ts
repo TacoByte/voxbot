@@ -2,18 +2,14 @@ import { concat, from } from 'ix/iterable'
 import { filter, flatMap } from 'ix/iterable/operators'
 import winston from 'winston'
 import { AvatarChangedMessage, MessageType } from '../../../../common/messages'
-import { ChatStore } from '../../common/chatStore'
-import { ClientStateStore, GlobalClientStateStore } from '../../common/clientStateStore'
 import { ClientUUID } from '../../common/clientUUID'
 import { ConnectionHandle } from '../../common/pq'
 import { ShardId } from '../../common/shardId'
 import { SpaceId } from '../../common/spaceId'
 import { WSCloseCodes } from '../../constants/socketCloseCodes'
 import type { WsLike } from '../../createServer'
-import { CustomMetrics } from '../../createMetrics'
 import { Client, ClientConnectionInformation } from '../client'
 import { Shard } from './shard'
-import { createShardMetrics, ShardMetrics } from './shardMetrics'
 
 /**
  * this is where we create and manage the shards.
@@ -49,19 +45,13 @@ export const CONNECTION_INACTIVE_TIMEOUT_MS = 30000
 export default async function createShards(
   publish: (topic: string, message: ArrayBufferView, isBinary?: boolean) => void,
   logger: winston.Logger,
-  stateStore: GlobalClientStateStore,
   connection: ConnectionHandle,
-  chatStore: ChatStore,
-  metrics: CustomMetrics,
   jwtSecret: string,
 ): Promise<Shards> {
   const worldShard = createWorldShardInternal({
     publish: (topic, message, isBinary) => publish(topic, message, isBinary),
-    stateStore: stateStore.getStore('world'),
     logger,
     connection,
-    chatStore,
-    metrics: createShardMetrics(metrics, 'world'),
     jwtSecret,
   })
   const spaceShards = new Map<SpaceId, Shard>()
@@ -85,11 +75,8 @@ export default async function createShards(
 
     const shard = createSpaceShardInternal(spaceId, {
       publish,
-      stateStore: stateStore.getStore(spaceId),
       logger,
       connection,
-      chatStore,
-      metrics: createShardMetrics(metrics, 'space'),
       jwtSecret,
     })
     spaceShards.set(spaceId, shard)
@@ -143,7 +130,6 @@ export default async function createShards(
 
     spaceShards.get(shardID)?.dispose()
     spaceShards.delete(shardID)
-    stateStore.disposeStore(shardID)
   }
 
   const handleDrain = (shardID: ShardId, clientUUID: ClientUUID): Error | void => {
@@ -206,7 +192,10 @@ export default async function createShards(
     }
     ;[worldShard, ...spaceShards.values()]
       .filter((shard) =>
-        Array.from(shard.getClients()).some((c) => c.identity?.wallet?.toLowerCase() === changedWallet),
+        Array.from(shard.getClients()).some((c) => {
+          const w = typeof c.avatar === 'string' ? c.avatar : (c.avatar as any)?.owner
+          return w?.toLowerCase() === changedWallet
+        }),
       )
       .forEach((shard) => shard.broadcastFromServer(message))
   }
@@ -223,7 +212,10 @@ export default async function createShards(
     concat(from([worldShard]), spaceShards.values())
       .pipe(
         flatMap((s) => s.getClients()),
-        filter((c) => c.identity?.wallet?.toLowerCase() === suspendedWallet),
+        filter((c) => {
+          const w = typeof c.avatar === 'string' ? c.avatar : (c.avatar as any)?.owner
+          return w?.toLowerCase() === suspendedWallet
+        }),
       )
       .forEach((client) => {
         client.drop(WSCloseCodes.tryAgainLater, 'connection forced drop via voxels.com')
@@ -253,40 +245,16 @@ export default async function createShards(
 }
 
 export type ShardOptions = {
-  /** Publishes a message under topic, for all WebSockets under this app */
   publish: (topic: string, message: ArrayBufferView, isBinary?: boolean) => void
-  stateStore: ClientStateStore
   logger: winston.Logger
   connection: ConnectionHandle
-  chatStore: ChatStore
-  metrics: ShardMetrics
   jwtSecret: string
 }
 
 const createWorldShardInternal = (opts: ShardOptions) => {
-  return new Shard(
-    'world',
-    opts.logger,
-    null,
-    opts.publish,
-    opts.stateStore,
-    opts.connection,
-    opts.chatStore,
-    opts.metrics,
-    opts.jwtSecret,
-  )
+  return new Shard('world', opts.logger, null, opts.publish, opts.connection, opts.jwtSecret)
 }
 
 const createSpaceShardInternal = (spaceId: SpaceId, opts: ShardOptions) => {
-  return new Shard(
-    spaceId,
-    opts.logger,
-    SPACE_SHARD_CLIENT_LIMIT,
-    opts.publish,
-    opts.stateStore,
-    opts.connection,
-    opts.chatStore,
-    opts.metrics,
-    opts.jwtSecret,
-  )
+  return new Shard(spaceId, opts.logger, SPACE_SHARD_CLIENT_LIMIT, opts.publish, opts.connection, opts.jwtSecret)
 }
