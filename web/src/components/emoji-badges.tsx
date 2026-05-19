@@ -5,7 +5,7 @@ import { isInWorld } from '../../../common/helpers/detector'
 import { AggregatedEmoji, Emoji, Emojiable_type, Emojis } from '../../../common/messages/emoji'
 import { Spinner } from '../spinner'
 import { app } from '../state'
-import { fetchAPI, fetchOptions } from '../utils'
+import { fetchOptions } from '../utils'
 import { PanelType } from './panel'
 
 interface Props {
@@ -118,7 +118,8 @@ export default class EmojiBadges extends Component<Props, State> {
     const opts = fetchOptions(this.setAbortController())
     opts.priority = 'high'
     opts.cache = cachebust ? 'reload' : undefined
-    return fetchAPI(`/api/${this.formatAPIUrl()}/${this.id}/emojis.json`, opts)
+    return fetch(`/api/${this.formatAPIUrl()}/${this.id}/emojis.json`, opts)
+      .then((r) => r.json())
       .then((r) => {
         this.setState({ emojis: r.emojis ?? [] }, this.moveBoxInWorld)
       })
@@ -134,7 +135,7 @@ export default class EmojiBadges extends Component<Props, State> {
 
     const body = { emoji: emoji, emojiable_id: this.id, emojiable_type: this.props.emojiable_type }
 
-    return fetchAPI(`/api/emojis/add`, fetchOptions(this.setAbortController(), JSON.stringify(body)))
+    return fetch(`/api/emojis/add`, fetchOptions(this.setAbortController(), JSON.stringify(body)))
       .then(() => this.fetchEmojis(true))
       .then(() => this.worldEmote(emoji))
       .catch((err) => {
@@ -150,7 +151,7 @@ export default class EmojiBadges extends Component<Props, State> {
     this.setState({ updating: true, adding: false })
 
     const body = { emoji: emoji, emojiable_id: this.id, emojiable_type: this.props.emojiable_type }
-    return fetchAPI(`/api/emojis/remove`, fetchOptions(undefined, JSON.stringify(body)))
+    return fetch(`/api/emojis/remove`, fetchOptions(undefined, JSON.stringify(body)))
       .then(() => this.fetchEmojis(true))
       .catch((err) => {
         app.showSnackbar('Something went wrong...', PanelType.Danger)

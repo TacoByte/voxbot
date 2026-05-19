@@ -6,7 +6,8 @@ import { useListControls } from './components/list-controls'
 import { fmt } from './components/date-field'
 import { truncate } from './lib/string-utils'
 import { Spinner } from './spinner'
-import { fetchAPI, fetchOptions } from './utils'
+import cachedFetch from './helpers/cached-fetch'
+import { fetchOptions } from './utils'
 
 export interface Props {
   path?: string
@@ -33,7 +34,7 @@ export default function Events(props: Props) {
   async function doFetch() {
     setLoaded(false)
     // todo: verify events API supports sort param
-    const r = await fetchAPI(`/api/events.json?sort=${controls.sort}`, fetchOptions())
+    const r = await cachedFetch(`/api/events.json?sort=${controls.sort}`, fetchOptions()).then((r) => r.json())
     if (!r) {
       setLoaded(true)
       return

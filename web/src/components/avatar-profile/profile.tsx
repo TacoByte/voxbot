@@ -11,7 +11,6 @@ import { Parcels } from '../../../account/parcels'
 import { Spaces } from '../../../account/spaces'
 import cachedFetch from '../../helpers/cached-fetch'
 import { app } from '../../state'
-import { fetchAPI } from '../../utils'
 import { PanelType } from '../panel'
 import WompsList from '../../womps-list'
 import { truncate } from 'lodash'
@@ -30,7 +29,9 @@ export default function Profile(props: Props) {
   const { walletOrUUId, isOwner } = props
 
   useEffect(() => {
-    fetchAPI(`/api/avatars/${walletOrUUId}.json`).then((data) => setAvatar(data.avatar))
+    cachedFetch(`/api/avatars/${walletOrUUId}.json`)
+      .then((r) => r.json())
+      .then((data) => setAvatar(data.avatar))
     cachedFetch(`/api/avatars/${walletOrUUId}/costumes`)
       .then((r) => r.json())
       .then((data) => setCostumes(data.costumes ?? []))

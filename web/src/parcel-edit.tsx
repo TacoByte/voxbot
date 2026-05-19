@@ -182,9 +182,7 @@ export default function ParcelEdit(props: Props) {
   return (
     <section class="columns">
       <hgroup>
-        <h1>
-          Edit Parcel
-        </h1>
+        <h1>Edit Parcel</h1>
       </hgroup>
 
       <article>

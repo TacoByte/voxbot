@@ -10,7 +10,7 @@ import type MapOverlayUI from '../../src/ui/map-overlay'
 import { Womp, WompCard } from './components/womp-card'
 import { mapParcelPopup, mapTeleportPopup } from './map-parcel-popup'
 import { app, AppEvent } from './state'
-import { fetchAPI, fetchOptions } from './utils'
+import { fetchOptions } from './utils'
 
 const retryPolicy = retry(handleAll, { maxAttempts: 3, backoff: new ExponentialBackoff() })
 
@@ -591,7 +591,7 @@ export default class WorldMap extends Component<Props, State> {
 
 const getWomps = async (signal?: AbortSignal) => {
   const url = `${process.env.API}/womps.json?limit=50&kind=broadcast`
-  const p = await fetchAPI(`${url}`, { method: 'get', signal })
+  const p = await fetch(`${url}`, { method: 'get', signal, credentials: 'include' }).then((r) => r.json())
 
   return (p?.womps || []) as Womp[]
 }

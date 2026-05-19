@@ -11,7 +11,7 @@ import { PanelType } from './components/panel'
 import ParcelEvent, { removeEvent } from './helpers/event'
 import { app, AppEvent } from './state'
 import cachedFetch from './helpers/cached-fetch'
-import { fetchAPI, fetchOptions } from './utils'
+import { fetchOptions } from './utils'
 
 export interface Props {
   event?: Event
@@ -117,7 +117,7 @@ export default class EventPage extends Component<Props, State> {
     const isMod = app.state?.moderator || this.helper.isOwner
 
     return (
-      <section class="columns nav">
+      <section class="columns nav event-page">
         <EventsNav activeId={this.props.id} />
 
         <hgroup>
@@ -126,18 +126,20 @@ export default class EventPage extends Component<Props, State> {
 
         <article>
           <figcaption>
-            <a href={this.visitUrl}>Visit</a>
+            <a class="buttonish" href={this.visitUrl}>
+              Visit
+            </a>
           </figcaption>
 
           <figure>
             <iframe id="ParcelorbitView" key={this.parcel?.orbitUrl} scrolling="no" src={this.parcel?.orbitUrl} />
           </figure>
+
+          <div>{this.state.event.description}</div>
         </article>
 
         <aside class="push-header">
           <dl>
-            <dt>Description</dt>
-            <dd class="description">{this.state.event.description}</dd>
             {this.helper.isInPast && <SummaryPast event={this.helper} anons={this.state.visitor_anons} wallets={this.state.visitor_wallets} isMod={isMod} />}
             {this.helper.isLive && <SummaryLive event={this.helper} anons={this.state.visitor_anons} wallets={this.state.visitor_wallets} isMod={isMod} />}
             {this.helper.isInFuture && <SummaryFuture event={this.helper} anons={this.state.visitor_anons} wallets={this.state.visitor_wallets} isMod={isMod} />}
@@ -315,13 +317,12 @@ const copyToClipboard = (text: string) => {
 function EventsNav({ activeId }: { activeId?: string }) {
   const [events, setEvents] = useState<Event[]>([])
   useEffect(() => {
-    fetchAPI('/api/events.json', fetchOptions()).then((r) => r && setEvents(r.events))
+    cachedFetch('/api/events.json', fetchOptions())
+      .then((r) => r.json())
+      .then((r) => setEvents(r.events ?? []))
   }, [])
   return (
     <nav>
-      <p>
-        <a class="buttonish" href="/events/new">New event</a>
-      </p>
       <ul>
         {events.map((e) => (
           <li key={e.id} aria-selected={String(e.id) === activeId}>
@@ -329,6 +330,12 @@ function EventsNav({ activeId }: { activeId?: string }) {
           </li>
         ))}
       </ul>
+
+      <p>
+        <a class="buttonish" href="/events/new">
+          New event
+        </a>
+      </p>
     </nav>
   )
 }

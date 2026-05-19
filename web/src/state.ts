@@ -4,7 +4,6 @@ import Cookies from 'js-cookie'
 import { decodeJwt } from 'jose'
 import { ApiAvatar, type ApiAvatarMessage } from '../../common/messages/api-avatars'
 import Snackbar from './components/snackbar'
-import { fetchAPI } from './utils'
 
 const jsonHeaders = {
   Accept: 'application/json, text/plain, */*',
@@ -257,7 +256,7 @@ export class Appstate extends State {
       console.log('no wallet in updateLastOnline')
       return
     }
-    fetchAPI(`/api/avatar/${this.state?.wallet}/online`, { method: 'POST' }).catch(console.error)
+    fetch(`/api/avatar/${this.state?.wallet}/online`, { method: 'POST', credentials: 'include' }).catch(console.error)
   }
 
   async onLoad() {

@@ -11,7 +11,7 @@ import cachedFetch from './helpers/cached-fetch'
 import Head from './components/head'
 import { Spinner } from './spinner'
 import { app, AppEvent } from './state'
-import { fetchAPI, fetchOptions } from './utils'
+import { fetchOptions } from './utils'
 import WompsList from './womps-list'
 import { ParcelMetrics as Metrics } from './components/metrics'
 
@@ -424,7 +424,8 @@ export default class Parcel extends Component<Props, State> {
       return
     }
     this.setState({ querying: true })
-    return fetchAPI(`/api/parcels/${this.state.parcelId}/query`, fetchOptions())
+    return fetch(`/api/parcels/${this.state.parcelId}/query`, fetchOptions())
+      .then((r) => r.json())
       .then(() => {
         window.location.reload()
       })
