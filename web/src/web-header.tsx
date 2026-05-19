@@ -166,7 +166,7 @@ export default class WebHeader extends Component<Props, State> {
 
     const navLink = (label: string, href: string, icon: any, active: boolean, extra?: any) =>
       active ? (
-        <Link class='active' aria-selected={true} href={href} onClick={extra ?? this.closeMobileMenu}>
+        <Link class="active" aria-selected={true} href={href} onClick={extra ?? this.closeMobileMenu}>
           {label}
         </Link>
       ) : (

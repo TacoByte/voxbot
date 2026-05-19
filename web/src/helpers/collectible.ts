@@ -2,6 +2,7 @@ import { SUPPORTED_CHAINS_BY_ID } from '../../../common/helpers/chain-helpers'
 import { CollectibleInfoRecord, CollectibleRecord } from '../../../common/messages/collectibles'
 import { WearableCategory } from '../../../web/types'
 import { getWearableGif } from './wearable-helpers'
+import { AvatarRef, avatarName, avatarSlug } from '../../../common/messages/avatar-ref'
 
 export default class WearableHelper {
   // always present
@@ -20,9 +21,6 @@ export default class WearableHelper {
   hash?: string
   issues?: number
   offer_prices?: number[]
-
-  // from the server apis:
-  author_name?: string
 
   // From metadata endpoint
   image?: string
@@ -78,15 +76,17 @@ export default class WearableHelper {
   }
 
   isAuthor(wallet: string | null) {
-    if (!wallet || !this.author) {
-      return false
-    }
-    return wallet.toLowerCase() === this.author.toLowerCase()
+    if (!wallet || !this.author) return false
+    const w = typeof this.author === 'string' ? this.author : (this.author as AvatarRef as any).owner
+    return wallet.toLowerCase() === w.toLowerCase()
   }
 
-  /* helpers to get author name */
   ownerName() {
-    return this.author_name || this.author?.slice(0, 10).toLowerCase() + '...'
+    return this.author ? avatarName(this.author as AvatarRef) : '...'
+  }
+
+  ownerSlug() {
+    return this.author ? avatarSlug(this.author as AvatarRef) : ''
   }
 
   summary(): CollectibleRecord | CollectibleInfoRecord {

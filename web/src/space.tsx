@@ -65,7 +65,7 @@ export default class Space extends Component<Props, State> {
     if (!app.signedIn) {
       return false
     }
-    return !!this.state.space && this.state.space.owner.toLowerCase() === app.state.wallet?.toLowerCase()
+    return app.isOwner(this.state.space?.owner)
   }
 
   get visitUrl() {

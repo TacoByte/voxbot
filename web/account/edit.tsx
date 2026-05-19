@@ -3,7 +3,6 @@ import { ApiAvatar } from '../../common/messages/api-avatars'
 import { AddPasskey, Login } from '../src/auth/login'
 import ParcelField from '../src/components/parcel-field'
 import { app } from '../src/state'
-import { fetchAPI } from '../src/utils'
 
 export default function EditAccount() {
   if (!app.signedIn) return <Login reason="edit your account" />
@@ -21,15 +20,17 @@ export default function EditAccount() {
 
   useEffect(() => {
     if (!wallet) return
-    fetchAPI(`/api/avatars/${wallet}.json`).then((data) => {
-      const a = data.avatar
-      setAvatar(a)
-      setName(a?.name ?? '')
-      setDescription(a?.description ?? '')
-      setLink1(a?.social_link_1 ?? '')
-      setLink2(a?.social_link_2 ?? '')
-      if (a?.home_id) setHome({ parcel_id: a.home_id })
-    })
+    fetch(`/api/avatars/${wallet}.json`, { credentials: 'include' })
+      .then((r) => r.json())
+      .then((data: any) => {
+        const a = data.avatar
+        setAvatar(a)
+        setName(a?.name ?? '')
+        setDescription(a?.description ?? '')
+        setLink1(a?.social_link_1 ?? '')
+        setLink2(a?.social_link_2 ?? '')
+        if (a?.home_id) setHome({ parcel_id: a.home_id })
+      })
   }, [wallet])
 
   async function submit(e: Event) {

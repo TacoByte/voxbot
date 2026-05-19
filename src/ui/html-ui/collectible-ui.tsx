@@ -6,6 +6,7 @@ import { exitPointerLock } from '../../../common/helpers/ui-helpers'
 import { HTMLUi } from './html-ui'
 import { unmountComponentAtNode } from 'preact/compat'
 import { SUPPORTED_CHAINS_BY_ID } from '../../../common/helpers/chain-helpers'
+import { avatarName } from '../../../common/messages/avatar-ref'
 type Props = {
   collectible: CollectibleModel
   onClose: () => void
@@ -14,7 +15,6 @@ type Props = {
 }
 type State = {
   collectible: CollectibleModel
-  author_name: string | null
   status?: string
 }
 
@@ -26,7 +26,6 @@ export class CollectibleHTMLUi extends HTMLUi<Props, State> {
 
     this.state = {
       collectible: props.collectible,
-      author_name: null,
     }
   }
 
@@ -76,19 +75,7 @@ export class CollectibleHTMLUi extends HTMLUi<Props, State> {
     return this.state.collectible
   }
 
-  componentDidMount() {
-    this.fetchAuthorName()
-  }
-
-  async fetchAuthorName() {
-    if (this.asset) {
-      const p = await fetch(`${process.env.API}/avatar/${this.asset.author}/name.json`)
-      const r = await p.json()
-      if (r.success) {
-        this.setState({ author_name: r.name.name })
-      }
-    }
-  }
+  componentDidMount() {}
 
   redirectToPage() {
     window.open(`${this.urlPage}`, '_blank')
@@ -159,7 +146,7 @@ export class CollectibleHTMLUi extends HTMLUi<Props, State> {
             </div>
             <div className="OverlayHighlightContent -link">
               <h4>Creator</h4>
-              <p>{this.state.author_name || this.asset?.author}</p>
+              <p>{this.asset?.author ? avatarName(this.asset.author as any) : ''}</p>
             </div>
             <div className="OverlayHighlightContent">
               <h4>Chain</h4>

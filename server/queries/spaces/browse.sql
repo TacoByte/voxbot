@@ -9,14 +9,13 @@ select s.name,
        depth                                                                     as z2,
        unlisted,
        visits,
-       a.name                                                                    as owner_name,
+       COALESCE(
+         (SELECT row_to_json(sub) FROM (SELECT a.id, a.name, a.owner, a.created_at FROM avatars a WHERE lower(a.owner) = lower(s.owner) LIMIT 1) sub),
+         to_json(s.owner)
+       )                                                                           as owner,
        json_array_length(null_if_invalid_string(s.content, s.id) -> 'features') as feature_count,
        count(*)                                                                     OVER() AS pagination_count
 from spaces s
-         left join
-     avatars a
-     on
-         lower(a.owner) = lower(s.owner)
 where s.unlisted = false
 order by coalesce(s.updated_at, '1900-01-01'::timestamp) desc limit
   100

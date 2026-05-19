@@ -7,9 +7,8 @@ export interface Womp {
   parcel_name: string
   space_name: string
   parcel_address: string
-  author_name: string
   content: string
-  author: string
+  author: any // AvatarRef
   coords: string
   created_at: string
   updated_at: string
@@ -53,14 +52,6 @@ export function WompCard(props: CardProps) {
       </a>
     </div>
   )
-}
-
-function getAuthorName(womp: Womp) {
-  if (typeof womp.author_name === 'string') {
-    return womp.author_name
-  } else if (typeof womp.author === 'string') {
-    return womp.author.slice(0, 10)
-  }
 }
 
 function stopPropagation(e: MouseEvent) {

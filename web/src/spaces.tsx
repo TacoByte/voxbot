@@ -7,11 +7,12 @@ import cachedFetch from './helpers/cached-fetch'
 import parse from './helpers/parse'
 
 import { app } from './state'
+import { AvatarLink } from './components/avatar-link'
 
 type SpaceRecord = {
   id: string
   name: string | null
-  owner_name: string | null
+  owner: any // AvatarRef
   visits: number | null
   feature_count: number | null
   pagination_count: number
@@ -110,7 +111,9 @@ export default class Spaces extends Component<Props, State> {
               <a href={`/spaces/${s.id}`}>{name}</a>
             </b>
             <br />
-            <small>{s.owner_name}</small>
+            <small>
+              <AvatarLink avatar={s.owner} />
+            </small>
           </td>
           <td>{s.visits}</td>
           <td>{s.feature_count}</td>

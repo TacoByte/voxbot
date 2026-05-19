@@ -143,8 +143,10 @@ export default function (db: Db, passport: PassportStatic, app: Express) {
         CAST(distance_to_center as double precision),
         CAST(distance_to_ocean as double precision),
         CAST(distance_to_closest_common as double precision),
-        lower(properties.owner) as owner,
-        avatars.name as owner_name,
+        COALESCE(
+          (SELECT row_to_json(sub) FROM (SELECT a.id, a.name, a.owner, a.created_at FROM avatars a WHERE lower(a.owner) = lower(properties.owner) LIMIT 1) sub),
+          to_json(lower(properties.owner))
+        ) as owner,
         properties.x1,
         properties.x2,
         y1,
@@ -156,14 +158,12 @@ export default function (db: Db, passport: PassportStatic, app: Express) {
         count(*) OVER() AS pagination_count
       from
         properties
-      left join
-        avatars on lower(avatars.owner) = lower(properties.owner)
       left join suburbs on suburbs.id = properties.suburb_id
         where (is_common <> true)
       and
         (minted = true)
       and
-        (address ILIKE $1  or  properties.island ILIKE $1 or properties.name ILIKE $1 or lower(properties.owner)=lower($1) or  avatars.name ILIKE $1)
+        (address ILIKE $1  or  properties.island ILIKE $1 or properties.name ILIKE $1 or lower(properties.owner)=lower($1) or EXISTS (SELECT 1 FROM avatars av WHERE lower(av.owner)=lower(properties.owner) AND av.name ILIKE $1))
       order by
         ${orderBy}
       limit

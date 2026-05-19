@@ -8,6 +8,7 @@ import { app } from './state'
 import { assetCache } from './store'
 import { fetchOptions } from './utils'
 import { WearableViewer } from './wearable-viewer'
+import { AvatarLink } from './components/avatar-link'
 
 interface Props {
   path?: string
@@ -151,7 +152,7 @@ export default class Asset extends Component<Props, State> {
         <h1>{this.state.asset.name}</h1>
 
         <article>
-          <figure>
+          <figure class="shortie">
             {this.asset ? (
               <iframe src={iframe} />
             ) : (
@@ -188,7 +189,7 @@ export default class Asset extends Component<Props, State> {
           <dl>
             <dt>Author</dt>
             <dd>
-              <a href={`/u/${this.state.asset.author}`}>{ethTrunc(this.state.asset.author)}</a>
+              <AvatarLink avatar={this.state.asset.author} />
             </dd>
             <dt>Created</dt>
             <dd>{this.state.asset.created_at}</dd>

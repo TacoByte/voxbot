@@ -1,7 +1,6 @@
 import { Component } from 'preact'
 import { Spinner } from '../../../web/src/spinner'
 import { app, AppEvent } from '../../../web/src/state'
-import { fetchAPI } from '../../../web/src/utils'
 import { FeatureAssetCategory, FeatureAssetType, LibraryAsset, ScriptAssetCategory } from '../../library-asset'
 import { AssetLibrarySearchBar } from '../search-bar'
 import { AssetBrowser, NUMBER_PER_PAGE } from './asset-browser'
@@ -134,7 +133,7 @@ export class AssetLibraryBrowser extends Component<Props, State> {
       url = `/api/library/all/${app.state.wallet}.json`
     }
 
-    const tasks = [fetchAPI(`/api/library/info.json?${searchParams}`), fetchAPI(`${url}?${searchParams}`)]
+    const tasks = [fetch(`/api/library/info.json?${searchParams}`, { credentials: 'include' }).then((r) => r.json()), fetch(`${url}?${searchParams}`, { credentials: 'include' }).then((r) => r.json())]
     this.setState({ loading: true }, () => {
       Promise.all(tasks)
         .then((result) => {

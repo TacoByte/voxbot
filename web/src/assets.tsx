@@ -12,7 +12,7 @@ import { invalidateUrl } from './helpers/cached-fetch'
 import { Spinner } from './spinner'
 import { app } from './state'
 import { assetCache } from './store/index'
-import { fetchAPI, fetchOptions } from './utils'
+import { fetchOptions } from './utils'
 
 interface Props {
   assets?: LibraryAsset_Type[]
@@ -56,7 +56,7 @@ export default function Library(props: Props) {
     scope.nonce = editing
     if (props.wallet) scope.author = props.wallet
 
-    const r = await fetchAPI(scope.toString(), fetchOptions(controller.current))
+    const r = await fetch(scope.toString(), fetchOptions(controller.current)).then((r) => r.json())
     if (!r) {
       setLoading(false)
       return

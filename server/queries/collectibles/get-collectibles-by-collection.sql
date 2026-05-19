@@ -6,8 +6,10 @@ select
   category,
   wearables.description,
   issues,
-  author,
-  (select avatars.name from avatars where lower(avatars.owner) = lower(wearables.author)) as author_name,
+  COALESCE(
+    (SELECT row_to_json(sub) FROM (SELECT a.id, a.name, a.owner, a.created_at FROM avatars a WHERE lower(a.owner) = lower(wearables.author) LIMIT 1) sub),
+    to_json(wearables.author)
+  )    as author,
   hash
 from 
   wearables 

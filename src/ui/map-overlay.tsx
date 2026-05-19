@@ -6,7 +6,7 @@ import type { Event } from '../../common/messages/event'
 import { generateWompMarkers } from '../../web/src/map'
 import { mapEventMarkerPopup, mapParcelPopup, mapTeleportPopup } from '../../web/src/map-parcel-popup'
 import { app, AppEvent } from '../../web/src/state'
-import { fetchAPI, fetchOptions } from '../../web/src/utils'
+import { fetchOptions } from '../../web/src/utils'
 
 import { ExponentialBackoff, handleAll, retry } from 'cockatiel'
 import type { PathOptions } from '../../vendor/library/leaflet'
@@ -660,7 +660,8 @@ export function SearchMap({ mapContext }: { mapContext: MapOverlayUI }) {
     if (value) {
       clearMarkers()
       const searchRegex = new RegExp(value, 'i')
-      const list = mapContext.parcels.filter((p) => p.name?.match(searchRegex) || p.label?.match(searchRegex) || p.address?.match(searchRegex) || p.owner_name?.match(searchRegex))
+      const ownerStr = (p: any) => (typeof p.owner === 'string' ? p.owner : (p.owner?.name ?? ''))
+      const list = mapContext.parcels.filter((p) => p.name?.match(searchRegex) || p.label?.match(searchRegex) || p.address?.match(searchRegex) || ownerStr(p).match(searchRegex))
 
       m.current = window.L.featureGroup(
         list.map((p) => {
@@ -698,8 +699,9 @@ export function SearchMap({ mapContext }: { mapContext: MapOverlayUI }) {
 // event notification service already will have this in mem, so wasteful to fetch again
 // future optimisation is to use that cache
 async function getLiveEvents(signal?: AbortSignal): Promise<Event[] | null> {
-  return await fetchAPI(`/api/events/on.json?live=true`, { signal })
-    .then((res) => res?.events || [])
+  return await fetch(`/api/events/on.json?live=true`, { signal, credentials: 'include' })
+    .then((r) => r.json())
+    .then((res: any) => res?.events || [])
     .catch(console.error)
 }
 

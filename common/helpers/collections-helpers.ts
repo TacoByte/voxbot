@@ -173,8 +173,7 @@ export type Collection = {
   chainid?: number
   chain_identifier?: string
   description?: string
-  owner?: string
-  owner_name?: string
+  owner?: any // AvatarRef
   address?: string
   chainId?: number
   collectiblesType?: string
@@ -202,8 +201,7 @@ export class CollectionHelper {
   name?: string
   chainid: number
   description?: string
-  owner?: string
-  owner_name?: string
+  owner?: any // AvatarRef
   address?: string
   collectiblesType?: string
   image_url?: string | null

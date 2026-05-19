@@ -2,6 +2,7 @@ import { Component, createRef, Ref, RefObject } from 'preact'
 import { CollectibleRecord } from '../../common/messages/collectibles'
 import LoadingPage from './loading-page'
 import { WearableViewer } from './wearable-viewer'
+import { AvatarLink } from './components/avatar-link'
 
 export interface Props {
   path?: string
@@ -109,7 +110,7 @@ export default class Wearable extends Component<Props, State> {
           <dl>
             <dt>Author</dt>
             <dd>
-              <a href={`/marketplace/collectibles?q=${this.wearable.author}`}>{this.wearable.author}</a>
+              <AvatarLink avatar={this.wearable.author} />
             </dd>
             <dt>OpenSea</dt>
             <dd>

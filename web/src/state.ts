@@ -3,8 +3,8 @@ import { EventEmitter } from 'events'
 import Cookies from 'js-cookie'
 import { decodeJwt } from 'jose'
 import { ApiAvatar, type ApiAvatarMessage } from '../../common/messages/api-avatars'
+import type { AvatarRef } from '../../common/messages/avatar-ref'
 import Snackbar from './components/snackbar'
-import { fetchAPI } from './utils'
 
 const jsonHeaders = {
   Accept: 'application/json, text/plain, */*',
@@ -138,6 +138,12 @@ export class Appstate extends State {
     return this.state.wallet
   }
 
+  isOwner(ref: AvatarRef | null | undefined): boolean {
+    if (!this.state.wallet || !ref) return false
+    const w = typeof ref === 'object' ? ref.owner : ref
+    return w.toLowerCase() === this.state.wallet.toLowerCase()
+  }
+
   onStorage = (e: StorageEvent) => {
     if (e.key == MESSAGE_CHANNEL && e.newValue) {
       const msg = JSON.parse(e.newValue) as Message
@@ -257,7 +263,7 @@ export class Appstate extends State {
       console.log('no wallet in updateLastOnline')
       return
     }
-    fetchAPI(`/api/avatar/${this.state?.wallet}/online`, { method: 'POST' }).catch(console.error)
+    fetch(`/api/avatar/${this.state?.wallet}/online`, { method: 'POST', credentials: 'include' }).catch(console.error)
   }
 
   async onLoad() {

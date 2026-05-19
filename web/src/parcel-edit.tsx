@@ -162,7 +162,7 @@ export default function ParcelEdit(props: Props) {
   if (!parcel) return <p>Loading...</p>
 
   const wallet = app.state.wallet?.toLowerCase()
-  const isOwner = !!wallet && parcel.owner?.toLowerCase() === wallet
+  const isOwner = app.isOwner(parcel.owner)
   const isCollaborator = !!wallet && (parcel.parcel_users ?? []).some((u: ParcelUser) => u.wallet.toLowerCase() === wallet)
   const canEdit = isOwner || isCollaborator
 
@@ -182,9 +182,7 @@ export default function ParcelEdit(props: Props) {
   return (
     <section class="columns">
       <hgroup>
-        <h1>
-          Edit Parcel
-        </h1>
+        <h1>Edit Parcel</h1>
       </hgroup>
 
       <article>

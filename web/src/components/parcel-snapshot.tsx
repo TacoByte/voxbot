@@ -67,7 +67,7 @@ export default class ParcelSnapshot extends Component<Props, State> {
   }
 
   get isOwner() {
-    return this.parcel && this.parcel.owner.toLowerCase() === app.state.wallet?.toLowerCase()
+    return app.isOwner(this.parcel?.owner)
   }
 
   setHelper() {

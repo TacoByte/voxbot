@@ -11,8 +11,9 @@ import cachedFetch from './helpers/cached-fetch'
 import Head from './components/head'
 import { Spinner } from './spinner'
 import { app, AppEvent } from './state'
-import { fetchAPI, fetchOptions } from './utils'
+import { fetchOptions } from './utils'
 import WompsList from './womps-list'
+import { AvatarLink } from './components/avatar-link'
 import { ParcelMetrics as Metrics } from './components/metrics'
 
 type FrameProps = {
@@ -424,7 +425,8 @@ export default class Parcel extends Component<Props, State> {
       return
     }
     this.setState({ querying: true })
-    return fetchAPI(`/api/parcels/${this.state.parcelId}/query`, fetchOptions())
+    return fetch(`/api/parcels/${this.state.parcelId}/query`, fetchOptions())
+      .then((r) => r.json())
       .then(() => {
         window.location.reload()
       })
@@ -524,7 +526,7 @@ export default class Parcel extends Component<Props, State> {
                   </dd>
                   <dt>Owner</dt>
                   <dd>
-                    <a href={`/u/${p.owner}`}>{p.owner.substring(0, 10)}...</a>
+                    <AvatarLink avatar={p.owner} />
                   </dd>
                   <dt>Token ID</dt>
                   <dd>

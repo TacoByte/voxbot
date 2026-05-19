@@ -649,7 +649,7 @@ export default class Parcel extends TypedEventTarget<ParcelEventMap> {
     this.suburb = meta.suburb || 'Unknown suburb'
     this.hash = meta.hash || undefined
     this.island = meta.island || 'Unknown island'
-    this.owner = meta.owner
+    this.owner = meta.owner && typeof meta.owner === 'object' ? (meta.owner as any).owner : (meta.owner ?? '')
     this.parcel_users = meta.parcel_users || []
     this.settings = meta.settings || {}
     this.lightmap_url = meta.lightmap_url || null

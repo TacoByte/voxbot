@@ -40,8 +40,10 @@ from (select count(wao.wearable_id)                                             
                  WHEN issues >= 100 and issues < 1000 THEN 'rare'
                  ELSE 'common'
                  END                                                                          AS rarity,
-             lower(wao.author)                                                                as author,
-             lower((select name from avatars where lower(avatars.owner) = lower(wao.author))) as author_name
+             COALESCE(
+               (SELECT row_to_json(sub) FROM (SELECT a.id, a.name, a.owner, a.created_at FROM avatars a WHERE lower(a.owner) = lower(wao.author) LIMIT 1) sub),
+               to_json(lower(wao.author))
+             )                                                                                as author
       FROM wearables_and_owners wao
                inner JOIN
            collections c

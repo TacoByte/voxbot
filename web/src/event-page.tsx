@@ -11,7 +11,7 @@ import { PanelType } from './components/panel'
 import ParcelEvent, { removeEvent } from './helpers/event'
 import { app, AppEvent } from './state'
 import cachedFetch from './helpers/cached-fetch'
-import { fetchAPI, fetchOptions } from './utils'
+import { fetchOptions } from './utils'
 
 export interface Props {
   event?: Event
@@ -126,18 +126,20 @@ export default class EventPage extends Component<Props, State> {
 
         <article>
           <figcaption>
-            <a href={this.visitUrl}>Visit</a>
+            <a class="buttonish" href={this.visitUrl}>
+              Visit
+            </a>
           </figcaption>
 
-          <figure>
+          <figure class="shortie">
             <iframe id="ParcelorbitView" key={this.parcel?.orbitUrl} scrolling="no" src={this.parcel?.orbitUrl} />
           </figure>
+
+          <div>{this.state.event.description}</div>
         </article>
 
         <aside class="push-header">
           <dl>
-            <dt>Description</dt>
-            <dd class="description">{this.state.event.description}</dd>
             {this.helper.isInPast && <SummaryPast event={this.helper} anons={this.state.visitor_anons} wallets={this.state.visitor_wallets} isMod={isMod} />}
             {this.helper.isLive && <SummaryLive event={this.helper} anons={this.state.visitor_anons} wallets={this.state.visitor_wallets} isMod={isMod} />}
             {this.helper.isInFuture && <SummaryFuture event={this.helper} anons={this.state.visitor_anons} wallets={this.state.visitor_wallets} isMod={isMod} />}
@@ -194,7 +196,6 @@ export default class EventPage extends Component<Props, State> {
     this.parcel = new ParcelHelper({
       id: event.parcel_id,
       owner: event.parcel_owner,
-      owner_name: event.parcel_owner_name,
       name: event.parcel_name,
       description: event.parcel_description,
       address: event.parcel_address,
@@ -216,7 +217,7 @@ function SummaryPast({ event, anons, wallets, isMod }: SummaryProps) {
     <>
       <dt>Host</dt>
       <dd>
-        <a href={`/u/${event.author}`}>{event.authorNameOrAddress(34)}</a>
+        <a href={`/u/${event.authorSlug}`}>{event.authorNameOrAddress(34)}</a>
       </dd>
       <dt>Location</dt>
       <dd>
@@ -240,7 +241,7 @@ function SummaryFuture({ event, anons, wallets, isMod }: SummaryProps) {
       </dd>
       <dt>Host</dt>
       <dd>
-        <a href={`/u/${event.author}`}>{event.authorNameOrAddress(34)}</a>
+        <a href={`/u/${event.authorSlug}`}>{event.authorNameOrAddress(34)}</a>
       </dd>
       <dt>Location</dt>
       <dd>
@@ -273,7 +274,7 @@ function SummaryLive({ event, anons, wallets, isMod }: SummaryProps) {
       </dd>
       <dt>Host</dt>
       <dd>
-        <a href={`/u/${event.author}`}>{event.authorNameOrAddress(34)}</a>
+        <a href={`/u/${event.authorSlug}`}>{event.authorNameOrAddress(34)}</a>
       </dd>
       <dt>Location</dt>
       <dd>
@@ -315,13 +316,12 @@ const copyToClipboard = (text: string) => {
 function EventsNav({ activeId }: { activeId?: string }) {
   const [events, setEvents] = useState<Event[]>([])
   useEffect(() => {
-    fetchAPI('/api/events.json', fetchOptions()).then((r) => r && setEvents(r.events))
+    cachedFetch('/api/events.json', fetchOptions())
+      .then((r) => r.json())
+      .then((r) => setEvents(r.events ?? []))
   }, [])
   return (
     <nav>
-      <p>
-        <a class="buttonish" href="/events/new">New event</a>
-      </p>
       <ul>
         {events.map((e) => (
           <li key={e.id} aria-selected={String(e.id) === activeId}>
@@ -329,6 +329,12 @@ function EventsNav({ activeId }: { activeId?: string }) {
           </li>
         ))}
       </ul>
+
+      <p>
+        <a class="buttonish" href="/events/new">
+          New event
+        </a>
+      </p>
     </nav>
   )
 }
