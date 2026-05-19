@@ -7,7 +7,7 @@ import Parcel, { PARCEL_EVENT_EMITTER } from './parcel'
 // Import handlers
 import BuildRequestHandler, { SpaceBuildRequestHandler } from './handlers/build-parcel'
 import queryParcel, { refreshParcelsByWallet } from './handlers/query-parcel'
-import { CheckEmail, CheckNameAvailable, EmailCode, SignIn } from './handlers/sign-in'
+import { CheckEmail, CheckNameAvailable, EmailCode, getUserInfo, SignIn } from './handlers/sign-in'
 import { PasskeyAddOptions, PasskeyAddVerify, PasskeyAvailable, PasskeyLoginOptions, PasskeyLoginVerify, PasskeyRegisterOptions, PasskeyRegisterVerify } from './handlers/passkey'
 import updateParcel from './handlers/update-parcel'
 
@@ -295,6 +295,18 @@ const timeoutMiddleware = (delay: number) => (req: express.Request, res: express
   res.socket?.setTimeout(delay)
   next()
 }
+
+if (config.isDevelopment) {
+  app.get('/login/:wallet', async (req, res) => {
+    // debug login as the wallet
+    const wallet = req.params.wallet
+    console.log('debug login as wallet', wallet)
+
+    const { token, name, isNewUser } = await getUserInfo(res, wallet, {})
+    res.redirect('/account')
+  })
+}
+
 app.post('/api/signin', signInRateLimit, timeoutMiddleware(5 * 60 * 60 * 1000), SignIn)
 app.post('/api/signin/code', signInRateLimit, timeoutMiddleware(5 * 60 * 60 * 1000), EmailCode)
 app.post('/api/account/reserve', signInRateLimit, CheckNameAvailable)
