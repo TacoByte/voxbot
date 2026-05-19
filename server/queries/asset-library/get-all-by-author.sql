@@ -3,7 +3,7 @@ select a.id,
        COALESCE(
          (SELECT row_to_json(sub) FROM (SELECT av.id, av.name, av.owner, av.created_at FROM avatars av WHERE lower(av.owner) = lower(a.author) LIMIT 1) sub),
          to_json(a.author)
-       )       as author,
+       ) as author,
        a.name,
        a.description,
        category,

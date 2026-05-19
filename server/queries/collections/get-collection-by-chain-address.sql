@@ -5,7 +5,7 @@ select c.id,
        COALESCE(
          (SELECT row_to_json(sub) FROM (SELECT av.id, av.name, av.owner, av.created_at FROM avatars av WHERE lower(av.owner) = lower(c.owner) LIMIT 1) sub),
          to_json(c.owner)
-       )       as owner,
+       ) as owner,
        address,
        slug,
        c.type,

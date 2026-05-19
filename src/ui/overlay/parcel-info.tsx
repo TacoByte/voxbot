@@ -1,5 +1,4 @@
 import ParcelHelper from '../../../common/helpers/parcel-helper'
-import Emojis from '../../../web/src/components/emoji-badges'
 import ParcelEventItem from '../../../web/src/components/parcel-event'
 import WriteMailOverlay from '../mail-owner'
 import { app } from '../../../web/src/state'
@@ -195,11 +194,6 @@ export default function ParcelInfoTab(props: Props) {
           </li>
         </ul>
         <section className="overlay-parcel-info-content">
-          {!window.config.isSpace && (
-            <div>
-              <Emojis item={parcel} emojiable_type="parcels" />
-            </div>
-          )}
           <div>
             <p>{description}</p>
           </div>

@@ -363,9 +363,6 @@ export default function (db: Db, passport: PassportStatic, app: Express) {
     // res.json({success : true, parcel: parcel.summary})
   })
 
-  // Route to get count of parcels
-  app.get('/api/parcels/total.json', passport.authenticate(['jwt', 'anonymous'], { session: false }), cache('10 minutes'), createRequestHandlerForQuery(db, 'parcels/get-parcel-count', 'count'))
-
   // Route to allow users to share their parcels without using ?coords=
   app.get('/parcels/:id/visit', cache('15 seconds'), async (req, res) => {
     const id = Number(req.params.id)
