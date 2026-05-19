@@ -2,7 +2,9 @@ import { useEffect, useState } from 'preact/hooks'
 import { route } from 'preact-router'
 import { blocks } from '../../common/content/blocks'
 import { Login } from './auth/login'
+import WebParcelSnapshots from './components/parcel-snapshots'
 import SelectUser from './components/select-user'
+import ParcelVersions from './parcel-versions'
 import { app } from './state'
 
 type ParcelUser = { wallet: string; role: string }
@@ -152,36 +154,35 @@ export default function ParcelEdit(props: Props) {
           </button>
         </form>
       </article>
-      <aside>
-        <a href={`/parcels/${props.id}/snapshots`}>Snapshots</a>
-        <br />
-        <a href={`/parcels/${props.id}/versions`}>Versions</a>
+      <div class="postscript">
+        <WebParcelSnapshots parcel={parcel} />
+        <ParcelVersions parcel={parcel} id={parcel.id} />
+      </div>
 
-        {isOwner && (
-          <div>
-            <h3>quick build</h3>
-            <p>Replaces all content on the parcel.</p>
-            <div class="f">
-              <label>Material</label>
-              <select onChange={(e: any) => setBuildMaterial(e.target.value)}>
-                {blocks.map((b) => (
-                  <option key={b.value} value={b.value}>
-                    {b.name.replace(/.png/, '')}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <ul>
-              {['Empty', 'Park', 'Outline', 'ThreeTowers', 'House', 'Pyramid', 'Scaffold'].map((fn) => (
-                <li key={fn}>
-                  <button type="button" disabled={building} onClick={() => build(fn)}>
-                    {fn}
-                  </button>
-                </li>
+      <aside>
+        <div>
+          <h3>quick build</h3>
+          <p>Replaces all content on the parcel.</p>
+          <div class="f">
+            <label>Material</label>
+            <select onChange={(e: any) => setBuildMaterial(e.target.value)}>
+              {blocks.map((b) => (
+                <option key={b.value} value={b.value}>
+                  {b.name.replace(/.png/, '')}
+                </option>
               ))}
-            </ul>
+            </select>
           </div>
-        )}
+          <ul>
+            {['Empty', 'Park', 'Outline', 'ThreeTowers', 'House', 'Pyramid', 'Scaffold'].map((fn) => (
+              <li key={fn}>
+                <button type="button" disabled={building} onClick={() => build(fn)}>
+                  {fn}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
       </aside>
     </section>
   )

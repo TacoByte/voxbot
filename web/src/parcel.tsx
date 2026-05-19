@@ -1,5 +1,5 @@
 import { Component, Fragment, createRef } from 'preact'
-import Router, { route } from 'preact-router'
+import { route } from 'preact-router'
 import { format } from 'timeago.js'
 import ParcelHelper from '../../common/helpers/parcel-helper'
 import { canUseDom, ssrFriendlyWindow } from '../../common/helpers/utils'
@@ -7,9 +7,7 @@ import { FullParcelRecord, NearbyParcelRecord, ParcelRecord, ParcelWithMintednes
 import type { Map } from '../../vendor/library/leaflet'
 import Listings from './components/listings'
 import ParcelEvents from './components/parcel-events'
-import WebParcelSnapshots from './components/parcel-snapshots'
 import cachedFetch from './helpers/cached-fetch'
-import ParcelVersions from './parcel-versions'
 import Head from './components/head'
 import { Spinner } from './spinner'
 import { app, AppEvent } from './state'
@@ -421,10 +419,6 @@ export default class Parcel extends Component<Props, State> {
   // Do we only all the information on this parcel? (If this is
   // false we may only have a few fields from the parcel cache,
 
-  refreshIframe() {
-    // no-op
-  }
-
   updateStateFromBlockChain() {
     if (this.state.querying) {
       return
@@ -487,6 +481,12 @@ export default class Parcel extends Component<Props, State> {
             <a class="buttonish" href={this.visitUrl}>
               Teleport
             </a>
+
+            {this.isOwner && (
+              <a class="buttonish" href={`/parcels/${this.state.parcelId}/edit`}>
+                Edit
+              </a>
+            )}
           </figcaption>
 
           <figure>
@@ -498,16 +498,9 @@ export default class Parcel extends Component<Props, State> {
 
         <div class="postscript">
           <WompsList key={this.state.parcelId} fetch={`/womps/at/parcel/${this.state.parcelId}.json`} numberToShow={10} smaller={true} collapsed={true} />
-
-          <Router>
-            {this.isOwner && <WebParcelSnapshots parcel={this.state.parcel} path={`/parcels/${this.state.parcelId}/snapshots`} />}
-            {this.isOwner && <ParcelVersions parcel={this.state.parcel} id={this.state.parcelId} onContentChange={this.refreshIframe.bind(this)} path={`/parcels/${this.props.parcel?.id ?? this.state.parcelId}/versions`} />}
-          </Router>
         </div>
 
         <aside class="push-header">
-          {this.isOwner && <a href={`/parcels/${this.state.parcelId}/edit`}>Edit</a>}
-
           <Listings parcel={this.props.id!} name={this.state.parcel?.address!} />
 
           {this.state.parcel &&
