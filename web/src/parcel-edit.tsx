@@ -174,19 +174,25 @@ export default function ParcelEdit(props: Props) {
     loadVersions()
   }
 
-  async function clearHistory() {
-    if (!confirm('This will erase all non-snapshot versions of this parcel. Continue?')) return
-    await fetch(`/api/parcels/${parcel.id}/history`, {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-    })
-    loadVersions()
-  }
-
   if (!parcel) return <p>Loading...</p>
 
-  const isOwner = app.state.wallet && parcel.owner?.toLowerCase() === app.state.wallet?.toLowerCase()
+  const wallet = app.state.wallet?.toLowerCase()
+  const isOwner = !!wallet && parcel.owner?.toLowerCase() === wallet
+  const isCollaborator = !!wallet && (parcel.parcel_users ?? []).some((u: ParcelUser) => u.wallet.toLowerCase() === wallet)
+  const canEdit = isOwner || isCollaborator
+
+  if (!canEdit) {
+    return (
+      <section class="columns">
+        <hgroup>
+          <h1>
+            <a href={`/parcels/${props.id}`}>{parcel.name || parcel.address}</a>
+          </h1>
+        </hgroup>
+        <p>You don't have permission to edit this parcel.</p>
+      </section>
+    )
+  }
 
   return (
     <section class="columns">
@@ -254,11 +260,15 @@ export default function ParcelEdit(props: Props) {
         </form>
 
         <h3>history</h3>
-        <p>Parcels autosave every edit. Mark a version as a snapshot to keep it forever.</p>
         <div class="f">
+          <label>Snapshots</label>
           <button type="button" onClick={takeSnapshot}>
             Take snapshot
           </button>
+        </div>
+
+        <div class="f">
+          <label>Import</label>
           <input ref={fileRef} type="file" accept=".json" onChange={importJson} />
         </div>
         <ul>
@@ -277,15 +287,6 @@ export default function ParcelEdit(props: Props) {
             </li>
           ))}
         </ul>
-
-        {isOwner && (
-          <>
-            <h3>danger zone</h3>
-            <button type="button" onClick={clearHistory}>
-              Clear non-snapshot history
-            </button>
-          </>
-        )}
       </article>
 
       <aside>

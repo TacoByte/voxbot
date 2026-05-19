@@ -797,10 +797,15 @@ div.f {
     text-transform: lowercase;
   }
 
+  label:has(input) {
+    position: relative;
+  }
+
   button {
   }
 
-  input,
+  input[type='text'],
+  input[type='number'],
   textarea {
     font-family: 'source code pro', monospace;
     width: 25rem;
