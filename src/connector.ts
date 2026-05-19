@@ -765,7 +765,7 @@ export default class Connector extends TypedEventTarget<{ avatar_joined: string 
     // Show speech bubble?
     this.persona.avatar?.addChat(text)
 
-    this.addChat(text, this.persona.avatar, app.state.name ?? app.state.wallet ?? undefined)
+    this.addChat(text, this.persona.avatar, app.avatarRef ?? app.state.wallet ?? undefined)
 
     // For scripting purposes:
     // const parcel = this.currentParcel()
