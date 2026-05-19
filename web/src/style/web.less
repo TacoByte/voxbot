@@ -62,7 +62,7 @@ h4 {
     max-width: 100%;
   }
 
-  img+p {
+  img + p {
     margin: 0;
   }
 }
@@ -204,7 +204,7 @@ div.nav-menu {
   header nav {
     position: relative;
 
-    >ul:first-child {
+    > ul:first-child {
       justify-content: space-between;
       width: 100%;
     }
@@ -302,7 +302,7 @@ main {
     'nav postscript side';
   gap: 0.5rem 1rem;
 
-  &>nav {
+  & > nav {
     grid-area: nav;
     margin-top: 4rem;
     overflow: hidden;
@@ -310,25 +310,25 @@ main {
     transition: max-width 200ms ease-in-out;
   }
 
-  &.nav-collapsed>nav {
+  &.nav-collapsed > nav {
     max-width: 0;
   }
 
-  &>hgroup {
+  & > hgroup {
     grid-area: header;
   }
 
-  &>article {
+  & > article {
     grid-area: main;
     min-width: 300px;
   }
 
-  &>aside {
+  & > aside {
     grid-area: side;
     min-width: 300px;
   }
 
-  &>.postscript {
+  & > .postscript {
     grid-area: postscript;
   }
 }
@@ -351,11 +351,11 @@ button.hamburger {
     'postscript side';
   gap: 0.5rem 1rem;
 
-  &>header {
+  & > header {
     grid-area: header;
   }
 
-  &>article {
+  & > article {
     grid-area: main;
     min-width: 300px;
     position: relative;
@@ -371,12 +371,12 @@ button.hamburger {
     }
   }
 
-  &>aside {
+  & > aside {
     grid-area: side;
     min-width: 300px;
   }
 
-  &>.postscript {
+  & > .postscript {
     grid-area: postscript;
   }
 }
@@ -534,7 +534,7 @@ body.done-loading {
 
 // Figcaption
 
-figcaption+figure {
+figcaption + figure {
   margin-top: -2rem;
 }
 
@@ -797,7 +797,8 @@ div.f {
     text-transform: lowercase;
   }
 
-  button {}
+  button {
+  }
 
   input,
   textarea {
@@ -809,7 +810,6 @@ div.f {
 }
 
 .island-admin {
-
   article,
   aside {
     width: 40vw;
@@ -997,7 +997,7 @@ hgroup {
     margin: 1rem 0 0 0;
   }
 
-  h1+p {
+  h1 + p {
     margin-top: -0.5rem;
   }
 }
@@ -1060,7 +1060,6 @@ p.empty {
   }
 }
 
-
 // Sidebar columns nav
 
 .columns.nav {
@@ -1070,14 +1069,13 @@ p.empty {
       padding: 0;
     }
 
-    li {
+    ul li {
       list-style: none;
       margin: 0;
       padding: 0;
 
-      &>a {
+      & > a {
         display: block;
-
 
         // truncate
         text-overflow: ellipsis;
@@ -1086,13 +1084,33 @@ p.empty {
       }
     }
 
-    li[aria-selected="true"] {
+    li[aria-selected='true'] {
       a {
         text-decoration: none;
         color: inherit;
         font-weight: bold;
       }
     }
+  }
+}
 
+// Context menu
+
+menu.context {
+  border: --border;
+  background: white;
+  box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2);
+  margin: 0;
+  padding: 0;
+
+  li {
+    margin: 0;
+    padding: 0.2rem 0.5rem;
+    list-style: none;
+    cursor: pointer;
+  }
+
+  li:hover {
+    background: #ccc;
   }
 }

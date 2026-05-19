@@ -249,6 +249,7 @@ export function setupScene(canvas: HTMLCanvasElement, engine: BABYLON.Engine, on
 
   scene.fogEnabled = true
   scene.fogMode = BABYLON.Scene.FOGMODE_EXP2
+  scene.fogDensity = 0.06
   scene.fogColor = scene.clearColor as any
   scene.fogStart = 10
   scene.fogEnd = 40

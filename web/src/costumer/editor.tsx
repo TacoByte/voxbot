@@ -1,12 +1,13 @@
 import { Component } from 'preact'
 import * as _ from 'lodash'
 import { sortBy } from 'lodash'
-import { Costume, CostumeAttachment } from '../../../common/messages/costumes'
+import { Costume } from '../../../common/messages/costumes'
+import { Attachment } from './index'
 import { pending } from './utils'
 
 interface Props {
   attachmentIdx: number
-  updateAttachment: (a: CostumeAttachment) => void
+  updateAttachment: (a: Attachment) => void
   deleteAttachment: (attachmentIdx: number) => void
   costume: Costume | null
 }
@@ -30,7 +31,7 @@ export class Editor extends Component<Props, State> {
   }
 
   setAttachmentBone = async (name: string) => {
-    this.merge({ bone: name }).catch(console.error)
+    this.merge({ bone: name.toLowerCase() }).catch(console.error)
   }
 
   suppress = (e: Event) => {
@@ -44,7 +45,7 @@ export class Editor extends Component<Props, State> {
     }
   }
 
-  get attachment(): CostumeAttachment | null {
+  get attachment(): Attachment | null {
     if (!this.props.costume) {
       return null
     }
@@ -143,14 +144,14 @@ export class Editor extends Component<Props, State> {
   }
 
   sendUpdates() {
-    const attachment: Partial<CostumeAttachment> = {}
+    const attachment: Partial<Attachment> = {}
     attachment.position = this.state.position
     attachment.rotation = this.state.rotation
     attachment.scaling = this.state.scaling
     this.merge(attachment).catch(console.error)
   }
 
-  async merge(params: Partial<CostumeAttachment>) {
+  async merge(params: Partial<Attachment>) {
     const attachment = Object.assign({}, this.attachment, params)
     this.props.updateAttachment(attachment)
   }
@@ -275,7 +276,7 @@ export class Editor extends Component<Props, State> {
 
         <div class="action">
           <button class="danger" onClick={(e) => this.deleteAttachment(e)}>
-            Remove
+            Delete
           </button>
         </div>
       </div>

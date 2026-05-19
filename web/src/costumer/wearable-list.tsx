@@ -40,34 +40,14 @@ export default class WearableList extends Component<Props, WearableListState> {
   }
 
   renderWearableRow(wearable: CollectiblesData) {
-    const ondragstart = (e: DragEvent) => {
-      e.dataTransfer?.setData('text/plain', 'boop')
-      e.stopImmediatePropagation()
-
-      if (e.target && e.target instanceof HTMLElement) {
-        e.target.className = 'dragging-wearable'
-      }
-
-      // @ts-expect-error global abuse for drag drop
-      window['droppedWearable'] = wearable
-    }
-
-    const ondragend = (e: DragEvent) => {
-      if (e.target && e.target instanceof HTMLElement) {
-        e.target.className = 'draggable-wearable'
-      }
-    }
-
     const onClick = () => {
       if (this.props.onPickWearable) {
-        this.props.onPickWearable(wearable, wearable.default_bone || 'LeftHand')
-      } else {
-        app.showSnackbar('Drag and drop wearables onto your avatar to attach', PanelType.Help)
+        this.props.onPickWearable(wearable, wearable.default_bone || 'lefthand')
       }
     }
 
     return (
-      <li class="draggable-wearable" key={wearable.id} onDragStart={ondragstart} onDragEnd={ondragend} onClick={onClick} draggable={true}>
+      <li key={wearable.id} onClick={onClick}>
         <img width={94} height={94} src={getWearableGif(wearable)} />
         <address>{wearable.name}</address>
         {this.props.onPickWearable ? (
