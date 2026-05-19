@@ -302,4 +302,15 @@ export default function AvatarsController(db: Db, passport: PassportStatic, app:
     cache('5 minutes'),
     createRequestHandlerForQuery(db, 'avatars/get-score-by-wallet', 'scores', (req) => [req.params.wallet || '']),
   )
+
+  app.get('/api/avatars/search', cache('10 seconds'), async (req, res) => {
+    const q = (req.query.q as string) || ''
+    if (!q.trim()) {
+      res.json([])
+      return
+    }
+    const like = `%${q}%`
+    const result = await db.query('avatars/search', `select name, owner as wallet from avatars where lower(name) ilike lower($1) or lower(owner) ilike lower($1) limit 10`, [like])
+    res.json(result.rows)
+  })
 }

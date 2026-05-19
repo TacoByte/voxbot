@@ -1,17 +1,12 @@
-import { Component, createRef } from 'preact'
+import { Component, Fragment, createRef } from 'preact'
 import Router, { route } from 'preact-router'
+import { format } from 'timeago.js'
 import ParcelHelper from '../../common/helpers/parcel-helper'
 import { canUseDom, ssrFriendlyWindow } from '../../common/helpers/utils'
 import { FullParcelRecord, NearbyParcelRecord, ParcelRecord, ParcelWithMintednessRecord } from '../../common/messages/parcel'
 import type { Map } from '../../vendor/library/leaflet'
-import Build from './build'
-import { Collaborators } from './components/collaborators'
 import Listings from './components/listings'
-import { PanelType } from './components/panel'
-import ParcelAdminPanel from './components/parcel-admin'
-import { ParcelAttributes } from './components/parcel-attributes'
-import ParcelDescription from './components/parcel-description'
-import ParcelEventPanel from './components/parcel-event-panel'
+import ParcelEvents from './components/parcel-events'
 import WebParcelSnapshots from './components/parcel-snapshots'
 import cachedFetch from './helpers/cached-fetch'
 import ParcelVersions from './parcel-versions'
@@ -387,30 +382,6 @@ export default class Parcel extends Component<Props, State> {
     app.removeListener(AppEvent.Change, this.onAppChange)
   }
 
-  takeSnapshot() {
-    if (!this.state.parcel) {
-      console.warn('No parcel to snapshot')
-      return
-    }
-    return fetch(`/api/parcels/snapshot`, {
-      method: 'post',
-      credentials: 'include',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ parcel_id: this.state.parcelId }),
-    })
-      .then((r) => r.json())
-      .then((r) => {
-        if (!r.success) {
-          app.showSnackbar('❌ Something went wrong...', PanelType.Danger)
-        } else {
-          app.showSnackbar('✔️ Snapshot saved!', PanelType.Success)
-        }
-      })
-  }
-
   addMap() {
     if (!canUseDom || !this.state.parcel) {
       return
@@ -449,16 +420,6 @@ export default class Parcel extends Component<Props, State> {
 
   // Do we only all the information on this parcel? (If this is
   // false we may only have a few fields from the parcel cache,
-
-  eventCreate(parcel_event_id: number) {
-    if (canUseDom && parcel_event_id) {
-      window.location.href = `/events/${parcel_event_id}`
-    }
-  }
-
-  onSave = () => {
-    // no-op
-  }
 
   refreshIframe() {
     // no-op
@@ -545,20 +506,75 @@ export default class Parcel extends Component<Props, State> {
         </div>
 
         <aside class="push-header">
+          {this.isOwner && <a href={`/parcels/${this.state.parcelId}/edit`}>Edit</a>}
+
           <Listings parcel={this.props.id!} name={this.state.parcel?.address!} />
 
-          <dl>
-            <dt>Address</dt>
-            <dd>
-              {this.state.parcel?.address}
-              <br />
-              {this.state.parcel?.suburb}
-              <br />
-              <a href={`/islands/${islandSlug}`}>{this.state.parcel?.island}</a>
-            </dd>
-          </dl>
+          {this.state.parcel &&
+            (() => {
+              const p = this.state.parcel
+              const h = this.helper!
+              const attrs: string[] = []
+              if (p.y1 < 0) attrs.push('Basement')
+              if (h.isWaterFront) attrs.push('Waterfront')
+              if (p.kind == 'inner') attrs.push('Prebuilt')
+              const updated = 'updated_at' in p && typeof p.updated_at === 'string' ? format(Date.parse(p.updated_at as string)) : ''
+              return (
+                <dl>
+                  <dt>Address</dt>
+                  <dd>
+                    {p.address}
+                    <br />
+                    {p.suburb}
+                    <br />
+                    <a href={`/islands/${islandSlug}`}>{p.island}</a>
+                  </dd>
+                  <dt>Owner</dt>
+                  <dd>
+                    <a href={`/u/${p.owner}`}>{p.owner.substring(0, 10)}...</a>
+                  </dd>
+                  <dt>Token ID</dt>
+                  <dd>
+                    <a href={h.tokenUri}>#{p.id}</a>
+                  </dd>
+                  {(p as any).traffic_visits ? (
+                    <Fragment>
+                      <dt>Visits</dt>
+                      <dd>{(p as any).traffic_visits.toLocaleString()}</dd>
+                    </Fragment>
+                  ) : null}
+                  <dt>Dimensions</dt>
+                  <dd>
+                    {h.width}m &times; {h.depth}m and {h.height}m tall.
+                  </dd>
+                  {p.y1 > 0 ? (
+                    <Fragment>
+                      <dt>Elevation</dt>
+                      <dd>{p.y1}m.</dd>
+                    </Fragment>
+                  ) : null}
+                  {attrs.length > 0 ? (
+                    <Fragment>
+                      <dt>Attributes</dt>
+                      <dd>{attrs.join(', ')}</dd>
+                    </Fragment>
+                  ) : null}
+                  {h.isSandbox ? (
+                    <Fragment>
+                      <dt>Sandbox</dt>
+                      <dd>Yes</dd>
+                    </Fragment>
+                  ) : null}
+                  {updated ? (
+                    <Fragment>
+                      <dt>Updated</dt>
+                      <dd>{updated}</dd>
+                    </Fragment>
+                  ) : null}
+                </dl>
+              )
+            })()}
 
-          {this.state.parcel ? <ParcelAttributes parcel={this.state.parcel} /> : <div />}
           {this.state.parcel ? (
             <p title="Refresh owner and parcel state from the chain (e.g. after an OpenSea sale)">
               {this.state.querying ? (
@@ -571,18 +587,37 @@ export default class Parcel extends Component<Props, State> {
             </p>
           ) : null}
           <a href={this.visitUrl}>Teleport</a>
-          {this.state.parcel ? <Collaborators parcel={this.state.parcel} /> : <div />}
-          {this.complete && this.state.parcel ? <ParcelAdminPanel parcelOrSpace={this.state.parcel as any as FullParcelRecord} onSave={this.onSave} onEventCreate={this.eventCreate.bind(this)} /> : <div />}
-          <div>{this.isOwner && this.state.parcel ? <Build parcel={this.state.parcel} callback={this.refreshIframe.bind(this)} /> : <div />}</div>
 
-          {this.state.parcel ? <ParcelEventPanel parcel={this.state.parcel} /> : <div />}
+          {this.state.parcel?.parcel_users && this.state.parcel.parcel_users.length > 0 && (
+            <div>
+              <h3>Collaborators</h3>
+              <ul>
+                {this.state.parcel.parcel_users.map((u: any) => (
+                  <li key={u.wallet}>
+                    <a href={`/u/${u.wallet}`}>{u.wallet.substring(0, 10)}...</a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
-          <h3>Description</h3>
+          {this.state.parcel ? <ParcelEvents parcel={this.state.parcel} /> : null}
 
-          {this.state.parcel ? <ParcelDescription parcel={this.state.parcel} path={`/parcels/${this.state.parcelId}`} /> : <div />}
+          {this.state.parcel?.description && (
+            <div>
+              <h3>Description</h3>
+              <p>
+                {this.state.parcel.description.split('\n').map((line: string, i: number, arr: string[]) => (
+                  <Fragment key={i}>
+                    {line}
+                    {i < arr.length - 1 && <br />}
+                  </Fragment>
+                ))}
+              </p>
+            </div>
+          )}
 
           <h3>Activity</h3>
-
           <Metrics parcelId={this.state.parcelId} />
         </aside>
       </section>
