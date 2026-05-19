@@ -1070,7 +1070,7 @@ p.empty {
       padding: 0;
     }
 
-    li {
+    ul li {
       list-style: none;
       margin: 0;
       padding: 0;
@@ -1093,6 +1093,28 @@ p.empty {
         font-weight: bold;
       }
     }
+
+  }
+}
+
+// Context menu
+
+menu.context {
+  border: --border;
+  background: white;
+  box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2);
+  margin: 0;
+  padding: 0;
+
+  li {
+    margin: 0;
+    padding: 0.2rem 0.5rem;
+    list-style: none;
+    cursor: pointer;
+  }
+
+  li:hover {
+    background: #ccc;
 
   }
 }

@@ -1,7 +1,6 @@
 import { Component, Fragment, createRef } from 'preact'
 import TextInput from '../../src/components/inplace/text'
 import Skin from './skin'
-import WearableList from './wearable-list'
 import { app } from '../../src/state'
 import Avatar from './avatar'
 import { Costume, CostumeAttachment } from '../../../common/messages/costumes'
@@ -12,8 +11,6 @@ import { route } from 'preact-router'
 import { pending, registerCostumerVoidBackground, setupGizmos, setupScene } from './utils'
 import { Wearable } from './wearable'
 import { CollectiblesData, fetchMergedWearableCatalog } from '../../../common/helpers/collections-helpers'
-import { wearablesForBone } from './bone-wearables'
-import { getWearableGif } from '../helpers/wearable-helpers'
 import { createHash } from 'crypto'
 import { Spinner } from '../../src/spinner'
 import Redirect from '../../src/components/redirect'
@@ -46,8 +43,6 @@ interface State {
   costumes?: Array<Costume>
   avatarCostumeId?: number
   pickedBone: BABYLON.Bone | null
-  bonePickerLoading: boolean
-  bonePickerItems: CollectiblesData[] | null
   wearables: CollectiblesData[]
   ctxMenu: { id: number; x: number; y: number } | null
   navOpen: boolean
@@ -126,8 +121,6 @@ export default class Costumer extends Component<Props, State> {
     attachmentIdx: null,
     loading: true,
     pickedBone: null,
-    bonePickerLoading: false,
-    bonePickerItems: null,
     wearables: [],
     ctxMenu: null,
     navOpen: true,
@@ -434,7 +427,11 @@ export default class Costumer extends Component<Props, State> {
   }
 
   updateCostume = async (costume: Costume, blocking?: boolean) => {
-    const body = JSON.stringify(costume)
+    const clean = {
+      ...costume,
+      attachments: costume.attachments?.map(({ wearable: _, ...a }) => a) ?? null,
+    }
+    const body = JSON.stringify(clean)
 
     const costumes = this.state.costumes?.map((c: Costume) => {
       if (c.id == costume.id) {
@@ -453,8 +450,8 @@ export default class Costumer extends Component<Props, State> {
     }
   }
 
-  downloadCostume = () => {
-    const costume = this.costume
+  downloadCostume = (id?: number) => {
+    const costume = id ? this.state.costumes?.find((c) => c.id === id) ?? null : this.costume
 
     if (!costume) {
       return
@@ -699,10 +696,6 @@ export default class Costumer extends Component<Props, State> {
     return true
   }
 
-  pickWearableForHand = (wearable: CollectiblesData, bone: string) => {
-    void this.addAttachment(wearable, bone)
-  }
-
   async addAttachment(wearable: CollectiblesData, bone: string) {
     if (!this.costume) {
       app.showSnackbar("Can't attach wearable when no costume is selected", PanelType.Warning, 5000)
@@ -713,12 +706,12 @@ export default class Costumer extends Component<Props, State> {
     const costume = { ...this.costume }
 
     const attachment: CostumeAttachment = {
-      name: wearable.name,
       wid: wearable.id!,
       position: [0, 0, 0],
       rotation: [0, 0, 0],
       scaling: [s, s, s],
       bone,
+      wearable: { id: wearable.id!, name: wearable.name },
     }
 
     let attachments = [...(costume.attachments || [])]
@@ -769,7 +762,7 @@ export default class Costumer extends Component<Props, State> {
     const editorKey = `editor-${this.state.attachmentIdx ?? 0}-${this.props.costumeId}`
     const attachments = this.costume?.attachments ?? []
     const { ctxMenu } = this.state
-    const costumes = sortBy(this.state.costumes, (c) => c.id)
+    const costumes = sortBy(this.state.costumes, (c) => c.name)
 
     return (
       <section class={`columns nav costumer-page${this.state.navOpen ? '' : ' nav-collapsed'}`}>
@@ -800,7 +793,7 @@ export default class Costumer extends Component<Props, State> {
           </ul>
           {ctxMenu && (
             <div onClick={this.closeCtxMenu} style="position:fixed;inset:0;z-index:99">
-              <menu style={{ position: 'absolute', left: ctxMenu.x, top: ctxMenu.y }} onClick={(e) => e.stopPropagation()}>
+              <menu class='context' style={{ position: 'absolute', left: ctxMenu.x, top: ctxMenu.y }} onClick={(e) => e.stopPropagation()}>
                 <li onClick={this.ctxRename}>Rename</li>
                 <li
                   onClick={() => {
@@ -817,6 +810,14 @@ export default class Costumer extends Component<Props, State> {
                   }}
                 >
                   Delete
+                </li>
+                <li
+                  onClick={() => {
+                    this.closeCtxMenu()
+                    this.downloadCostume(ctxMenu.id)
+                  }}
+                >
+                  Download
                 </li>
               </menu>
             </div>
@@ -860,18 +861,9 @@ export default class Costumer extends Component<Props, State> {
         </article>
 
         <aside>
-          <form>
-            <div class='f'>
-              <label>Name</label>
-              <input type="text" value={this.costume?.name ? this.costume.name : ``} />
-            </div>
-          </form>
-
-          <h2>Wearables</h2>
-
           <div class="wearables">
             {attachments.map((a, idx) => {
-              const name = a.name ?? a.wid
+              const name = a.wearable?.name ?? a.wid
               const bone = a.bone
 
               const selected = idx == this.state.attachmentIdx
@@ -896,9 +888,6 @@ export default class Costumer extends Component<Props, State> {
             })}
           </div>
 
-          <button type="button" onClick={this.downloadCostume}>
-            costume-{this.costume?.id ?? 'new'}.json
-          </button>
         </aside>
       </section>
     )
@@ -906,6 +895,6 @@ export default class Costumer extends Component<Props, State> {
 }
 
 const anchorUrl = (a: CostumeAttachment) => {
-  const name = a.name ?? a.wid
+  const name = a.wearable?.name ?? a.wid
   return `#${name.toLowerCase().replace(/^[a-z]/g, '-')}`
 }

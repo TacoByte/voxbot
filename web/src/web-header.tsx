@@ -212,7 +212,6 @@ export default class WebHeader extends Component<Props, State> {
                       this.onSignOut()
                     }}
                   >
-                    <Icon name="logout" /> Log out
                   </a>
                 </li>
               )}

@@ -275,7 +275,7 @@ export class Editor extends Component<Props, State> {
 
         <div class="action">
           <button class="danger" onClick={(e) => this.deleteAttachment(e)}>
-            Remove
+            Delete
           </button>
         </div>
       </div>

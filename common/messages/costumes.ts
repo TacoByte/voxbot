@@ -81,7 +81,7 @@ export const CostumeAttachment = t.intersection(
       scaling: t.array(t.number),
     }),
     t.partial({
-      name: t.string,
+      wearable: t.type({ id: t.string, name: t.string }),
     }),
   ],
   'CostumeAttachment',

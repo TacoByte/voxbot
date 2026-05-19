@@ -253,7 +253,7 @@ app.get(`/${currentVersion}-web.js`, cache('1 day'), (req, res) => {
   return res.sendFile(path.join(__dirname, '..', 'dist', `${currentVersion}-web.js`))
 })
 
-app.get(`/${currentVersion}-web.css`, cache('1 day'), (req, res) => {
+app.get(`/${currentVersion}-web.css`, cache(config.isDevelopment ? false : '1 day'), (req, res) => {
   return res.sendFile(path.join(__dirname, '..', 'dist', `web.css`))
 })
 
