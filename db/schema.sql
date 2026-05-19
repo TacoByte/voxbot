@@ -1,4 +1,4 @@
-\restrict YqaErakC4PBrwPKIKgqUDx3KyjfKZSsid0zhtIv8WYiG5BEtwfovppqMJ4ODQ0m
+\restrict Ie3SMC4agiorrcXjdC1UsvBVaLVu1FgEB0b6XNCsKRdh4aOfuV84MaGXQYIX1Nv
 CREATE SCHEMA metrics;
 CREATE EXTENSION IF NOT EXISTS citext WITH SCHEMA public;
 COMMENT ON EXTENSION citext IS 'data type for case-insensitive character strings';
@@ -841,4 +841,4 @@ CREATE INDEX womps_parcel_id ON public.womps USING btree (parcel_id);
 CREATE TRIGGER wearables_recalculate_total_wearables_trigger AFTER INSERT ON public.wearables FOR EACH ROW WHEN ((new.token_id IS NOT NULL)) EXECUTE FUNCTION public.recalculate_total_wearables();
 ALTER TABLE ONLY public.properties
     ADD CONSTRAINT suburb_cascading_foreign_key FOREIGN KEY (suburb_id) REFERENCES public.suburbs(id) ON DELETE CASCADE;
-\unrestrict YqaErakC4PBrwPKIKgqUDx3KyjfKZSsid0zhtIv8WYiG5BEtwfovppqMJ4ODQ0m
+\unrestrict Ie3SMC4agiorrcXjdC1UsvBVaLVu1FgEB0b6XNCsKRdh4aOfuV84MaGXQYIX1Nv

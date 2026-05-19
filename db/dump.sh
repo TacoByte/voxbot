@@ -75,6 +75,8 @@ dump_table "costumes" "
 
 # bnolan wearables (costumes already captured above via Poneke dump)
 dump_table "wearables" "SELECT DISTINCT ON (w.id) w.* FROM wearables w JOIN (SELECT e->>'wid' AS wid FROM costumes c JOIN avatars a ON lower(a.owner) = lower(c.wallet) CROSS JOIN LATERAL jsonb_array_elements(c.attachments::jsonb) e WHERE a.name = 'bnolan') wids ON w.id::text = wids.wid"
+dump_table "collections" "SELECT DISTINCT ON (col.id) col.* FROM collections col JOIN wearables w ON w.collection_id = col.id JOIN (SELECT e->>'wid' AS wid FROM costumes c JOIN avatars a ON lower(a.owner) = lower(c.wallet) CROSS JOIN LATERAL jsonb_array_elements(c.attachments::jsonb) e WHERE a.name = 'bnolan') wids ON w.id::text = wids.wid"
+dump_table "asset_library" "SELECT * FROM asset_library WHERE name ILIKE '%fish%' OR name ILIKE '%toilet%'"
 
 cat <<EOF >> $OUTPUT_FILE
 COMMIT;
