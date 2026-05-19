@@ -173,17 +173,13 @@ export class AudioEngine {
     // load settings
     this.loadSettingsFromLocalStorage()
 
-    this.soundFx = {} as Record<SoundName, BABYLON.Sound>
-
-    if (isBatterySaver()) {
-      this.soundFx = Object.entries(soundFx).reduce(
-        (acc, [sound, options]) => {
-          acc[sound as SoundName] = this.createSound({ name: sound, ...options })
-          return acc
-        },
-        {} as Record<SoundName, BABYLON.Sound>,
-      )
-    }
+    this.soundFx = Object.entries(soundFx).reduce(
+      (acc, [sound, options]) => {
+        acc[sound as SoundName] = this.createSound({ name: sound, ...options })
+        return acc
+      },
+      {} as Record<SoundName, BABYLON.Sound>,
+    )
   }
 
   get persona(): Persona {
