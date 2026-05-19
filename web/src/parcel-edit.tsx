@@ -1,13 +1,20 @@
-import { useEffect, useState } from 'preact/hooks'
+import { useEffect, useRef, useState } from 'preact/hooks'
 import { route } from 'preact-router'
+import { format } from 'timeago.js'
 import { blocks } from '../../common/content/blocks'
 import { Login } from './auth/login'
-import WebParcelSnapshots from './components/parcel-snapshots'
 import SelectUser from './components/select-user'
-import ParcelVersions from './parcel-versions'
 import { app } from './state'
 
 type ParcelUser = { wallet: string; role: string }
+
+type Version = {
+  id: number
+  parcel_id: number
+  is_snapshot: boolean
+  updated_at: string
+  snapshot_name?: string
+}
 
 interface Props {
   path?: string
@@ -18,15 +25,24 @@ export default function ParcelEdit(props: Props) {
   if (!app.signedIn) return <Login reason="edit this parcel" />
 
   const [parcel, setParcel] = useState<any>(null)
+  const [versions, setVersions] = useState<Version[]>([])
   const [saving, setSaving] = useState(false)
   const [building, setBuilding] = useState(false)
   const [buildMaterial, setBuildMaterial] = useState(blocks[0].value)
+  const fileRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     fetch(`/api/parcels/${props.id}.json`)
       .then((r) => r.json())
       .then((d) => setParcel(d.parcel))
+    loadVersions()
   }, [props.id])
+
+  async function loadVersions() {
+    const r = await fetch(`/api/parcels/${props.id}/history.json?limit=50&page=0&asc=false`, { credentials: 'include' })
+    const d = await r.json()
+    setVersions(d.versions ?? [])
+  }
 
   function set(key: string, value: any) {
     setParcel((p: any) => ({ ...p, [key]: value }))
@@ -87,9 +103,90 @@ export default function ParcelEdit(props: Props) {
     )
   }
 
-  const isOwner = parcel && app.state.wallet && parcel.owner?.toLowerCase() === app.state.wallet?.toLowerCase()
+  async function takeSnapshot() {
+    await fetch(`/api/parcels/snapshot`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ parcel_id: parcel.id }),
+    })
+    loadVersions()
+  }
+
+  async function revert(v: Version) {
+    if (!confirm(`Revert to version #${v.id} from ${format(v.updated_at)}?`)) return
+    await fetch(`/api/parcels/${v.parcel_id}/revert`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ parcel_version_id: v.id }),
+    })
+    loadVersions()
+  }
+
+  async function toggleSnapshot(v: Version) {
+    if (v.is_snapshot) {
+      await fetch(`/api/parcels/snapshot/remove`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ version: v }),
+      })
+    } else {
+      await fetch(`/api/parcels/snapshot`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(v),
+      })
+    }
+    loadVersions()
+  }
+
+  async function download(v: Version) {
+    const r = await fetch(`/api/parcels/${v.parcel_id}/history/${v.id}.json`, { credentials: 'include' })
+    const d = await r.json()
+    const data = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(d.version))
+    const a = document.createElement('a')
+    a.href = data
+    a.download = `${v.parcel_id}-${v.id}.json`
+    a.click()
+  }
+
+  async function importJson(e: Event) {
+    const input = e.target as HTMLInputElement
+    if (!input.files?.[0]) return
+    const text = await input.files[0].text()
+    let content
+    try {
+      content = JSON.parse(text).content ?? JSON.parse(text)
+    } catch {
+      alert('Invalid JSON')
+      return
+    }
+    await fetch(`/grid/parcels/${parcel.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ content }),
+    })
+    if (fileRef.current) fileRef.current.value = ''
+    loadVersions()
+  }
+
+  async function clearHistory() {
+    if (!confirm('This will erase all non-snapshot versions of this parcel. Continue?')) return
+    await fetch(`/api/parcels/${parcel.id}/history`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+    })
+    loadVersions()
+  }
 
   if (!parcel) return <p>Loading...</p>
+
+  const isOwner = app.state.wallet && parcel.owner?.toLowerCase() === app.state.wallet?.toLowerCase()
 
   return (
     <section class="columns">
@@ -98,8 +195,10 @@ export default function ParcelEdit(props: Props) {
           <a href={`/parcels/${props.id}`}>{parcel.name || parcel.address}</a> / edit
         </h1>
       </hgroup>
+
       <article>
         <form onSubmit={submit}>
+          <h3>basics</h3>
           <div class="f">
             <label>Name</label>
             <input type="text" value={parcel.name || ''} onInput={(e: any) => set('name', e.target.value)} />
@@ -108,16 +207,16 @@ export default function ParcelEdit(props: Props) {
             <label>Description</label>
             <textarea rows={5} value={parcel.description || ''} onInput={(e: any) => set('description', e.target.value)} />
           </div>
+
+          <h3>settings</h3>
           <div class="f">
             <label>
-              <input type="checkbox" checked={!!parcel.settings?.sandbox} onChange={(e: any) => setSettings('sandbox', e.target.checked)} />
-              Sandbox (publicly editable)
+              <input type="checkbox" checked={!!parcel.settings?.sandbox} onChange={(e: any) => setSettings('sandbox', e.target.checked)} /> Sandbox (publicly editable)
             </label>
           </div>
           <div class="f">
             <label>
-              <input type="checkbox" checked={!!parcel.settings?.hosted_scripts} onChange={(e: any) => setSettings('hosted_scripts', e.target.checked)} />
-              Hosted scripts (multiplayer)
+              <input type="checkbox" checked={!!parcel.settings?.hosted_scripts} onChange={(e: any) => setSettings('hosted_scripts', e.target.checked)} /> Hosted scripts (multiplayer)
             </label>
           </div>
           {parcel.settings?.hosted_scripts && (
@@ -128,17 +227,17 @@ export default function ParcelEdit(props: Props) {
           )}
 
           {isOwner && (
-            <div>
+            <>
               <h3>collaborators</h3>
               <SelectUser onSelect={addCollaborator} />
               {(parcel.parcel_users ?? []).length > 0 && (
                 <ul>
                   {(parcel.parcel_users as ParcelUser[]).map((u) => (
                     <li key={u.wallet}>
-                      {u.wallet.substring(0, 10)}...
+                      <a href={`/u/${u.wallet}`}>{u.wallet.substring(0, 10)}...</a>{' '}
                       <button type="button" onClick={() => toggleRole(u.wallet)}>
                         {u.role}
-                      </button>
+                      </button>{' '}
                       <button type="button" onClick={() => removeCollaborator(u.wallet)}>
                         remove
                       </button>
@@ -146,43 +245,71 @@ export default function ParcelEdit(props: Props) {
                   ))}
                 </ul>
               )}
-            </div>
+            </>
           )}
 
           <button type="submit" disabled={saving}>
             {saving ? 'Saving...' : 'Save'}
           </button>
         </form>
+
+        <h3>history</h3>
+        <p>Parcels autosave every edit. Mark a version as a snapshot to keep it forever.</p>
+        <div class="f">
+          <button type="button" onClick={takeSnapshot}>
+            Take snapshot
+          </button>
+          <input ref={fileRef} type="file" accept=".json" onChange={importJson} />
+        </div>
+        <ul>
+          {versions.map((v) => (
+            <li key={v.id}>
+              {format(v.updated_at)} {v.is_snapshot && <small>snapshot{v.snapshot_name ? `: ${v.snapshot_name}` : ''}</small>}{' '}
+              <button type="button" onClick={() => revert(v)}>
+                Revert
+              </button>{' '}
+              <button type="button" onClick={() => toggleSnapshot(v)}>
+                {v.is_snapshot ? 'Unmark' : 'Mark snapshot'}
+              </button>{' '}
+              <button type="button" onClick={() => download(v)}>
+                Download
+              </button>
+            </li>
+          ))}
+        </ul>
+
+        {isOwner && (
+          <>
+            <h3>danger zone</h3>
+            <button type="button" onClick={clearHistory}>
+              Clear non-snapshot history
+            </button>
+          </>
+        )}
       </article>
-      <div class="postscript">
-        <WebParcelSnapshots parcel={parcel} />
-        <ParcelVersions parcel={parcel} id={parcel.id} />
-      </div>
 
       <aside>
-        <div>
-          <h3>quick build</h3>
-          <p>Replaces all content on the parcel.</p>
-          <div class="f">
-            <label>Material</label>
-            <select onChange={(e: any) => setBuildMaterial(e.target.value)}>
-              {blocks.map((b) => (
-                <option key={b.value} value={b.value}>
-                  {b.name.replace(/.png/, '')}
-                </option>
-              ))}
-            </select>
-          </div>
-          <ul>
-            {['Empty', 'Park', 'Outline', 'ThreeTowers', 'House', 'Pyramid', 'Scaffold'].map((fn) => (
-              <li key={fn}>
-                <button type="button" disabled={building} onClick={() => build(fn)}>
-                  {fn}
-                </button>
-              </li>
+        <h3>quick build</h3>
+        <p>Replaces all content on the parcel.</p>
+        <div class="f">
+          <label>Material</label>
+          <select onChange={(e: any) => setBuildMaterial(e.target.value)}>
+            {blocks.map((b) => (
+              <option key={b.value} value={b.value}>
+                {b.name.replace(/.png/, '')}
+              </option>
             ))}
-          </ul>
+          </select>
         </div>
+        <ul>
+          {['Empty', 'Park', 'Outline', 'ThreeTowers', 'House', 'Pyramid', 'Scaffold'].map((fn) => (
+            <li key={fn}>
+              <button type="button" disabled={building} onClick={() => build(fn)}>
+                {fn}
+              </button>
+            </li>
+          ))}
+        </ul>
       </aside>
     </section>
   )

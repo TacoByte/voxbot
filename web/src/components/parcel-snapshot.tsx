@@ -10,7 +10,19 @@ import { app } from '../state'
 import { AssetType } from './Editable/editable'
 import EditableName from './Editable/editable-name'
 import { PanelType } from './panel'
-import { ParcelSnapshotRecord } from './parcel-snapshots'
+
+export type ParcelSnapshotRecord = {
+  id: number
+  is_snapshot?: boolean
+  parcel_id: number
+  content: Record<string, any>
+  snapshot_name?: string
+  ipfs_hash?: string
+  name?: string
+  updated_at?: string
+  created_at?: string
+  content_hash?: string
+}
 
 const headers = {
   Accept: 'application/json',
