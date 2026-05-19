@@ -65,9 +65,11 @@ function EventsList() {
       .then((r) => r.json())
       .then((d) => setEvents(d.events || []))
   }, [])
+  const cutoff = Date.now() - 24 * 60 * 60 * 1000
+  const visible = events.filter((e) => new Date(e.expires_at).getTime() >= cutoff)
   return (
     <ul>
-      {events.slice(0, 5).map((e) => (
+      {visible.slice(0, 5).map((e) => (
         <li key={e.id}>
           <a href={`/events/${e.id}`}>{e.name}</a>
         </li>
@@ -93,7 +95,7 @@ export default class Explore extends Component<any, Props> {
 
   render() {
     return (
-      <section class="columns explore">
+      <section class="columns">
         <Head title="" url={'/'}>
           <Fragment>
             <link rel="prefetch" href={getClientPath(currentVersion)} />
@@ -102,19 +104,20 @@ export default class Explore extends Component<any, Props> {
           </Fragment>
         </Head>
 
-        <h1>Explore</h1>
-
         <article>
+          <h3>Live</h3>
+          <p>No one is live right now</p>
+
+          <h3>Womps</h3>
           <WompsList numberToShow={20} collapsed={false} fetch="/womps.json" womps={this.props.womps ?? undefined} ttl={600} />
         </article>
 
         <aside>
+          <h3>Events</h3>
+          <EventsList />
+
           <h3>Popular</h3>
           <PopularParcels />
-
-          <h3>Events</h3>
-
-          <EventsList />
         </aside>
       </section>
     )
