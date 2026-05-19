@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'preact/hooks'
 import { route } from 'preact-router'
-import { format } from 'timeago.js'
+import * as strftime from 'strftime'
 import { blocks } from '../../common/content/blocks'
 import { Login } from './auth/login'
 import SelectUser from './components/select-user'
@@ -63,8 +63,6 @@ export default function ParcelEdit(props: Props) {
         name: parcel.name,
         description: parcel.description,
         sandbox: !!parcel.settings?.sandbox,
-        hosted_scripts: !!parcel.settings?.hosted_scripts,
-        script_host_url: parcel.settings?.script_host_url,
         parcel_users: parcel.parcel_users ?? [],
       }),
     })
@@ -114,7 +112,7 @@ export default function ParcelEdit(props: Props) {
   }
 
   async function revert(v: Version) {
-    if (!confirm(`Revert to version #${v.id} from ${format(v.updated_at)}?`)) return
+    if (!confirm(`Revert to version #${v.id} from ${strftime('%B %-d, %Y at %-I%P', new Date(v.updated_at))}?`)) return
     await fetch(`/api/parcels/${v.parcel_id}/revert`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -201,17 +199,6 @@ export default function ParcelEdit(props: Props) {
               <input type="checkbox" checked={!!parcel.settings?.sandbox} onChange={(e: any) => setSettings('sandbox', e.target.checked)} /> Sandbox (publicly editable)
             </label>
           </div>
-          <div class="f">
-            <label>
-              <input type="checkbox" checked={!!parcel.settings?.hosted_scripts} onChange={(e: any) => setSettings('hosted_scripts', e.target.checked)} /> Hosted scripts (multiplayer)
-            </label>
-          </div>
-          {parcel.settings?.hosted_scripts && (
-            <div class="f">
-              <label>Script host URL</label>
-              <input type="text" value={parcel.settings?.script_host_url || ''} onInput={(e: any) => setSettings('script_host_url', e.target.value)} />
-            </div>
-          )}
 
           {isOwner && (
             <>
@@ -249,9 +236,19 @@ export default function ParcelEdit(props: Props) {
         </div>
 
         <table>
+          <thead>
+            <tr>
+              <th style={{ width: '10%' }} scope="col">
+                Type
+              </th>
+              <th>Creation date</th>
+              <th></th>
+            </tr>
+          </thead>
           <tbody>
             {versions.map((v) => (
               <tr key={v.id}>
+                <td>{v.is_snapshot && <small>snapshot</small>}</td>
                 <td>
                   <a
                     href="#"
@@ -260,10 +257,9 @@ export default function ParcelEdit(props: Props) {
                       revert(v)
                     }}
                   >
-                    {format(v.updated_at)}
+                    {strftime('%B %-d, %Y at %-I%P', new Date(v.updated_at))}
                   </a>
                 </td>
-                <td>{v.is_snapshot && <small>snapshot{v.snapshot_name ? `: ${v.snapshot_name}` : ''}</small>}</td>
                 <td>
                   <a
                     href="#"
