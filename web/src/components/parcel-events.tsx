@@ -13,7 +13,7 @@ export interface State {
   event?: any
 }
 
-export default class ParcelEventPanel extends Component<Props, State> {
+export default class ParcelEvents extends Component<Props, State> {
   constructor(props: any) {
     super(props)
 

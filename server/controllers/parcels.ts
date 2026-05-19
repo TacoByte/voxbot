@@ -455,43 +455,6 @@ export default function (db: Db, passport: PassportStatic, app: Express) {
     }),
   )
 
-  app.delete('/api/parcels/:id/history', cache(false), passport.authenticate('jwt', { session: false }), async (req, res) => {
-    const parcelId = parseInt(req.params.id, 10)
-    if (isNaN(parcelId)) {
-      res.status(404).send({ success: false })
-      return
-    }
-
-    const parcel: ParcelRef | null = await Parcel.loadRef(parcelId)
-    if (!parcel) {
-      res.status(200).send({ success: false })
-
-      return
-    }
-
-    const user = req.user as VoxelsUser | null
-    if (!user || !user.wallet) {
-      return res.status(401).send({ success: false })
-    }
-
-    const auth: boolean | string = await authParcel(parcel, user)
-
-    if (auth !== 'Owner') {
-      res.status(400).send({ success: false })
-
-      return
-    }
-    const id = parcel.id
-    // Set name of snapshot
-    try {
-      await db.query('embedded/delete-parcel-snapshot', `delete from property_versions where parcel_id = $1 and is_snapshot=false`, [id])
-
-      res.status(200).send({ success: true })
-    } catch (err: any) {
-      res.status(200).send({ success: false, error: err.toString ? err.toString() : err })
-    }
-  })
-
   app.get(
     '/api/parcels/:id/history-count.json',
     cache('10 seconds'),

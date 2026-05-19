@@ -8,7 +8,6 @@ import EditableDescription from './components/Editable/editable-description'
 import { copyTextToClipboard, ssrFriendlyDocument } from '../../common/helpers/utils'
 import WompsList from './womps-list'
 import LoadingIcon from './components/loading-icon'
-import ParcelAdminPanel from './components/parcel-admin'
 import { SpaceRecord } from '../../common/messages/space'
 import Head from './components/head'
 
@@ -221,7 +220,7 @@ export default class Space extends Component<Props, State> {
             </dd>
           </dl>
 
-          <ParcelAdminPanel parcelOrSpace={space} onSave={this.refreshIframe.bind(this)} />
+          {this.isOwner && <a href={`/spaces/${space.id}/edit`}>Edit</a>}
         </aside>
       </section>
     )

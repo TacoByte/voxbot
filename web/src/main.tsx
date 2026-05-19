@@ -35,12 +35,14 @@ import Islands from './islands'
 import Mail from './mail'
 import WorldMap from './map'
 import Parcel from './parcel'
+import ParcelEdit from './parcel-edit'
 import Parcels from './parcels'
 import Privacy from './privacy'
 import RenderAsset from './render/asset'
 import RenderCostume from './render/costume'
 import Search from './search'
 import Space from './space'
+import SpaceEdit from './space-edit'
 import Spaces from './spaces'
 import Terms from './terms'
 import Wearable from './wearable'
@@ -126,10 +128,12 @@ const Main = () => {
           <Parcels path="/parcels" />
           <Parcel path="/parcels/:id" />
           <Parcel path="/parcels/:id/:section" />
+          <ParcelEdit path="/parcels/:id/edit" />
 
           <Spaces path="/spaces" />
           <NewSpace path="/spaces/new" />
           <Space path="/spaces/:id" />
+          <SpaceEdit path="/spaces/:id/edit" />
 
           <Islands path="/islands" />
           <Island path="/islands/:slug" />
