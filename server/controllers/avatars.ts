@@ -158,15 +158,6 @@ export default function AvatarsController(db: Db, passport: PassportStatic, app:
   app.post('/api/avatar/:wallet/suspend', passport.authenticate('jwt', { session: false }), suspendAvatar)
   app.post('/api/avatar/:wallet/unsuspend', passport.authenticate('jwt', { session: false }), unsuspendAvatar)
 
-  app.get('/api/avatar/:wallet/parcels-count.json', cache('15 minutes'), async (req, res) => {
-    try {
-      const { parcels } = await Avatar.getParcelsCount(req.params.wallet)
-      res.status(200).json({ success: true, parcels })
-    } catch (err: any) {
-      res.status(400).json({ success: false, message: err.toString() })
-    }
-  })
-
   app.post('/api/avatar/owns/:chain_identifier/:contract/:token_id', cache('1 minute'), passport.authenticate(['jwt', 'anonymous'], { session: false }), async (req, res) => {
     const wallet = (req.user as Express.User & { wallet?: string })?.wallet
     if (!wallet || !ethers.isAddress(wallet)) {
@@ -249,11 +240,6 @@ export default function AvatarsController(db: Db, passport: PassportStatic, app:
     cache(false),
     createRequestHandlerForQuery(db, 'avatars/get-avatar-costume', 'costume', (req) => [req.params.wallet]),
   )
-
-  app.get('/api/avatars-count.json', async (req, res) => {
-    const result = await db.query('embedded/get-avatar-count', 'select count(owner) from avatars')
-    res.status(200).send(result.rows[0].count)
-  })
 
   app.get(
     '/api/avatar/:wallet/name.json',

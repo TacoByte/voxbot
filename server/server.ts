@@ -21,7 +21,6 @@ import AdminController from './controllers/admin'
 import ScratchpadController from './controllers/scratchpad'
 import CollectiblesController from './controllers/collectibles'
 import CollectionsController from './controllers/collections'
-import EmojiBadgeController from './controllers/emoji_badges'
 import FavoritesController from './controllers/favorites'
 import LivekitController from './controllers/livekit'
 import NftController from './controllers/nft'
@@ -371,7 +370,6 @@ CollectiblesController(db, passport, app)
 //Events
 EventsController(db, passport, app)
 // Emoji Badges
-EmojiBadgeController(db, passport, app)
 // Mails controller
 MailsController(db, passport, app)
 // Favorites controller
@@ -507,16 +505,6 @@ app.get(
 )
 
 app.get('/api/parcels/cached.json', cache('60 seconds', true), createRequestHandlerForQuery(db, 'get-parcels-cached', 'parcels'))
-
-app.get(
-  '/api/parcels/edits/latest.json',
-  cache('1 minute'),
-  createRequestHandlerForQuery(db, 'get-parcels-by-latest-edit', 'parcels', (req) => {
-    const limit = parseQueryInt(req.query.limit, 50)
-
-    return [limit]
-  }),
-)
 
 app.get(
   '/api/parcels/:id.json',

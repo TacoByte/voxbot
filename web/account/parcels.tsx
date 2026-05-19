@@ -99,7 +99,7 @@ export class Parcels extends Component<Props, State> {
       .map((p: any) => <PropertyItem key={p.id} record={p} helper={new ParcelHelper(p)} />)
 
     return parcels.length > 0 ? (
-      <table class='parcels'>
+      <table class="parcels">
         <tbody>{parcels}</tbody>
       </table>
     ) : (
