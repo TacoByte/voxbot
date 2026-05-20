@@ -465,10 +465,9 @@ export default class Parcel extends Component<Props, State> {
 
     return (
       <section class="columns parcel-page">
-        <Head title={parcelName} description={parcelDesc} url={`/parcels/${this.state.parcelId}`} imageURL={ogImage} />
-        <h1>{parcelName}</h1>
-
         <article>
+          <Head title={parcelName} description={parcelDesc} url={`/parcels/${this.state.parcelId}`} imageURL={ogImage} />
+          <h1>{parcelName}</h1>
           <figcaption>
             <button class="secondary" onClick={onFullscreen}>
               <span>Fullscreen</span>
@@ -496,11 +495,8 @@ export default class Parcel extends Component<Props, State> {
             {this.state.viewTab === 'orbit' && <iframe id="ParcelorbitView" src={this.helper?.orbitUrl} className="play-view" />}
             {this.state.parcel && <Client hidden={this.state.viewTab !== 'client'} parcelId={this.props.id!} src={iframeUrl} coords={this.helper!.spawnCoords} />}
           </figure>
-        </article>
-
-        <div class="postscript">
           <WompsList key={this.state.parcelId} fetch={`/womps/at/parcel/${this.state.parcelId}.json`} numberToShow={10} smaller={true} collapsed={true} />
-        </div>
+        </article>
 
         <aside class="push-header">
           <Listings parcel={this.props.id!} name={this.state.parcel?.address!} />

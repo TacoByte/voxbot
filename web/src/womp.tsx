@@ -123,17 +123,18 @@ export default class Womp extends Component<Props, State> {
 
     return (
       <section class="columns">
-        <Head title={metaTitle} url={`/womps/${this.state.womp.id}`} description={this.state.womp.content || `This womp ${this.state.womp.id} was captured at ${this.state.womp.parcel_name || this.state.womp.space_name}`} imageURL={img}>
-          <script id="womp-json" data-womp-id={this.state.womp.id} type="application/json">
-            {JSON.stringify(this.state.womp)}
-          </script>
-        </Head>
-
-        <h1>{this.state.womp.parcel_address}</h1>
-
         <article>
+          <Head title={metaTitle} url={`/womps/${this.state.womp.id}`} description={this.state.womp.content || `This womp ${this.state.womp.id} was captured at ${this.state.womp.parcel_name || this.state.womp.space_name}`} imageURL={img}>
+            <script id="womp-json" data-womp-id={this.state.womp.id} type="application/json">
+              {JSON.stringify(this.state.womp)}
+            </script>
+          </Head>
+
+          <h1>{this.state.womp.parcel_address}</h1>
           <figcaption>
-            <a onClick={onFullscreen}>Full screen</a>
+            <a class="buttonish" onClick={onFullscreen}>
+              Full screen
+            </a>
           </figcaption>
 
           <figure>

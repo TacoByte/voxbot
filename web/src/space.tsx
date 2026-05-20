@@ -163,9 +163,8 @@ export default class Space extends Component<Props, State> {
 
     return (
       <section class="columns">
-        <EditableName value={space.name} path={this.props.path} isowner={this.isOwner} type={AssetType.Space} data={this.state.space} title="Name of this space" />
-
         <article>
+          <EditableName value={space.name} path={this.props.path} isowner={this.isOwner} type={AssetType.Space} data={this.state.space} title="Name of this space" />
           <Head title={this.name} description={space.description ?? `Visit this space`} url={`/spaces/${space.id}`}>
             <script id="space-json" data-space-id={space.id} type="application/json">
               {JSON.stringify(this.props.space)}
@@ -193,12 +192,9 @@ export default class Space extends Component<Props, State> {
             </div>
           )) ||
             space.description}
-        </article>
-        <div class="postscript">
           <h3>Womps</h3>
-
           <WompsList fetch={`/womps/at/space/${space.spaceId}.json`} />
-        </div>
+        </article>
         <aside class="push-header">
           <dl>
             <dt>Type</dt>

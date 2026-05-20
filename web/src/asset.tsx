@@ -149,9 +149,8 @@ export default class Asset extends Component<Props, State> {
     const iframe = `/assets/${this.state.asset.id}/play?mode=orbit`
     return (
       <section class="columns">
-        <h1>{this.state.asset.name}</h1>
-
         <article>
+          <h1>{this.state.asset.name}</h1>
           <figure class="shortie">
             {this.asset ? (
               <iframe src={iframe} />

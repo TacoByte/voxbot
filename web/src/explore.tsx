@@ -28,7 +28,6 @@ type RESummary = {
 type LiveParcel = { id: number; name?: string; address: string }
 type LiveEntry = { room: string; parcel: LiveParcel; coord?: string; avatar: any; thumbnail: string }
 
-
 function LiveSection() {
   const [streams, setStreams] = useState<Map<string, LiveEntry>>(new Map())
   const ref = useRef<EventSource | null>(null)
@@ -162,15 +161,14 @@ export default class Explore extends Component<any, Props> {
   render() {
     return (
       <section class="columns">
-        <Head title="" url={'/'}>
-          <Fragment>
-            <link rel="prefetch" href={getClientPath(currentVersion)} />
-            <link rel="prefetch" href="/api/parcels/cached.json" />
-            <link rel="prefetch" href="/api/parcels/map.json" />
-          </Fragment>
-        </Head>
-
         <article>
+          <Head title="" url={'/'}>
+            <Fragment>
+              <link rel="prefetch" href={getClientPath(currentVersion)} />
+              <link rel="prefetch" href="/api/parcels/cached.json" />
+              <link rel="prefetch" href="/api/parcels/map.json" />
+            </Fragment>
+          </Head>
           <h3>Live</h3>
           <LiveSection />
 

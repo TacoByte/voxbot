@@ -52,12 +52,12 @@ export default function EditAsset(props: Props) {
 
   return (
     <section class="columns">
-      <hgroup>
-        <h1>
-          <a href={`/assets/${props.id}`}>{asset.name}</a> / edit
-        </h1>
-      </hgroup>
       <article>
+        <hgroup>
+          <h1>
+            <a href={`/assets/${props.id}`}>{asset.name}</a> / edit
+          </h1>
+        </hgroup>
         <form onSubmit={submit}>
           <div class="f">
             <label>Name</label>

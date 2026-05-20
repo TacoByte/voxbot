@@ -82,10 +82,10 @@ export default function EventsEdit(props: Props) {
 
   return (
     <section class="columns">
-      <hgroup>
-        <h1>Edit Event</h1>
-      </hgroup>
       <article>
+        <hgroup>
+          <h1>Edit Event</h1>
+        </hgroup>
         <form onSubmit={submit}>
           <div class="f">
             <label>Name</label>

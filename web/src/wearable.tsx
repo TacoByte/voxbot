@@ -84,15 +84,14 @@ export default class Wearable extends Component<Props, State> {
 
     return (
       <section class="columns">
-        <hgroup>
-          <h1>{this.wearable.name}</h1>
-
-          <p>
-            <a href={`/collections/${this.props.cid}`}>Back to collection</a>
-          </p>
-        </hgroup>
-
         <article>
+          <hgroup>
+            <h1>{this.wearable.name}</h1>
+
+            <p>
+              <a href={`/collections/${this.props.cid}`}>Back to collection</a>
+            </p>
+          </hgroup>
           <figcaption>
             <a class="buttonish" href={this.previousUrl ?? undefined}>
               Previous

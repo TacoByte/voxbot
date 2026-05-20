@@ -169,23 +169,24 @@ export default function ParcelEdit(props: Props) {
   if (!canEdit) {
     return (
       <section class="columns">
-        <hgroup>
-          <h1>
-            <a href={`/parcels/${props.id}`}>{parcel.name || parcel.address}</a>
-          </h1>
-        </hgroup>
-        <p>You don't have permission to edit this parcel.</p>
+        <article>
+          <hgroup>
+            <h1>
+              <a href={`/parcels/${props.id}`}>{parcel.name || parcel.address}</a>
+            </h1>
+          </hgroup>
+          <p>You don't have permission to edit this parcel.</p>
+        </article>
       </section>
     )
   }
 
   return (
     <section class="columns">
-      <hgroup>
-        <h1>Edit Parcel</h1>
-      </hgroup>
-
       <article>
+        <hgroup>
+          <h1>Edit Parcel</h1>
+        </hgroup>
         <form onSubmit={submit}>
           <h3>basics</h3>
           <div class="f">

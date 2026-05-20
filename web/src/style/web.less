@@ -299,50 +299,6 @@ main {
 
 // Grid layout
 
-.parcel-page.columns {
-  grid-template-columns: 7fr 1fr;
-}
-
-.columns.nav {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  grid-template-areas:
-    'nav header side'
-    'nav main   side'
-    'nav postscript side';
-  gap: 0.5rem 1rem;
-
-  & > nav {
-    grid-area: nav;
-    margin-top: 4rem;
-    overflow: hidden;
-    max-width: 10rem;
-    transition: max-width 200ms ease-in-out;
-  }
-
-  &.nav-collapsed > nav {
-    max-width: 0;
-  }
-
-  & > hgroup {
-    grid-area: header;
-  }
-
-  & > article {
-    grid-area: main;
-    min-width: 300px;
-  }
-
-  & > aside {
-    grid-area: side;
-    min-width: 300px;
-  }
-
-  & > .postscript {
-    grid-area: postscript;
-  }
-}
-
 button.hamburger {
   background: none;
   border: none;
@@ -353,53 +309,38 @@ button.hamburger {
 }
 
 .columns {
-  display: grid;
-  grid-template-columns: 3fr 1fr;
-  grid-template-areas:
-    'header header'
-    'main   side'
-    'postscript side';
+  display: flex;
+  flex-direction: row;
+  align-items: start;
   gap: 0.5rem 1rem;
 
-  & > header {
-    grid-area: header;
+  & > nav {
+    margin-top: 4rem;
+    overflow: hidden;
+    max-width: 10rem;
+    transition: max-width 200ms ease-in-out;
+  }
+
+  &.nav-collapsed > nav {
+    max-width: 0;
   }
 
   & > article {
-    grid-area: main;
-    min-width: 300px;
-    position: relative;
-
-    h1 {
-      margin-top: 0;
-    }
-
-    .hamburger {
-      position: absolute;
-      left: -2rem;
-      top: 0.5rem;
-    }
+    flex: 1;
   }
 
   & > aside {
-    grid-area: side;
-    min-width: 300px;
+    width: 25vw;
   }
 
-  & > .postscript {
-    grid-area: postscript;
+  .hamburger {
+    position: absolute;
+    left: -2rem;
+    top: 0.5rem;
   }
 }
 
 @media @mobile {
-  .columns {
-    grid-template-columns: 1fr;
-    grid-template-areas:
-      'header'
-      'main'
-      'side';
-  }
-
   article {
     background: none;
     padding: 0;
@@ -1129,5 +1070,13 @@ table.spaces {
 
   td:first-child {
     width: 4rem;
+  }
+}
+
+// Parcel / spaces page
+
+.parcel-page {
+  aside {
+    width: 15rem;
   }
 }

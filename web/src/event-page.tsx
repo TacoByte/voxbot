@@ -121,11 +121,10 @@ export default class EventPage extends Component<Props, State> {
       <section class="columns nav">
         <EventsNav activeId={this.props.id} />
 
-        <hgroup>
-          <h1>{this.state.event.name}</h1>
-        </hgroup>
-
         <article>
+          <hgroup>
+            <h1>{this.state.event.name}</h1>
+          </hgroup>
           <figcaption>
             <a class="buttonish" href={this.visitUrl}>
               Visit

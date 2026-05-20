@@ -56,12 +56,12 @@ export default function SpaceEdit(props: Props) {
 
   return (
     <section class="columns">
-      <hgroup>
-        <h1>
-          <a href={`/spaces/${props.id}`}>{space.name || space.id}</a> / edit
-        </h1>
-      </hgroup>
       <article>
+        <hgroup>
+          <h1>
+            <a href={`/spaces/${props.id}`}>{space.name || space.id}</a> / edit
+          </h1>
+        </hgroup>
         <form onSubmit={submit}>
           <div class="f">
             <label>Name</label>

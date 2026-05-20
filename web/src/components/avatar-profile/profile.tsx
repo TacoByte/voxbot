@@ -61,16 +61,15 @@ export default function Profile(props: Props) {
 
   return (
     <section class="columns profile">
-      <hgroup>
-        <h1>{name}</h1>
-        {isOwner && (
-          <a href="/account/edit" role="button">
-            Edit account
-          </a>
-        )}
-      </hgroup>
-
       <article>
+        <hgroup>
+          <h1>{name}</h1>
+          {isOwner && (
+            <a href="/account/edit" role="button">
+              Edit account
+            </a>
+          )}
+        </hgroup>
         <h2>Parcels</h2>
         <Parcels wallet={walletOrUUId} isOwner={isOwner} />
 

@@ -37,7 +37,11 @@ export default async function LivekitController(db: Db, passport: PassportStatic
 
       sub.subscribe(CHANNEL, (msg) => {
         const line = `data: ${msg}\n\n`
-        sseClients.forEach((r) => { try { r.write(line) } catch {} })
+        sseClients.forEach((r) => {
+          try {
+            r.write(line)
+          } catch {}
+        })
       })
 
       // Prune stale entries (broadcaster crashed without sending null)
@@ -98,7 +102,10 @@ export default async function LivekitController(db: Db, passport: PassportStatic
   })
 
   app.post('/api/rooms/:name/thumbnail', async (req, res) => {
-    if (!pub) { res.json({ success }); return }
+    if (!pub) {
+      res.json({ success })
+      return
+    }
     const name = req.params.name.toString()
     const { avatar, parcel, coord, thumbnail } = req.body ?? {}
 
@@ -122,7 +129,15 @@ export default async function LivekitController(db: Db, passport: PassportStatic
 
     if (pub) {
       const all = await pub.hGetAll(HASH)
-      const entries = Object.values(all).map((v) => { try { return JSON.parse(v) } catch { return null } }).filter(Boolean)
+      const entries = Object.values(all)
+        .map((v) => {
+          try {
+            return JSON.parse(v)
+          } catch {
+            return null
+          }
+        })
+        .filter(Boolean)
       res.write(`data: ${JSON.stringify({ type: 'snapshot', entries })}\n\n`)
     } else {
       res.write(`data: ${JSON.stringify({ type: 'snapshot', entries: [] })}\n\n`)

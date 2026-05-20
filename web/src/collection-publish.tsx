@@ -137,11 +137,11 @@ export default class PublishCollection extends Component<{ mint?: string }, Stat
       const explorer = chainId !== 1 ? `https://polygonscan.com/address/${address}` : `https://etherscan.io/address/${address}`
       return (
         <section class="columns">
-          <hgroup>
-            <h1>Published!</h1>
-            <p>Contract deployed for {collectionName}.</p>
-          </hgroup>
           <article>
+            <hgroup>
+              <h1>Published!</h1>
+              <p>Contract deployed for {collectionName}.</p>
+            </hgroup>
             <p>
               Address: <code>{address}</code>
             </p>
@@ -158,11 +158,11 @@ export default class PublishCollection extends Component<{ mint?: string }, Stat
 
     return (
       <section class="columns">
-        <hgroup>
-          <h1>Publish: {collectionName}</h1>
-          <p>Deploy a smart contract for this collection on-chain.</p>
-        </hgroup>
         <article>
+          <hgroup>
+            <h1>Publish: {collectionName}</h1>
+            <p>Deploy a smart contract for this collection on-chain.</p>
+          </hgroup>
           <label>Chain</label>
           <select
             value={chainId ?? ''}

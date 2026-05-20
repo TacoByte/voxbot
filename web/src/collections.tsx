@@ -47,8 +47,8 @@ export default function ListCollections({ path }: { path?: string }) {
 
   return (
     <section class="columns">
-      <Head title="Collections" url="/collections" description="Asset and wearable collections made by users" />
       <article>
+        <Head title="Collections" url="/collections" description="Asset and wearable collections made by users" />
         {controlsEl}
 
         <table>

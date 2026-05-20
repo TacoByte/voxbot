@@ -41,12 +41,12 @@ export default function CollectionEdit(props: Props) {
 
   return (
     <section class="columns">
-      <hgroup>
-        <h1>
-          <a href={`/collections/${props.id}`}>{col.name}</a> / edit
-        </h1>
-      </hgroup>
       <article>
+        <hgroup>
+          <h1>
+            <a href={`/collections/${props.id}`}>{col.name}</a> / edit
+          </h1>
+        </hgroup>
         <form onSubmit={submit}>
           <div class="f">
             <label>Name</label>

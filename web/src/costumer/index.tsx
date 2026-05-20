@@ -49,6 +49,7 @@ interface State {
 }
 
 export default class Costumer extends Component<Props, State> {
+  private resizeObserver: ResizeObserver | null = null
   private engine: BABYLON.Engine | null = null
   private scene: BABYLON.Scene | null = null
   private gizmoManager: BABYLON.GizmoManager | null = null
@@ -71,7 +72,8 @@ export default class Costumer extends Component<Props, State> {
     }
 
     this.engine = new BABYLON.Engine(this.canvas.current, true, { stencil: true })
-    window.addEventListener('resize', () => this.engine?.resize(), { passive: true })
+    this.resizeObserver = new ResizeObserver(() => this.engine?.resize())
+    this.resizeObserver.observe(this.canvas.current)
     this.scene = setupScene(this.canvas.current, this.engine, this.onClick)
 
     this.gizmoManager = setupGizmos(this.scene, this.onDragEnd)
@@ -86,6 +88,7 @@ export default class Costumer extends Component<Props, State> {
   }
 
   componentWillUnmount() {
+    this.resizeObserver?.disconnect()
     this.gizmoManager?.dispose()
     this.scene?.dispose()
     this.engine?.dispose()
