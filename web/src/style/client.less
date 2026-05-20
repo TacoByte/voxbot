@@ -216,6 +216,15 @@ main.chat {
     margin-bottom: 2px;
   }
 
+  s.profanity {
+    text-decoration: none;
+    filter: blur(4px) contrast(10);
+    cursor: pointer;
+    &:hover {
+      filter: none;
+    }
+  }
+
   .chat-messages.at-cap {
     mask-image: linear-gradient(to bottom, transparent 0, black 40px);
     -webkit-mask-image: linear-gradient(to bottom, transparent 0, black 40px);

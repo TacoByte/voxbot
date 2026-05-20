@@ -162,6 +162,7 @@
     "ndarray": "1.0.19",
     "node-fetch": "2.6.7",
     "object-hash": "^3.0.0",
+    "obscenity": "^0.4.6",
     "os-browserify": "^0.3.0",
     "p-defer": "^4.0.0",
     "p-queue": "^7.3.4",

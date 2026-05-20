@@ -268,6 +268,9 @@ importers:
       object-hash:
         specifier: ^3.0.0
         version: 3.0.0
+      obscenity:
+        specifier: ^0.4.6
+        version: 0.4.6
       os-browserify:
         specifier: ^0.3.0
         version: 0.3.0
@@ -4767,6 +4770,10 @@ packages:
   object.entries@1.1.9:
     resolution: { integrity: sha512-8u/hfXFRBD1O0hPUjioLhoWFHRmt6tKA4/vZPyckBr18l1KE9uHrFaFaUi8MDRTpi4uak2goyPTSNJLXX2k2Hw== }
     engines: { node: '>= 0.4' }
+
+  obscenity@0.4.6:
+    resolution: { integrity: sha512-pHk7kNN7j3L3zGhhGnwxjvXIGsPpLrcZl2r58fqWh/V/rH6b/dafscj2sMmAY+A/9/wPsocLmimgGk2DKeKsFQ== }
+    engines: { node: '>=18.0.0' }
 
   obuf@1.1.2:
     resolution: { integrity: sha512-PX1wu0AmAdPqOL1mWhqmlOd8kOIZQwGZw6rh7uby9fTc5lhaOWFLX3I6R1hrF9k3zUY40e6igsLGkDXK92LJNg== }
@@ -11743,6 +11750,8 @@ snapshots:
       call-bound: 1.0.4
       define-properties: 1.2.1
       es-object-atoms: 1.1.1
+
+  obscenity@0.4.6: {}
 
   obuf@1.1.2: {}
 

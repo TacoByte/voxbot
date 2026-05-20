@@ -1,6 +1,9 @@
+import { RegExpMatcher, englishDataset, englishRecommendedTransformers } from 'obscenity'
 import { Component, createRef, Fragment, JSX } from 'preact'
 import { forwardRef } from 'preact/compat'
 import { useEffect, useRef, useState } from 'preact/hooks'
+
+const matcher = new RegExpMatcher({ ...englishDataset.build(), ...englishRecommendedTransformers })
 import { isMobile } from '../../../common/helpers/detector'
 import { Emojis, replaceEmojiText, replaceEmoticonsAndEmojiText } from '../../../common/helpers/emojis'
 import { Emotes } from '../../../common/messages/constant'
@@ -80,7 +83,7 @@ export class ChatOverlay extends Component<Props, State> {
     return (
       <main class="chat">
         <div class={'chat-messages' + (messageList.value.length >= 10 ? ' at-cap' : '')}>
-          {messageList.value.slice(-10).map((m) => (
+          {messageList.value.slice(-10).map((m: ChatMessageRecord) => (
             <p>
               <span>
                 {name(m)}: <ChatText text={m.text} />
@@ -130,21 +133,52 @@ function SlashCongaLinks({ text }: { text: string }) {
 
 const ChatText = ({ text }: { text: string }) => {
   const decoded = decodeChatHtmlEntities(text)
-  if (CONGA_INVITE_PATTERN.test(decoded)) {
+  const matches = matcher.getAllMatches(decoded)
+  const parts: JSX.Element[] = []
+  let last = 0
+  let k = 0
+
+  for (const match of matches) {
+    const [start, end] = [match.startIndex, match.endIndex + 1]
+    if (start > last)
+      parts.push(
+        <Fragment key={k++}>
+          <CongaText text={decoded.slice(last, start)} />
+        </Fragment>,
+      )
+    const word = decoded.slice(start, end)
+    parts.push(
+      <s key={k++} class="profanity">
+        {word}
+      </s>,
+    )
+    last = end
+  }
+  if (last < decoded.length)
+    parts.push(
+      <Fragment key={k++}>
+        <CongaText text={decoded.slice(last)} />
+      </Fragment>,
+    )
+
+  return <>{parts}</>
+}
+
+const CongaText = ({ text }: { text: string }) => {
+  if (CONGA_INVITE_PATTERN.test(text)) {
     CONGA_INVITE_PATTERN.lastIndex = 0
     const parts: JSX.Element[] = []
     let last = 0
     let k = 0
     let m: RegExpExecArray | null
-    while ((m = CONGA_INVITE_PATTERN.exec(decoded)) !== null) {
-      if (m.index > last) {
+    while ((m = CONGA_INVITE_PATTERN.exec(text)) !== null) {
+      if (m.index > last)
         parts.push(
           <Fragment key={k++}>
-            <SlashCongaLinks text={decoded.slice(last, m.index)} />
+            <SlashCongaLinks text={text.slice(last, m.index)} />
           </Fragment>,
         )
-      }
-      const uuid = m[1]
+      const uuid = m[1] as string
       const onJoin = (e: Event) => {
         e.preventDefault()
         window.connector.joinCongaFromInvitation(uuid)
@@ -156,17 +190,15 @@ const ChatText = ({ text }: { text: string }) => {
       )
       last = m.index + m[0].length
     }
-    if (last < decoded.length) {
+    if (last < text.length)
       parts.push(
         <Fragment key={k++}>
-          <SlashCongaLinks text={decoded.slice(last)} />
+          <SlashCongaLinks text={text.slice(last)} />
         </Fragment>,
       )
-    }
     return <>{parts}</>
   }
-
-  return <SlashCongaLinks text={decoded} />
+  return <SlashCongaLinks text={text} />
 }
 
 const ChatInput = () => {
