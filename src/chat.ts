@@ -4,8 +4,13 @@ const getTextWidth = (ctx: CanvasRenderingContext2D, text: string) => {
 
 const WIDTH = 512
 const HEIGHT = 256
+const TOTAL_MS = 1500
+const TAIL_MS = 500
+const FADE_MS = TOTAL_MS - TAIL_MS
+
 export class Bubble extends BABYLON.Mesh {
   private texture: BABYLON.DynamicTexture
+  private startedAt = 0
   constructor(
     scene: BABYLON.Scene,
     parent: BABYLON.TransformNode,
@@ -44,14 +49,43 @@ export class Bubble extends BABYLON.Mesh {
     this.material = m
 
     this.parent = parent
-    this.drawText()
+    this.drawText(1)
+    this.startAnimation()
   }
 
   getContext() {
     return this.texture.getContext() as CanvasRenderingContext2D
   }
 
-  private drawText() {
+  private startAnimation() {
+    this.startedAt = performance.now()
+    const mat = this.material as BABYLON.StandardMaterial
+    let lastTail = 1
+    // mesh-level observable: cleaned up automatically when this mesh disposes
+    this.onBeforeRenderObservable.add(() => {
+      const elapsed = performance.now() - this.startedAt
+      if (elapsed >= TOTAL_MS) {
+        this.dispose()
+        return
+      }
+      if (elapsed < TAIL_MS) {
+        const tail = 1 - elapsed / TAIL_MS
+        // only redraw when the change is visible; canvas redraws are not free
+        if (Math.abs(tail - lastTail) > 0.05) {
+          this.drawText(tail)
+          lastTail = tail
+        }
+      } else {
+        if (lastTail !== 0) {
+          this.drawText(0)
+          lastTail = 0
+        }
+        mat.alpha = 1 - (elapsed - TAIL_MS) / FADE_MS
+      }
+    })
+  }
+
+  private drawText(tailScale: number) {
     const ctx = this.getContext() as CanvasRenderingContext2D
     const WIDTH = 512
     const HEIGHT = 256
@@ -59,7 +93,7 @@ export class Bubble extends BABYLON.Mesh {
     ctx.clearRect(0, 0, WIDTH, HEIGHT)
 
     // 1. Comic-style font
-    ctx.font = "bold 32px 'Comic Sans MS', sans-serif"
+    ctx.font = "bold 20px 'Source Code Pro', sans-serif"
     ctx.textBaseline = 'top'
 
     const lines = 1
@@ -74,29 +108,32 @@ export class Bubble extends BABYLON.Mesh {
     // 2. Draw the Speech Bubble Shape
     ctx.lineCap = 'round'
     ctx.lineJoin = 'round'
-    ctx.lineWidth = 5
+    ctx.lineWidth = 4
     ctx.strokeStyle = '#000000'
     ctx.fillStyle = '#ffffff'
 
     ctx.beginPath()
     // Rounded bubble body
-    ctx.roundRect(left, top, w, h, 30)
+    ctx.roundRect(left, top, w, h, 10)
     ctx.fill()
     ctx.stroke()
 
-    // 3. The "Tail" (Pointing down)
-    ctx.beginPath()
-    ctx.moveTo(WIDTH / 2 + 30, top + h - 4)
-    ctx.lineTo(WIDTH / 2, top + h + 40) // Tip of tail
-    ctx.lineTo(WIDTH / 2 + 10, top + h - 4)
-    ctx.fill()
+    if (tailScale > 0) {
+      const tailLen = 40 * tailScale
+      // 3. The "Tail" (Pointing down)
+      ctx.beginPath()
+      ctx.moveTo(WIDTH / 2 + 30, top + h - 4)
+      ctx.lineTo(WIDTH / 2, top + h + tailLen)
+      ctx.lineTo(WIDTH / 2 + 10, top + h - 4)
+      ctx.fill()
 
-    // 4. Tail stroke
-    ctx.beginPath()
-    ctx.moveTo(WIDTH / 2 + 30, top + h)
-    ctx.lineTo(WIDTH / 2, top + h + 40) // Tip of tail
-    ctx.lineTo(WIDTH / 2 + 10, top + h)
-    ctx.stroke()
+      // 4. Tail stroke
+      ctx.beginPath()
+      ctx.moveTo(WIDTH / 2 + 30, top + h)
+      ctx.lineTo(WIDTH / 2, top + h + tailLen)
+      ctx.lineTo(WIDTH / 2 + 10, top + h)
+      ctx.stroke()
+    }
 
     ctx.beginPath()
 

@@ -32,9 +32,6 @@ const AVATAR_HEIGHT = 1.6
 const AVATAR_NAME_OFFSET = 0.5
 const NAME_CHAT_OFFSET = 0.6
 
-// fixme get screen refresh rate
-const CHAT_READ_DURATION = 3500
-
 // distance in meters from camera that we play sounds for this avatar
 const SOUND_DISTANCE = 20
 
@@ -52,6 +49,7 @@ export default class Avatar extends Entity {
   private actionsMesh: BABYLON.Mesh | null = null
   private actionsTexture: BABYLON.GUI.AdvancedDynamicTexture | null = null
   private collider: MeshExtended | undefined
+  private _bubble: Bubble | null = null
   private clearBubbleTimer: NodeJS.Timeout | undefined
   private typingTimer: NodeJS.Timeout | undefined
   private isTyping = false
@@ -809,19 +807,22 @@ export default class Avatar extends Entity {
   }
 
   addChat(text: string) {
-    // Dispose old bubbles
-    for (const b of this.node.getChildren()) {
-      if (b instanceof Bubble) {
-        b.dispose()
-      }
-    }
+    // bubble parents to null (stays where you spoke), so node.getChildren() won't find it
+    this._bubble?.dispose()
 
     const bubble = new Bubble(this.scene, this.node, text)
-    bubble.position.set(0, 0.5, 0)
+    // snapshot the head position in world space; bubble stays where you spoke, doesn't follow you
+    const head = this.neckBone?.getTransformNode()?.getAbsolutePosition()
+    bubble.parent = null
+    if (head) {
+      bubble.position.copyFrom(head)
+      bubble.position.y += 0.6
+    } else {
+      bubble.position.copyFrom(this.absolutePosition)
+      bubble.position.y += 2
+    }
 
-    setTimeout(() => {
-      bubble.dispose()
-    }, CHAT_READ_DURATION)
+    this._bubble = bubble
   }
 
   /**
