@@ -82,7 +82,8 @@ export default async function LivekitController(db: Db, passport: PassportStatic
   })
 
   app.get('/api/rooms/:name/token', cache(false), async (req, res) => {
-    const wallet = req.user ? (req.user as Express.User & { wallet: string }).wallet : `anon-${Math.random().toString(36).slice(2)}`
+    const wallet = req.user ? (req.user as Express.User & { wallet: string }).wallet : 'anon'
+    const identity = `${wallet}-${Math.random().toString(36).slice(2, 10)}`
 
     const name = req.params.name.toString()
     if (!name.match(/^[a-z0-9-]{1,32}$/)) {
@@ -96,7 +97,7 @@ export default async function LivekitController(db: Db, passport: PassportStatic
       refresh()
     }
 
-    const at = new AccessToken(process.env.LIVEKIT_API_KEY, process.env.LIVEKIT_API_SECRET, { identity: wallet })
+    const at = new AccessToken(process.env.LIVEKIT_API_KEY, process.env.LIVEKIT_API_SECRET, { identity })
     at.addGrant({ roomJoin: true, room: name, canPublish: true, canSubscribe: true })
     res.json({ success, room, token: at.toJwt() })
   })

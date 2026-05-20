@@ -1,14 +1,10 @@
 import { h } from 'preact'
 import { isBatterySaver, isMobile } from '../../common/helpers/detector'
-import { exitPointerLock } from '../../common/helpers/ui-helpers'
 import { YoutubeRecord } from '../../common/messages/feature'
-import { Room, RoomEvent, Track, createLocalScreenTracks, createLocalTracks } from 'livekit-client'
-import { app } from '../../web/src/state'
 import { CSS3DObject, CSS3DRenderer } from '../../vendor/CSS3DRenderer'
 import { Position, Rotation, Scale, Script } from '../../web/src/components/editor'
+import type { Scene } from '../scene'
 import { fetchNoImageTexture, fetchTexture } from '../textures/textures'
-import { cameraPosition, cameraRotation } from '../utils/camera'
-import { encodeCoords } from '../../common/helpers/utils'
 import { Advanced, FeatureEditor, FeatureEditorProps, FeatureID, SetParentDropdown, Toolbar, UuidReadOnly } from '../ui/features'
 import { isURL } from '../utils/helpers'
 import { FeatureMetadata, FeatureTemplate } from './_metadata'
@@ -22,14 +18,14 @@ const { setInterval } = window
 
 const mobile = isMobile()
 
-// Whitelist of commands the Youtube iframe API will honor. Twitch is handled out-of-world
-// via the PiP overlay, so only Youtube commands live here.
-const YOUTUBE_COMMANDS = new Set(['setVolume', 'setMuted', 'playVideo', 'pauseVideo'] as const)
-type YoutubeCommand = Parameters<typeof YOUTUBE_COMMANDS.has>[0]
+const TWITCH_YOUTUBE_FUNCTION_LOOKUP = {
+  setVolume: 11,
+  setMuted: 10,
+  playVideo: true,
+  pauseVideo: true,
+}
 
 const stopSignal = new EventTarget()
-
-const LIVEKIT_URL = 'https://voxels-7pvk06qt.livekit.cloud'
 
 export function buildYoutubeThumbnailUrl(videoId: string | undefined): string | null {
   if (!videoId) {
@@ -38,7 +34,7 @@ export function buildYoutubeThumbnailUrl(videoId: string | undefined): string | 
   return `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`
 }
 
-export async function loadYoutubeThumbnail(scene: BABYLON.Scene, videoId: string | undefined, signal: AbortSignal): Promise<BABYLON.Texture> {
+export async function loadYoutubeThumbnail(scene: Scene, videoId: string | undefined, signal: AbortSignal): Promise<BABYLON.Texture> {
   const thumbnailUrl = buildYoutubeThumbnailUrl(videoId)
   if (!thumbnailUrl) {
     return fetchNoImageTexture(scene)
@@ -62,7 +58,7 @@ export async function loadYoutubeThumbnail(scene: BABYLON.Scene, videoId: string
 export default class Youtube extends Feature2D<YoutubeRecord> {
   static metadata: FeatureMetadata = {
     title: 'Youtube / Twitch',
-    subtitle: 'youtube or twitch embed',
+    subtitle: 'Embed videos and livestreams',
     type: 'youtube',
     image: '/icons/youtube.png',
   }
@@ -76,11 +72,6 @@ export default class Youtube extends Feature2D<YoutubeRecord> {
   player: YoutubePlayer | null = null
   autoStopTimeout: NodeJS.Timeout | null = null
   hasBeenGeneratedAtLeastOnce = false // First generate has been called? Feature has loaded but it having a mesh is not guaranteed
-  livekitRoom: Room | null = null
-  broadcastRoom: Room | null = null
-  broadcastPanel: HTMLDivElement | null = null
-  thumbCanvas: HTMLCanvasElement | null = null
-  thumbInterval: number | null = null
 
   get autoplay() {
     return !!this.description.autoplay
@@ -144,9 +135,6 @@ export default class Youtube extends Feature2D<YoutubeRecord> {
       return this.description.previewUrl
     } else if (this.isYoutube) {
       return `https://i.ytimg.com/vi/${this.videoId}/hqdefault.jpg`
-    } else if (this.isTwitch) {
-      // Twitch's own live preview image (falls back to offline banner if the channel isn't live).
-      return `https://static-cdn.jtvnw.net/previews-ttv/live_user_${this.videoId}-640x360.jpg`
     } else {
       return null
     }
@@ -162,7 +150,7 @@ export default class Youtube extends Feature2D<YoutubeRecord> {
   }
 
   shouldBeInteractive(): boolean {
-    return (!!this.url && isURL(this.url)) || !!this.description.broadcasting
+    return !!this.url && isURL(this.url)
   }
 
   whatIsThis() {
@@ -196,12 +184,8 @@ export default class Youtube extends Feature2D<YoutubeRecord> {
   }
 
   onEnter = () => {
-    if (this.description.broadcasting && !this.parcel.canEdit) {
-      this.connectViewer()
-      return
-    }
     // tablets and mobile devices don't autoplay,
-    if (!this.autoplay || window.config.isOrbit || isMobile()) {
+    if (!this.autoplay || this.scene.config.isOrbit || isMobile()) {
       return
     }
     // disable autoplay in battery saver mode
@@ -216,17 +200,12 @@ export default class Youtube extends Feature2D<YoutubeRecord> {
 
       // fade it back in!
       this.fadeIn(AUTOPLAY_FADE_TIME)
-    } else if (this.autoplay && !window.config.isOrbit) {
+    } else if (this.autoplay && !this.scene.config.isOrbit) {
       this.play()
     }
   }
 
   onExit = () => {
-    if (this.livekitRoom) {
-      this.livekitRoom.disconnect()
-      this.livekitRoom = null
-      return
-    }
     this.autoStopTimeout && clearTimeout(this.autoStopTimeout)
 
     const fadeoutTime = this.rolloffFactor > 0 ? AUTOPLAY_FADE_TIME : 2
@@ -272,11 +251,6 @@ export default class Youtube extends Feature2D<YoutubeRecord> {
       return
     }
 
-    if (this.description.broadcasting) {
-      this.setBroadcastPreview()
-      return
-    }
-
     let texture: BABYLON.Texture
     if (this.description.previewUrl) {
       texture = await fetchTexture(this.scene, this.previewUrl, this.abortController.signal, { transparent: false, stretch: true })
@@ -295,309 +269,6 @@ export default class Youtube extends Feature2D<YoutubeRecord> {
 
     if (this.mesh) {
       this.mesh.material = material
-    }
-  }
-
-  setBroadcastPreview() {
-    if (this.disposed) return
-    const w = 640
-    const h = 360
-    const tex = new BABYLON.DynamicTexture(this.uniqueEntityName('bpreview' as any), { width: w, height: h }, this.scene, false)
-    const ctx = tex.getContext() as CanvasRenderingContext2D
-    const font = 'bold 18px "Source Code Pro", monospace'
-
-    ctx.fillStyle = '#0d0d0d'
-    ctx.fillRect(0, 0, w, h)
-
-    ctx.font = font
-    ctx.textBaseline = 'middle'
-    ctx.textAlign = 'center'
-    ctx.fillStyle = '#f5f5f0'
-
-    if (this.parcel.canEdit) {
-      ctx.fillText('broadcaster', w / 2, h / 2 - 20)
-      const cta = '\u25CF click here to broadcast'
-      const tw = ctx.measureText(cta).width
-      const padX = 14
-      const padY = 10
-      const bw = tw + padX * 2
-      const bh = 20 + padY * 2
-      ctx.fillStyle = 'rgba(220,30,30,0.85)'
-      ctx.fillRect(w / 2 - bw / 2, h / 2 + 10, bw, bh)
-      ctx.fillStyle = '#f5f5f0'
-      ctx.fillText(cta, w / 2, h / 2 + 10 + bh / 2)
-    } else {
-      ctx.fillStyle = '#888'
-      ctx.fillText('no stream active', w / 2, h / 2)
-    }
-
-    tex.update()
-    tex.hasAlpha = false
-
-    const material = new BABYLON.StandardMaterial(this.uniqueEntityName('bmaterial' as any), this.scene)
-    material.diffuseTexture = tex
-    material.backFaceCulling = false
-    material.zOffset = -4
-    material.specularColor.set(0, 0, 0)
-    material.emissiveColor.set(1, 1, 1)
-    material.blockDirtyMechanism = true
-
-    if (this.mesh) this.mesh.material = material
-  }
-
-  async connectViewer() {
-    if (this.livekitRoom) return
-    const id = this.parcel.id
-    const res = await fetch(`/api/rooms/parcel-${id}/token`)
-      .then((r) => r.json())
-      .catch(() => null)
-    if (!res?.token || this.disposed) return
-
-    const room = new Room()
-    this.livekitRoom = room
-
-    room.on(RoomEvent.TrackSubscribed, (track) => {
-      if (track.kind === Track.Kind.Audio) {
-        track.attach()
-        return
-      }
-      if (track.kind === Track.Kind.Video) {
-        this.attachVideoToMesh(track.attach() as HTMLVideoElement)
-      }
-    })
-
-    room.on(RoomEvent.TrackUnsubscribed, () => {
-      this.setBroadcastPreview()
-    })
-
-    await room.connect(LIVEKIT_URL, res.token).catch(() => null)
-  }
-
-  attachVideoToMesh(el: HTMLVideoElement, muted = false) {
-    if (!this.mesh) return
-    el.muted = muted
-    el.autoplay = true
-    el.play().catch(() => {})
-
-    const tex = new BABYLON.VideoTexture(this.uniqueEntityName('lktex' as any), el, this.scene, false, false)
-    tex.hasAlpha = false
-
-    const mat = new BABYLON.StandardMaterial(this.uniqueEntityName('lkmat' as any), this.scene)
-    mat.diffuseTexture = tex
-    mat.backFaceCulling = false
-    mat.zOffset = -4
-    mat.specularColor.set(0, 0, 0)
-    mat.emissiveColor.set(1, 1, 1)
-    mat.blockDirtyMechanism = true
-
-    this.mesh.material = mat
-  }
-
-  startThumbCapture(videoEl: HTMLVideoElement) {
-    if (!this.thumbCanvas) {
-      this.thumbCanvas = document.createElement('canvas')
-      this.thumbCanvas.width = 256
-      this.thumbCanvas.height = 144
-    }
-    const canvas = this.thumbCanvas
-    const ctx = canvas.getContext('2d')!
-    const id = this.parcel.id
-    const parcel = { id, name: this.parcel.name, address: this.parcel.address }
-    this.thumbInterval = setInterval(() => {
-      try {
-        ctx.drawImage(videoEl, 0, 0, 256, 144)
-        const thumbnail = canvas.toDataURL('image/jpeg', 0.2)
-        const coord = encodeCoords({ position: cameraPosition(this.scene), rotation: cameraRotation(this.scene) })
-        fetch(`/api/rooms/parcel-${id}/thumbnail`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ avatar: app.avatarRef, parcel, coord, thumbnail }),
-        }).catch(() => {})
-      } catch {}
-    }, 1000)
-  }
-
-  stopThumbCapture(silent = false) {
-    if (this.thumbInterval) {
-      clearInterval(this.thumbInterval)
-      this.thumbInterval = null
-    }
-    if (!silent) {
-      fetch(`/api/rooms/parcel-${this.parcel.id}/thumbnail`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ thumbnail: null }),
-      }).catch(() => {})
-    }
-  }
-
-  openBroadcastPanel() {
-    if (this.broadcastPanel) {
-      this.broadcastPanel.remove()
-      this.broadcastPanel = null
-      this.broadcastRoom?.disconnect()
-      this.broadcastRoom = null
-      return
-    }
-
-    exitPointerLock()
-
-    const panel = document.createElement('div')
-    this.broadcastPanel = panel
-    Object.assign(panel.style, {
-      position: 'fixed',
-      zIndex: '999999',
-      top: '50%',
-      left: '50%',
-      transform: 'translate(-50%, -50%)',
-      background: '#0d0d0d',
-      color: '#f5f5f0',
-      padding: '1rem',
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '0.75rem',
-      minWidth: '320px',
-      fontFamily: '"Source Code Pro", monospace',
-      fontSize: '13px',
-    })
-
-    const title = document.createElement('div')
-    title.textContent = 'broadcast'
-    title.style.fontWeight = 'bold'
-    title.style.fontSize = '16px'
-
-    const camLabel = document.createElement('label')
-    camLabel.textContent = 'camera'
-    const camSel = document.createElement('select')
-    Object.assign(camSel.style, { width: '100%', background: '#1a1a1a', color: '#f5f5f0', border: '1px solid #333', padding: '4px' })
-
-    const micLabel = document.createElement('label')
-    micLabel.textContent = 'microphone'
-    const micSel = document.createElement('select')
-    Object.assign(micSel.style, { width: '100%', background: '#1a1a1a', color: '#f5f5f0', border: '1px solid #333', padding: '4px' })
-
-    const screenOpt = document.createElement('label')
-    const screenChk = document.createElement('input')
-    screenChk.type = 'checkbox'
-    screenOpt.append(screenChk, ' use screenshare instead of camera')
-
-    const status = document.createElement('div')
-    status.style.color = '#888'
-
-    const goBtn = document.createElement('button')
-    goBtn.textContent = 'go live'
-    Object.assign(goBtn.style, { background: '#dc1e1e', color: '#f5f5f0', border: '0', padding: '8px 16px', cursor: 'pointer', fontFamily: 'inherit' })
-
-    const closeBtn = document.createElement('button')
-    closeBtn.textContent = 'close'
-    Object.assign(closeBtn.style, { background: '#333', color: '#f5f5f0', border: '0', padding: '8px 16px', cursor: 'pointer', fontFamily: 'inherit' })
-    closeBtn.onclick = () => {
-      panel.remove()
-      this.broadcastPanel = null
-      this.broadcastRoom?.disconnect()
-      this.broadcastRoom = null
-    }
-
-    const row = document.createElement('div')
-    row.style.display = 'flex'
-    row.style.gap = '0.5rem'
-    row.append(goBtn, closeBtn)
-
-    panel.append(title, camLabel, camSel, micLabel, micSel, screenOpt, status, row)
-    document.body.appendChild(panel)
-
-    navigator.mediaDevices.enumerateDevices().then((devices) => {
-      const cams = devices.filter((d) => d.kind === 'videoinput')
-      const mics = devices.filter((d) => d.kind === 'audioinput')
-      cams.forEach((d, i) => {
-        const opt = document.createElement('option')
-        opt.value = d.deviceId
-        opt.textContent = d.label || `camera ${i + 1}`
-        camSel.appendChild(opt)
-      })
-      mics.forEach((d, i) => {
-        const opt = document.createElement('option')
-        opt.value = d.deviceId
-        opt.textContent = d.label || `mic ${i + 1}`
-        micSel.appendChild(opt)
-      })
-    })
-
-    goBtn.onclick = async () => {
-      if (this.broadcastRoom) {
-        this.broadcastRoom.disconnect()
-        this.broadcastRoom = null
-        this.stopThumbCapture()
-        goBtn.textContent = 'go live'
-        this.setBroadcastPreview()
-        // remove the dot badge if present
-        panel.querySelector('span[data-dot]')?.remove()
-        ;[title, camLabel, camSel, micLabel, micSel, screenOpt, status].forEach((el) => ((el as HTMLElement).style.display = ''))
-        Object.assign(panel.style, { top: '50%', left: '50%', right: 'auto', transform: 'translate(-50%, -50%)', padding: '1rem', minWidth: '320px', flexDirection: 'column', borderRadius: '0' })
-        return
-      }
-
-      status.textContent = 'connecting...'
-      goBtn.disabled = true
-
-      try {
-        const id = this.parcel.id
-        const res = await fetch(`/api/rooms/parcel-${id}/token`).then((r) => r.json())
-        if (!res?.token) throw new Error('no token')
-
-        const room = new Room()
-        this.broadcastRoom = room
-        await room.connect(LIVEKIT_URL, res.token)
-
-        let tracks: any[]
-        if (screenChk.checked) {
-          tracks = await createLocalScreenTracks({ audio: true })
-        } else {
-          tracks = await createLocalTracks({
-            video: { deviceId: camSel.value || undefined },
-            audio: { deviceId: micSel.value || undefined },
-          })
-        }
-
-        for (const t of tracks) {
-          await room.localParticipant.publishTrack(t)
-        }
-
-        const videoTrack = tracks.find((t) => t.kind === Track.Kind.Video)
-        if (videoTrack) {
-          const el = videoTrack.attach() as HTMLVideoElement
-          this.attachVideoToMesh(el, true)
-          this.startThumbCapture(el)
-        }
-
-        goBtn.textContent = 'stop'
-        goBtn.disabled = false
-        status.textContent = ''
-        // minimize to top-right pill, hide everything except stop
-        ;[title, camLabel, camSel, micLabel, micSel, screenOpt, status].forEach((el) => ((el as HTMLElement).style.display = 'none'))
-        Object.assign(panel.style, {
-          top: '12px',
-          left: 'auto',
-          right: '12px',
-          transform: 'none',
-          padding: '6px 10px',
-          minWidth: 'unset',
-          flexDirection: 'row',
-          alignItems: 'center',
-          gap: '8px',
-          borderRadius: '999px',
-        })
-        const dot = document.createElement('span')
-        dot.dataset.dot = '1'
-        dot.textContent = '\u25CF live'
-        dot.style.color = '#dc1e1e'
-        dot.style.fontWeight = 'bold'
-        panel.insertBefore(dot, row)
-      } catch (e) {
-        status.textContent = 'failed to connect'
-        goBtn.disabled = false
-        this.broadcastRoom = null
-      }
     }
   }
 
@@ -655,11 +326,6 @@ export default class Youtube extends Feature2D<YoutubeRecord> {
       this.parcelScript?.dispatch('click', this, {})
       return
     }
-    if (this.description.broadcasting && this.parcel.canEdit) {
-      this.openBroadcastPanel()
-      this.parcelScript?.dispatch('click', this, {})
-      return
-    }
     if (this.playing) {
       if (this.paused) {
         this.unpause()
@@ -706,13 +372,6 @@ export default class Youtube extends Feature2D<YoutubeRecord> {
 
   dispose() {
     this._dispose()
-    this.stopThumbCapture(true)
-    this.livekitRoom?.disconnect()
-    this.livekitRoom = null
-    this.broadcastRoom?.disconnect()
-    this.broadcastRoom = null
-    this.broadcastPanel?.remove()
-    this.broadcastPanel = null
     if (this.player) {
       this.player.dispose()
       this.player = null
@@ -723,7 +382,6 @@ export default class Youtube extends Feature2D<YoutubeRecord> {
   play() {
     if (this.disposed) return
     if (this.playing) return
-
     if (!this.audio?.running) {
       // if the audio context isn't running yet, wait a second and try again
       setTimeout(() => this.play(), 1000)
@@ -779,7 +437,6 @@ class Editor extends FeatureEditor<Youtube> {
       loop: props.feature.description.loop,
       rolloffFactor: props.feature.rolloffFactor,
       volume: props.feature.volume, // use the prop for default values
-      broadcasting: !!props.feature.description.broadcasting,
     }
   }
 
@@ -797,7 +454,6 @@ class Editor extends FeatureEditor<Youtube> {
       loop: this.state.loop,
       rolloffFactor: this.state.rolloffFactor,
       volume: this.state.volume,
-      broadcasting: this.state.broadcasting,
     })
   }
 
@@ -875,14 +531,6 @@ class Editor extends FeatureEditor<Youtube> {
             </div>
 
             <div className="f">
-              <label>
-                <input checked={this.state.broadcasting} onInput={(e) => this.setState({ broadcasting: e.currentTarget.checked })} type="checkbox" />
-                Enable broadcasting
-              </label>
-              <small>lets you broadcast live video from this screen to anyone in the parcel</small>
-            </div>
-
-            <div className="f">
               <label>Spatial Rolloff Factor</label>
               <input type="range" step="0.1" min="0" max="5" value={this.state.rolloffFactor} onChange={(e) => this.setState({ rolloffFactor: parseFloat(e.currentTarget.value) })} />
               <small>Choose how quickly the sound fades away as the player moves away from the emitter (higher values fade away faster)</small>
@@ -924,7 +572,7 @@ class YoutubePlayer {
   static renderer: CSS3DRenderer
   div: HTMLDivElement | undefined = undefined
   iframe: HTMLIFrameElement | undefined = undefined
-  scene: BABYLON.Scene
+  scene: Scene
   CSSobject: CSS3DObject | undefined = undefined
   width = 480
   height = 360 // Twitch minimum height is 300
@@ -937,7 +585,7 @@ class YoutubePlayer {
   fadeState: FadeState | undefined = undefined
   disposed = false
 
-  constructor(feature: Youtube, scene: BABYLON.Scene, ratio: number) {
+  constructor(feature: Youtube, scene: Scene, ratio: number) {
     this.feature = feature
     this.scene = scene
     this.playing = false
@@ -970,7 +618,7 @@ class YoutubePlayer {
   }
 
   // COMMANDER WORF - INITIATE!
-  static initiate(scene: BABYLON.Scene) {
+  static initiate(scene: Scene) {
     if (YoutubePlayer.initiated) {
       return
     }
@@ -1004,8 +652,7 @@ class YoutubePlayer {
     const parcelOutVolume = this.audio?.parcelOut.gain.value || 0
     let volume = parcelOutVolume * 2 * this.volume * this.getFadeMultiplier()
 
-    // YouTube's setVolume API takes 0-100; Twitch is handled elsewhere via the PiP overlay.
-    const serviceMultiplier = 100
+    const serviceMultiplier = this.feature.isYoutube ? 100 : 1
 
     // no need to do the distance rollOff calc if volume is 0
     if (volume > 0) {
@@ -1058,7 +705,7 @@ class YoutubePlayer {
   }
 
   getVolumeMultiplier() {
-    const distance = this.scene.activeCamera ? this.feature.positionInGrid.subtract(cameraPosition(this.scene)).length() : 5.0
+    const distance = this.scene.activeCamera ? this.feature.positionInGrid.subtract(this.scene.cameraPosition).length() : 5.0
     return Math.pow(Math.max(distance, this.refDistance) / this.refDistance, -this.rolloffFactor)
   }
 
@@ -1095,8 +742,12 @@ class YoutubePlayer {
   }
 
   iframeUrl() {
-    const loopParams = this.feature.loop ? `&loop=1&playlist=${this.feature.videoId}` : ''
-    return ['https://www.youtube.com/embed/', this.feature.videoId, '?rel=0&enablejsapi=1&disablekb=1&autoplay=1&playsinline=1&controls=0&fs=0&modestbranding=1', loopParams].join('')
+    if (this.feature.isTwitch) {
+      return `https://player.twitch.tv/?channel=${this.feature.videoId}&parent=${location.hostname}&autoplay=true&muted=false`
+    } else if (this.feature.isYoutube) {
+      const loopParams = this.feature.loop ? `&loop=1&playlist=${this.feature.videoId}` : ''
+      return ['https://www.youtube.com/embed/', this.feature.videoId, '?rel=0&enablejsapi=1&disablekb=1&autoplay=1&playsinline=1&controls=0&fs=0&modestbranding=1', loopParams].join('')
+    }
   }
 
   addIframe() {
@@ -1141,17 +792,45 @@ class YoutubePlayer {
     }
   }
 
-  send(func: YoutubeCommand, args: unknown[] = []) {
-    if (!this.iframe || !YOUTUBE_COMMANDS.has(func)) return
-    this.iframe.contentWindow?.postMessage(JSON.stringify({ event: 'command', func, args }), '*')
+  send(func: keyof typeof TWITCH_YOUTUBE_FUNCTION_LOOKUP, args: any = []) {
+    if (this.iframe) {
+      if (this.feature.isTwitch) {
+        if (!TWITCH_YOUTUBE_FUNCTION_LOOKUP[func]) return
+        this.iframe.contentWindow?.postMessage(
+          {
+            namespace: 'twitch-embed-player-proxy',
+            eventName: TWITCH_YOUTUBE_FUNCTION_LOOKUP[func],
+            params: args[0],
+          },
+          '*',
+        )
+      } else if (this.feature.isYoutube) {
+        if (!TWITCH_YOUTUBE_FUNCTION_LOOKUP[func]) return
+        const message = JSON.stringify({
+          event: 'command',
+          func,
+          args,
+        })
+
+        this.iframe.contentWindow?.postMessage(message, '*')
+      }
+    }
   }
 
   pause() {
-    this.send('pauseVideo')
+    if (this.feature.isYoutube) {
+      this.send('pauseVideo')
+    } else if (this.feature.isTwitch) {
+      this.send('setMuted', [true])
+    }
   }
 
   unpause() {
-    this.send('playVideo')
+    if (this.feature.isYoutube) {
+      this.send('playVideo')
+    } else {
+      this.send('setMuted', [false])
+    }
   }
 
   createMaskingScreen() {
