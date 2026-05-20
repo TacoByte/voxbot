@@ -486,8 +486,11 @@ export default class Youtube extends Feature2D<YoutubeRecord> {
         this.broadcastRoom.disconnect()
         this.broadcastRoom = null
         goBtn.textContent = 'go live'
-        status.textContent = ''
         this.setBroadcastPreview()
+        // remove the dot badge if present
+        panel.querySelector('span[data-dot]')?.remove()
+        ;[title, camLabel, camSel, micLabel, micSel, screenOpt, status].forEach((el) => ((el as HTMLElement).style.display = ''))
+        Object.assign(panel.style, { top: '50%', left: '50%', right: 'auto', transform: 'translate(-50%, -50%)', padding: '1rem', minWidth: '320px', flexDirection: 'column', borderRadius: '0' })
         return
       }
 
@@ -524,8 +527,27 @@ export default class Youtube extends Feature2D<YoutubeRecord> {
 
         goBtn.textContent = 'stop'
         goBtn.disabled = false
-        status.textContent = 'live!'
-        status.style.color = '#dc1e1e'
+        status.textContent = ''
+        // minimize to top-right pill, hide everything except stop
+        ;[title, camLabel, camSel, micLabel, micSel, screenOpt, status].forEach((el) => ((el as HTMLElement).style.display = 'none'))
+        Object.assign(panel.style, {
+          top: '12px',
+          left: 'auto',
+          right: '12px',
+          transform: 'none',
+          padding: '6px 10px',
+          minWidth: 'unset',
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: '8px',
+          borderRadius: '999px',
+        })
+        const dot = document.createElement('span')
+        dot.dataset.dot = '1'
+        dot.textContent = '\u25CF live'
+        dot.style.color = '#dc1e1e'
+        dot.style.fontWeight = 'bold'
+        panel.insertBefore(dot, row)
       } catch (e) {
         status.textContent = 'failed to connect'
         goBtn.disabled = false
