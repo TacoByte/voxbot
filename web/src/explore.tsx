@@ -25,7 +25,17 @@ type RESummary = {
 }
 
 type LiveParcel = { id: number; name?: string; address: string }
-type LiveEntry = { room: string; parcel: LiveParcel; avatar: any; thumbnail: string }
+type LivePos = { x: number; y: number; z: number }
+type LiveEntry = { room: string; parcel: LiveParcel; pos?: LivePos; avatar: any; thumbnail: string }
+
+function jitteredCoord(pos: LivePos): string {
+  const jx = Math.round(pos.x + (Math.random() * 2 - 1))
+  const jz = Math.round(pos.z + (Math.random() * 2 - 1))
+  const parts: string[] = []
+  if (jx !== 0) parts.push(Math.abs(jx) + (jx < 0 ? 'W' : 'E'))
+  if (jz !== 0) parts.push(Math.abs(jz) + (jz < 0 ? 'S' : 'N'))
+  return parts.join(',')
+}
 
 function LiveSection() {
   const [streams, setStreams] = useState<Map<string, LiveEntry>>(new Map())
@@ -53,7 +63,7 @@ function LiveSection() {
     <ul class="live-streams">
       {[...streams.values()].map((s) => (
         <li key={s.room}>
-          <a href={`/parcels/${s.parcel.id}`}>
+          <a href={s.pos ? `/play?coords=${jitteredCoord(s.pos)}` : `/parcels/${s.parcel.id}`}>
             <img src={s.thumbnail} width="128" height="72" alt="" />
             <span>{s.parcel.name || s.parcel.address}</span>
             <small>{avatarName(s.avatar)}</small>

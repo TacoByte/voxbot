@@ -100,15 +100,15 @@ export default async function LivekitController(db: Db, passport: PassportStatic
   app.post('/api/rooms/:name/thumbnail', async (req, res) => {
     if (!pub) { res.json({ success }); return }
     const name = req.params.name.toString()
-    const { avatar, parcel, thumbnail } = req.body ?? {}
+    const { avatar, parcel, pos, thumbnail } = req.body ?? {}
 
     if (thumbnail === null || thumbnail === undefined) {
       await pub.hDel(HASH, name)
       pub.publish(CHANNEL, JSON.stringify({ type: 'remove', parcel: name }))
     } else {
-      const entry = { room: name, parcel, avatar, thumbnail, ts: Date.now() }
+      const entry = { room: name, parcel, pos, avatar, thumbnail, ts: Date.now() }
       await pub.hSet(HASH, name, JSON.stringify(entry))
-      pub.publish(CHANNEL, JSON.stringify({ type: 'update', room: name, parcel, avatar, thumbnail }))
+      pub.publish(CHANNEL, JSON.stringify({ type: 'update', room: name, parcel, pos, avatar, thumbnail }))
     }
 
     res.json({ success })
