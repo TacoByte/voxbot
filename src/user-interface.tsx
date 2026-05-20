@@ -274,6 +274,12 @@ export default class UserInterface extends Component<UserInterfaceProps, UserInt
     this.debugUI.toggle()
   }
 
+  refocus() {
+    requestPointerLock()
+
+    this.setState({ active: false, pane: undefined })
+  }
+
   disable() {
     this.setState({ enabled: false })
   }
@@ -297,9 +303,7 @@ export default class UserInterface extends Component<UserInterfaceProps, UserInt
         { code: 'KeyF', handleEvent: () => this.connector.controls.toggleFlying() },
         { code: 'KeyC', handleEvent: () => this.connector.controls.togglePerspective() },
         { code: 'KeyB', handleEvent: () => this.toggleVoxelTool() },
-        { code: 'KeyH', handleEvent: () => this.setState({ pane: 'help' }) },
-        { code: 'KeyL', handleEvent: () => this.setState({ pane: 'add' }) },
-        { code: 'KeyG', handleEvent: () => this.setState({ pane: 'emote' }) },
+        { code: 'KeyG', handleEvent: () => this.setPane('emote') },
         { code: 'KeyZ', handleEvent: () => this.connector.controls.toggleZoom() },
         { code: 'Enter', handleEvent: this.focusChat },
         { code: 'Escape', handleEvent: () => this.closeInteractOverlay() },
@@ -308,10 +312,7 @@ export default class UserInterface extends Component<UserInterfaceProps, UserInt
           code: 'Tab',
           handleEvent: (e) => {
             if (!this.state.active) {
-              this.setState({ active: true })
-
-              exitPointerLock()
-
+              this.setPane('add')
               return
             }
 
@@ -320,8 +321,6 @@ export default class UserInterface extends Component<UserInterfaceProps, UserInt
             } else if (document.activeElement?.closest('.UserInterface')) {
               // ignore tab if inside the nav
               return
-            } else {
-              this.setState({ active: false })
             }
           },
         },
@@ -335,6 +334,16 @@ export default class UserInterface extends Component<UserInterfaceProps, UserInt
         handleEvent: () => this.activateVoxelTool(SelectionMode.Add, { texture: index }),
       })
     })
+  }
+
+  setPane(pane: UIPanes) {
+    if (this.state.active) {
+      return
+    }
+
+    this.setState({ pane: pane, active: true })
+
+    exitPointerLock()
   }
 
   activateVoxelTool(mode?: SelectionMode, options?: SelectionModeOptions) {
@@ -572,10 +581,6 @@ export default class UserInterface extends Component<UserInterfaceProps, UserInt
   showNotificationBanner(message: string, duration = 5000, onClick?: () => void) {
     // ideally we would use a dedicated noitification banner component, but for now we'll use the snackbar
     return Snackbar.show(message, PanelType.Info, duration, onClick)
-  }
-
-  setPane = (pane: UIPanes) => {
-    this.setState({ pane, active: !!pane })
   }
 
   enable() {
