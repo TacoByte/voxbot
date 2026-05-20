@@ -1,9 +1,7 @@
-import { RegExpMatcher, englishDataset, englishRecommendedTransformers } from 'obscenity'
 import { Component, createRef, Fragment, JSX } from 'preact'
 import { forwardRef } from 'preact/compat'
 import { useEffect, useRef, useState } from 'preact/hooks'
 
-const matcher = new RegExpMatcher({ ...englishDataset.build(), ...englishRecommendedTransformers })
 import { isMobile } from '../../../common/helpers/detector'
 import { Emojis, replaceEmojiText, replaceEmoticonsAndEmojiText } from '../../../common/helpers/emojis'
 import { Emotes } from '../../../common/messages/constant'
@@ -14,6 +12,7 @@ import Avatar from '../../avatar'
 import Connector, { ChatMessageRecord, messageList } from '../../connector'
 import GuestBook from '../../features/guest-book'
 import Persona from '../../persona'
+import { matcher } from '../../obscenity'
 import { NearByPlayers } from './nearby-players'
 
 interface Props {
@@ -133,13 +132,14 @@ function SlashCongaLinks({ text }: { text: string }) {
 
 const ChatText = ({ text }: { text: string }) => {
   const decoded = decodeChatHtmlEntities(text)
-  const matches = matcher.getAllMatches(decoded)
+  const matches = matcher.getAllMatches(decoded, true)
   const parts: JSX.Element[] = []
   let last = 0
   let k = 0
 
   for (const match of matches) {
     const [start, end] = [match.startIndex, match.endIndex + 1]
+    if (start < last) continue
     if (start > last)
       parts.push(
         <Fragment key={k++}>
