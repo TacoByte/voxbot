@@ -46,7 +46,6 @@ type State = {
   snackbarMessage: string
   expanded: boolean
   query: string
-  mobileMenuOpen: boolean
 }
 
 const getQueryParams = () => (ssrFriendlyDocument ? new URLSearchParams(document.location.search.substring(1)) : null)
@@ -69,7 +68,6 @@ export default class WebHeader extends Component<Props, State> {
     snackbarMessage: '',
     expanded: false,
     query: getQueryParams()?.get('q') ?? '',
-    mobileMenuOpen: false,
   }
 
   componentDidMount() {
@@ -85,7 +83,7 @@ export default class WebHeader extends Component<Props, State> {
 
   componentDidUpdate(prevProps: Props, prevState: State) {
     if (prevProps.path !== this.props.path) {
-      this.setState({ expanded: false, mobileMenuOpen: false })
+      this.setState({ expanded: false })
     }
   }
 
@@ -112,14 +110,6 @@ export default class WebHeader extends Component<Props, State> {
   }
 
   onSignOut = () => app.signout()
-
-  toggleMobileMenu = () => {
-    this.setState({ mobileMenuOpen: !this.state.mobileMenuOpen })
-  }
-
-  closeMobileMenu = () => {
-    this.setState({ mobileMenuOpen: false })
-  }
 
   render() {
     const toggleMenu = (e: any) => {
@@ -166,11 +156,11 @@ export default class WebHeader extends Component<Props, State> {
 
     const navLink = (label: string, href: string, icon: any, active: boolean, extra?: any) =>
       active ? (
-        <Link class="active" aria-selected={true} href={href} onClick={extra ?? this.closeMobileMenu}>
+        <Link class="active" aria-selected={true} href={href} onClick={extra}>
           {label}
         </Link>
       ) : (
-        <Link activeClassName="active" href={href} onClick={extra ?? this.closeMobileMenu}>
+        <Link activeClassName="active" href={href} onClick={extra}>
           {label}
         </Link>
       )

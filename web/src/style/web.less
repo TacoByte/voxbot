@@ -118,8 +118,15 @@ a.buttonish {
 }
 
 // Nav tweaks
+header {
+  position: sticky;
+  top: 0;
+  background: white;
+  z-index: 100;
+}
+
 header nav {
-  margin: 5rem 0;
+  margin: 0 0 1rem 0;
 
   ul {
     display: flex;
@@ -129,6 +136,7 @@ header nav {
     padding: 0;
     border-top: var(--border);
     border-bottom: var(--border);
+    background: white;
   }
 
   li {
@@ -188,102 +196,42 @@ header nav img.logo {
   margin: 2px;
 }
 
-.hamburger-mobile-nav-toggle {
-  display: none;
-  background: none;
-  border: none;
-  font-size: 1.5rem;
-  cursor: pointer;
-  padding: 0.5rem;
-}
-
-div.nav-menu {
-  align-items: center;
-  gap: 0;
-
-  ul {
-    margin: 0;
-  }
-}
-
 @media @mobile {
-  .hamburger-mobile-nav-toggle {
-    display: block;
-  }
-
   header nav {
     position: relative;
 
-    > ul:first-child {
-      justify-content: space-between;
+    &::after {
+      content: '';
+      position: absolute;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      width: 2.5rem;
+      background: linear-gradient(to right, rgba(255, 255, 255, 0), white);
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    > ul {
       width: 100%;
-    }
-  }
+      overflow-x: auto;
+      flex-wrap: nowrap;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
 
-  .nav-menu {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    border-top: none;
-    z-index: 1000;
-    display: none;
-
-    &[data-open='true'] {
-      display: block;
+      &::-webkit-scrollbar {
+        display: none;
+      }
     }
 
-    ul {
-      flex-direction: column;
-      align-items: stretch;
-      padding: 0.5rem 0;
+    > ul > li {
+      flex: 0 0 auto;
+      white-space: nowrap;
     }
 
-    li {
-      width: 100%;
+    li:last-child {
+      flex: 0 0 auto;
       text-align: left;
-    }
-
-    a,
-    button {
-      display: block;
-      padding: 0.75rem 1rem;
-      text-decoration: none;
-      border: none;
-      background: none;
-      font-size: inherit;
-      font-family: inherit;
-      text-align: left;
-      width: 100%;
-      cursor: pointer;
-    }
-
-    .big-play {
-      margin: 0.5rem 1rem;
-      width: calc(100% - 2rem);
-    }
-
-    form {
-      padding: 0.5rem 1rem;
-      margin: 0;
-    }
-
-    input[type='search'] {
-      margin: 0;
-      width: 100%;
-    }
-
-    details summary {
-      padding: 0.75rem 1rem;
-    }
-
-    details ul {
-      margin: 0;
-      padding-left: 1rem;
-    }
-
-    details ul li a {
-      padding: 0.5rem 1rem;
     }
   }
 }
@@ -344,6 +292,74 @@ button.hamburger {
   article {
     background: none;
     padding: 0;
+  }
+
+  .columns {
+    flex-direction: column;
+
+    & > article,
+    & > aside {
+      width: 100%;
+    }
+  }
+}
+
+// Live streams (home page hero)
+
+.live-hero {
+  margin-bottom: 1.5rem;
+}
+
+.live-streams {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+  gap: 0.75rem;
+
+  li {
+    margin: 0;
+    padding: 0;
+  }
+
+  a {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+  }
+
+  img {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+    display: block;
+    background: #222;
+  }
+
+  span {
+    display: block;
+    font-weight: bold;
+    margin-top: 0.25rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  small {
+    display: block;
+    color: var(--soft);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+@media @mobile {
+  .live-streams {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
   }
 }
 
