@@ -7,7 +7,8 @@ import { app } from '../../web/src/state'
 import { CSS3DObject, CSS3DRenderer } from '../../vendor/CSS3DRenderer'
 import { Position, Rotation, Scale, Script } from '../../web/src/components/editor'
 import { fetchNoImageTexture, fetchTexture } from '../textures/textures'
-import { cameraPosition } from '../utils/camera'
+import { cameraPosition, cameraRotation } from '../utils/camera'
+import { encodeCoords } from '../../common/helpers/utils'
 import { Advanced, FeatureEditor, FeatureEditorProps, FeatureID, SetParentDropdown, Toolbar, UuidReadOnly } from '../ui/features'
 import { isURL } from '../utils/helpers'
 import { FeatureMetadata, FeatureTemplate } from './_metadata'
@@ -406,12 +407,11 @@ export default class Youtube extends Feature2D<YoutubeRecord> {
       try {
         ctx.drawImage(videoEl, 0, 0, 256, 144)
         const thumbnail = canvas.toDataURL('image/jpeg', 0.2)
-        const cam = cameraPosition(this.scene)
-        const pos: [number, number, number] = [cam.x, cam.y, cam.z]
+        const coord = encodeCoords({ position: cameraPosition(this.scene), rotation: cameraRotation(this.scene) })
         fetch(`/api/rooms/parcel-${id}/thumbnail`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ avatar: app.avatarRef, parcel, pos, thumbnail }),
+          body: JSON.stringify({ avatar: app.avatarRef, parcel, coord, thumbnail }),
         }).catch(() => {})
       } catch {}
     }, 1000)
