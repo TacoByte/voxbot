@@ -352,13 +352,14 @@ export default class Youtube extends Feature2D<YoutubeRecord> {
     const room = new Room()
     this.livekitRoom = room
 
-    room.on(RoomEvent.TrackSubscribed, (track, _pub, _participant) => {
-      if (track.kind !== Track.Kind.Video) return
-      const el = track.attach() as HTMLVideoElement
-      el.style.width = '480px'
-      el.style.height = '270px'
-      el.style.border = '0'
-      this.attachVideoToMesh(el)
+    room.on(RoomEvent.TrackSubscribed, (track) => {
+      if (track.kind === Track.Kind.Audio) {
+        track.attach()
+        return
+      }
+      if (track.kind === Track.Kind.Video) {
+        this.attachVideoToMesh(track.attach() as HTMLVideoElement)
+      }
     })
 
     room.on(RoomEvent.TrackUnsubscribed, () => {
@@ -368,23 +369,24 @@ export default class Youtube extends Feature2D<YoutubeRecord> {
     await room.connect(LIVEKIT_URL, res.token).catch(() => null)
   }
 
-  attachVideoToMesh(el: HTMLVideoElement) {
-    if (!YoutubePlayer.initiated) YoutubePlayer.initiate(this.scene)
+  attachVideoToMesh(el: HTMLVideoElement, muted = false) {
+    if (!this.mesh) return
+    el.muted = muted
+    el.autoplay = true
+    el.play().catch(() => {})
 
-    const div = document.createElement('div')
-    div.style.width = '480px'
-    div.style.height = '270px'
-    div.style.background = '#000'
-    div.appendChild(el)
+    const tex = new BABYLON.VideoTexture(this.uniqueEntityName('lktex' as any), el, this.scene, false, false)
+    tex.hasAlpha = false
 
-    const obj = new CSS3DObject(div, this.scene)
-    obj.position.copyFrom(this.mesh!.getAbsolutePosition())
-    obj.scaling.copyFrom(this.mesh!.scaling)
-    obj.rotation.y = -this.mesh!.rotation.y
-    obj.rotation.x = -this.mesh!.rotation.x
-    obj.rotation.z = this.mesh!.rotation.z
+    const mat = new BABYLON.StandardMaterial(this.uniqueEntityName('lkmat' as any), this.scene)
+    mat.diffuseTexture = tex
+    mat.backFaceCulling = false
+    mat.zOffset = -4
+    mat.specularColor.set(0, 0, 0)
+    mat.emissiveColor.set(1, 1, 1)
+    mat.blockDirtyMechanism = true
 
-    if (this.mesh) this.mesh.material = YoutubePlayer.depthMask
+    this.mesh.material = mat
   }
 
   openBroadcastPanel() {
@@ -517,11 +519,7 @@ export default class Youtube extends Feature2D<YoutubeRecord> {
 
         const videoTrack = tracks.find((t) => t.kind === Track.Kind.Video)
         if (videoTrack) {
-          const el = videoTrack.attach() as HTMLVideoElement
-          el.style.width = '480px'
-          el.style.height = '270px'
-          el.style.border = '0'
-          this.attachVideoToMesh(el)
+          this.attachVideoToMesh(videoTrack.attach() as HTMLVideoElement, true)
         }
 
         goBtn.textContent = 'stop'
