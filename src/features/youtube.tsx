@@ -1,5 +1,6 @@
 import { h } from 'preact'
 import { isBatterySaver, isMobile } from '../../common/helpers/detector'
+import { exitPointerLock } from '../../common/helpers/ui-helpers'
 import { YoutubeRecord } from '../../common/messages/feature'
 import { Room, RoomEvent, Track, createLocalScreenTracks, createLocalTracks } from 'livekit-client'
 import { CSS3DObject, CSS3DRenderer } from '../../vendor/CSS3DRenderer'
@@ -395,6 +396,8 @@ export default class Youtube extends Feature2D<YoutubeRecord> {
       return
     }
 
+    exitPointerLock()
+
     const panel = document.createElement('div')
     this.broadcastPanel = panel
     Object.assign(panel.style, {
@@ -482,6 +485,7 @@ export default class Youtube extends Feature2D<YoutubeRecord> {
         this.broadcastRoom = null
         goBtn.textContent = 'go live'
         status.textContent = ''
+        this.setBroadcastPreview()
         return
       }
 
@@ -509,6 +513,15 @@ export default class Youtube extends Feature2D<YoutubeRecord> {
 
         for (const t of tracks) {
           await room.localParticipant.publishTrack(t)
+        }
+
+        const videoTrack = tracks.find((t) => t.kind === Track.Kind.Video)
+        if (videoTrack) {
+          const el = videoTrack.attach() as HTMLVideoElement
+          el.style.width = '480px'
+          el.style.height = '270px'
+          el.style.border = '0'
+          this.attachVideoToMesh(el)
         }
 
         goBtn.textContent = 'stop'
