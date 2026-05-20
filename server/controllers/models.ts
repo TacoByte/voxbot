@@ -1,19 +1,14 @@
 import type { Express, Request, Response } from 'express'
 
 async function parseTime(req: Request, res: Response) {
-  const { input, now: rawNow, tz: rawTz } = req.body
+  const { input, now: rawNow } = req.body
   if (!input) return res.json({ error: 'no input' })
 
-  const nowDate = new Date(rawNow)
-  const now = isNaN(nowDate.getTime()) ? new Date().toISOString() : nowDate.toISOString()
+  // client sends their wall clock with offset, e.g. 2026-05-20T11:53:00+12:00
+  const now = typeof rawNow === 'string' && /[+-]\d\d:?\d\d$/.test(rawNow) ? rawNow : new Date().toISOString()
+  const offset = now.slice(-6)
 
-  let tz = 'UTC'
-  try {
-    Intl.DateTimeFormat(undefined, { timeZone: rawTz })
-    tz = rawTz
-  } catch {
-    // invalid tz, fall back to UTC
-  }
+  const prompt = `User's current local time: ${now}. Parse "${input}" into a single ISO 8601 timestamp using the same timezone offset (${offset}). Reply with ONLY the ISO string, no prose.`
 
   const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
@@ -23,7 +18,8 @@ async function parseTime(req: Request, res: Response) {
     },
     body: JSON.stringify({
       model: 'llama-3.1-8b-instant',
-      messages: [{ role: 'user', content: `Current time: ${now} (timezone: ${tz}). Parse this into ISO 8601: "${input}". Reply with ONLY the ISO string, nothing else.` }],
+      temperature: 0,
+      messages: [{ role: 'user', content: prompt }],
     }),
   }).then((r) => r.json())
 

@@ -39,10 +39,15 @@ export default function DateField({ value, onChange }: { value: string; onChange
   async function parse() {
     if (!text.trim()) return
     setLoading(true)
+    const d = new Date()
+    const off = -d.getTimezoneOffset()
+    const sign = off >= 0 ? '+' : '-'
+    const pad = (n: number) => String(n).padStart(2, '0')
+    const now = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}${sign}${pad(Math.floor(Math.abs(off) / 60))}:${pad(Math.abs(off) % 60)}`
     const r = await fetch('/api/models/time', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ input: text, now: new Date().toISOString(), tz: Intl.DateTimeFormat().resolvedOptions().timeZone }),
+      body: JSON.stringify({ input: text, now }),
     }).then((r) => r.json())
     setLoading(false)
     if (r.error || !r.iso) {

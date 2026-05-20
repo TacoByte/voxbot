@@ -63,7 +63,7 @@ export default class VEvent {
        SET name = $2, description = $3, color = $4, timezone = $5,
            starts_at = COALESCE($6, NOW()), expires_at = COALESCE($7, (NOW() + INTERVAL '1 hour')),
            location = $8
-       WHERE id = $1 AND starts_at > NOW()
+       WHERE id = $1
        RETURNING id`,
       [this.id, this.name, this.description, this.color, this.timezone, this.starts_at, this.expires_at, this.location],
     )

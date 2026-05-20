@@ -25,6 +25,7 @@ export const Event = t.type({
   timezone: t.string,
   starts_at: t.string,
   expires_at: t.string,
+  created_at: t.union([t.string, t.undefined]),
 })
 
 export type Event = t.TypeOf<typeof Event>

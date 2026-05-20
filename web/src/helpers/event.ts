@@ -108,6 +108,13 @@ export default class ParcelEvent {
     return app.isOwner(this.ev.author)
   }
 
+  get canEdit() {
+    if (app.state?.moderator) return true
+    if (!this.ev.created_at) return false
+    const week = 7 * 24 * 60 * 60 * 1000
+    return Date.now() - new Date(this.ev.created_at).getTime() < week
+  }
+
   get getContrastColor() {
     if (!this.ev.color) {
       this.ev.color = '#000000'

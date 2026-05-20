@@ -58,23 +58,46 @@ function FreshlyMinted() {
     </div>
   )
 }
+function countdown(ms: number) {
+  const s = Math.floor(ms / 1000)
+  const d = Math.floor(s / 86400)
+  const h = Math.floor((s % 86400) / 3600)
+  const m = Math.floor((s % 3600) / 60)
+  const sec = s % 60
+  return d > 0 ? `${d}d ${h}h ${m}m` : `${h}h ${m}m ${sec}s`
+}
+
 function EventsList() {
   const [events, setEvents] = useState<Event[]>([])
+  const [now, setNow] = useState(Date.now())
   useEffect(() => {
     fetch('/api/events.json')
       .then((r) => r.json())
       .then((d) => setEvents(d.events || []))
   }, [])
-  const cutoff = Date.now() - 24 * 60 * 60 * 1000
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 1000)
+    return () => clearInterval(t)
+  }, [])
+  const cutoff = now - 24 * 60 * 60 * 1000
   const visible = events.filter((e) => new Date(e.expires_at).getTime() >= cutoff)
   return (
-    <ul>
-      {visible.slice(0, 5).map((e) => (
-        <li key={e.id}>
-          <a href={`/events/${e.id}`}>{e.name}</a>
-        </li>
-      ))}
-    </ul>
+    <table class="events">
+      <tbody>
+        {visible.slice(0, 5).map((e) => {
+          const startsIn = new Date(e.starts_at).getTime() - now
+          const live = startsIn <= 0 && new Date(e.expires_at).getTime() > now
+          return (
+            <tr key={e.id}>
+              <td>
+                <a href={`/events/${e.id}`}>{e.name.length > 18 ? e.name.slice(0, 17) + '...' : e.name}</a>
+              </td>
+              <td>{startsIn > 0 ? countdown(startsIn) : live ? 'live' : 'ended'}</td>
+            </tr>
+          )
+        })}
+      </tbody>
+    </table>
   )
 }
 
@@ -115,6 +138,12 @@ export default class Explore extends Component<any, Props> {
         <aside>
           <h3>Events</h3>
           <EventsList />
+
+          <p>
+            <a class="buttonish" href="/events/new">
+              New Event
+            </a>
+          </p>
 
           <h3>Popular</h3>
           <PopularParcels />
