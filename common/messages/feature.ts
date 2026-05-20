@@ -305,6 +305,7 @@ export const YoutubeRecord = t.intersection(
         screenRatio: t.string,
         volume: t.number,
         loop: t.boolean,
+        broadcasting: t.boolean,
       },
       TYPE_SPECIFIC,
     ),

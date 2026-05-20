@@ -27,7 +27,7 @@ export default async function LivekitController(db: Db, passport: PassportStatic
   app.get('/api/rooms/:name', async (req, res) => {
     const name = req.params.name.toString()
 
-    if (!name.match(/^[a-z_]{0,9}$/)) {
+    if (!name.match(/^[a-z0-9-]{1,32}$/)) {
       res.status(401).send({ error: 'Invalid room name' })
       return
     }
@@ -53,7 +53,7 @@ export default async function LivekitController(db: Db, passport: PassportStatic
 
     const name = req.params.name.toString()
 
-    if (!name.match(/^[a-z_]{0,9}$/)) {
+    if (!name.match(/^[a-z0-9-]{1,32}$/)) {
       res.status(401).send({ error: 'Invalid room name' })
       return
     }
