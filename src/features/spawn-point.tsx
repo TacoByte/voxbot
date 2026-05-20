@@ -8,7 +8,7 @@ import { Feature3D } from './feature'
 export default class SpawnPoint extends Feature3D<SpawnPointRecord> {
   static metadata: FeatureMetadata = {
     title: 'Spawn point',
-    subtitle: 'Choose where avatars spawn',
+    subtitle: 'where avatars arrive',
     type: 'spawn-point',
     image: '/icons/spawn-point.png',
   }

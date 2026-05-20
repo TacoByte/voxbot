@@ -46,7 +46,7 @@ export default class NftImage extends Feature2D<NftImageRecord> {
   static blueFrameMaterial: NFTFrame
   static metadata: FeatureMetadata = {
     title: 'NFT Image',
-    subtitle: 'For NFTs you own',
+    subtitle: 'nfts you own',
     type: 'nft-image',
     image: '/icons/nft-image.png',
   }

@@ -20,7 +20,7 @@ export default class VoxModel<Description extends VoxModelRecord | MegavoxRecord
   static Editor: typeof Editor
   static metadata: FeatureMetadata = {
     title: 'Vox Model',
-    subtitle: 'Small .vox models',
+    subtitle: 'small .vox model',
     type: 'vox-model',
     image: '/icons/vox-model.png',
   }
@@ -288,7 +288,7 @@ VoxModel.Editor = Editor
 export class Megavox extends VoxModel<MegavoxRecord> {
   static metadata: FeatureMetadata = {
     title: 'Megavox',
-    subtitle: 'Large .vox models',
+    subtitle: 'large .vox model',
     type: 'megavox',
     image: '/icons/megavox.png',
   }

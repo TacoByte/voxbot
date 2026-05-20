@@ -18,7 +18,7 @@ const MAX_VOLUME = 1
 export default class Video extends Feature2D<VideoRecord> implements AudioFeature {
   static metadata: FeatureMetadata = {
     title: 'Video',
-    subtitle: 'Add short videos',
+    subtitle: 'short video files',
     type: 'video',
     image: '/icons/video.png',
   }

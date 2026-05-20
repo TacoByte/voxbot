@@ -41,7 +41,7 @@ export default class GuestBook extends Feature3D<GuestBookRecord> {
   static signGuestbookSound: BABYLON.Sound | null = null
   static metadata: FeatureMetadata = {
     title: 'Guest Book',
-    subtitle: 'A guest book for your visitors to sign!',
+    subtitle: 'visitors leave a note',
     type: 'guest-book',
     image: '/icons/guest-book.png',
   }

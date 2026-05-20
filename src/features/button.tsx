@@ -8,7 +8,7 @@ import { Position, Rotation, Scale, Script } from '../../web/src/components/edit
 export default class Button extends Feature3D<ButtonRecord> {
   static metadata: FeatureMetadata = {
     title: 'Button',
-    subtitle: 'For Scripting',
+    subtitle: 'scripting trigger',
     type: 'button',
     image: '/icons/button.png',
   }

@@ -18,7 +18,7 @@ interface BoomBoxSharedState {
 export default class Boombox extends Feature3D<BoomboxRecord> {
   static metadata: FeatureMetadata = {
     title: 'Boombox',
-    subtitle: 'Let users live-stream audio',
+    subtitle: 'live audio streaming',
     type: 'boombox',
     image: '/icons/boombox.png',
   }

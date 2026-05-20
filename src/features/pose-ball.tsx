@@ -10,7 +10,7 @@ import { EmoteAnimation, Idle } from '../states'
 export default class PoseBall extends Feature3D<PoseBallRecord> {
   public static metadata: FeatureMetadata = {
     title: 'PoseBall',
-    subtitle: 'A poseball',
+    subtitle: 'avatar poses',
     type: 'pose-ball',
     image: '/icons/spawn-point.png',
   }

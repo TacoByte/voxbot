@@ -195,7 +195,7 @@ export async function loadYoutubeThumbnail(scene: BABYLON.Scene, videoId: string
 export default class Youtube extends Feature2D<YoutubeRecord> {
   static metadata: FeatureMetadata = {
     title: 'Youtube / Twitch',
-    subtitle: 'Embed videos and livestreams',
+    subtitle: 'youtube or twitch embed',
     type: 'youtube',
     image: '/icons/youtube.png',
   }

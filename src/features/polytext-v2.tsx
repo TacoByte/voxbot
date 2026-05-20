@@ -15,8 +15,8 @@ let renderJob = 0
 
 export default class PolytextV2 extends NonMeshedFeature<PolytextV2Record> {
   static metadata: FeatureMetadata = {
-    title: 'Polytext V2',
-    subtitle: '3D Text',
+    title: 'Polytext',
+    subtitle: '3d text',
     type: 'polytext-v2',
     image: '/icons/polytext.png',
   }

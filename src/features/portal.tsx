@@ -10,7 +10,7 @@ import { Feature3D, FeatureTrigger } from './feature'
 export default class Portal extends Feature3D<PortalRecord> {
   static metadata: FeatureMetadata = {
     title: 'Portal',
-    subtitle: 'Make a teleporter using womps',
+    subtitle: 'teleporter to another parcel',
     type: 'portal',
     image: '/icons/portal.png',
   }

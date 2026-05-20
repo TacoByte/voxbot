@@ -22,7 +22,7 @@ export default class Audio extends Feature2D<AudioRecord> implements AudioFeatur
   static active: Audio | null = null
   static metadata: FeatureMetadata = {
     title: 'Audio',
-    subtitle: 'Play back an mp3',
+    subtitle: 'mp3 playback',
     type: 'audio',
     image: '/icons/audio.png',
   }
