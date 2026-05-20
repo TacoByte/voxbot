@@ -407,7 +407,7 @@ export default class Youtube extends Feature2D<YoutubeRecord> {
         ctx.drawImage(videoEl, 0, 0, 256, 144)
         const thumbnail = canvas.toDataURL('image/jpeg', 0.2)
         const cam = cameraPosition(this.scene)
-        const pos = { x: cam.x, y: cam.y, z: cam.z }
+        const pos: [number, number, number] = [cam.x, cam.y, cam.z]
         fetch(`/api/rooms/parcel-${id}/thumbnail`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

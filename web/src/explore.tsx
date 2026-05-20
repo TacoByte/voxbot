@@ -25,12 +25,11 @@ type RESummary = {
 }
 
 type LiveParcel = { id: number; name?: string; address: string }
-type LivePos = { x: number; y: number; z: number }
-type LiveEntry = { room: string; parcel: LiveParcel; pos?: LivePos; avatar: any; thumbnail: string }
+type LiveEntry = { room: string; parcel: LiveParcel; pos?: [number, number, number]; avatar: any; thumbnail: string }
 
-function jitteredCoord(pos: LivePos): string {
-  const jx = Math.round(pos.x + (Math.random() * 2 - 1))
-  const jz = Math.round(pos.z + (Math.random() * 2 - 1))
+function jitteredCoord(pos: [number, number, number]): string {
+  const jx = Math.round(pos[0] + (Math.random() * 2 - 1))
+  const jz = Math.round(pos[2] + (Math.random() * 2 - 1))
   const parts: string[] = []
   if (jx !== 0) parts.push(Math.abs(jx) + (jx < 0 ? 'W' : 'E'))
   if (jz !== 0) parts.push(Math.abs(jz) + (jz < 0 ? 'S' : 'N'))
