@@ -24,7 +24,8 @@ type RESummary = {
   }[]
 }
 
-type LiveEntry = { parcel: string; avatar: any; thumbnail: string }
+type LiveParcel = { id: number; name?: string; address: string }
+type LiveEntry = { room: string; parcel: LiveParcel; avatar: any; thumbnail: string }
 
 function LiveSection() {
   const [streams, setStreams] = useState<Map<string, LiveEntry>>(new Map())
@@ -37,9 +38,9 @@ function LiveSection() {
       const msg = JSON.parse(e.data)
       setStreams((prev) => {
         const next = new Map(prev)
-        if (msg.type === 'snapshot') msg.entries.forEach((s: LiveEntry) => next.set(s.parcel, s))
+        if (msg.type === 'snapshot') msg.entries.forEach((s: LiveEntry) => next.set(s.room, s))
         else if (msg.type === 'remove') next.delete(msg.parcel)
-        else next.set(msg.parcel, msg as LiveEntry)
+        else next.set(msg.room, msg as LiveEntry)
         return next
       })
     }
@@ -51,10 +52,11 @@ function LiveSection() {
   return (
     <ul class="live-streams">
       {[...streams.values()].map((s) => (
-        <li key={s.parcel}>
-          <a href={`/parcels/${s.parcel.replace('parcel-', '')}`}>
+        <li key={s.room}>
+          <a href={`/parcels/${s.parcel.id}`}>
             <img src={s.thumbnail} width="128" height="72" alt="" />
-            <span>{avatarName(s.avatar)}</span>
+            <span>{s.parcel.name || s.parcel.address}</span>
+            <small>{avatarName(s.avatar)}</small>
           </a>
         </li>
       ))}

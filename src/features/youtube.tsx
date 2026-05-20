@@ -401,6 +401,7 @@ export default class Youtube extends Feature2D<YoutubeRecord> {
     const canvas = this.thumbCanvas
     const ctx = canvas.getContext('2d')!
     const id = this.parcel.id
+    const parcel = { id, name: this.parcel.name, address: this.parcel.address }
     this.thumbInterval = setInterval(() => {
       try {
         ctx.drawImage(videoEl, 0, 0, 256, 144)
@@ -408,7 +409,7 @@ export default class Youtube extends Feature2D<YoutubeRecord> {
         fetch(`/api/rooms/parcel-${id}/thumbnail`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ avatar: app.avatarRef, thumbnail }),
+          body: JSON.stringify({ avatar: app.avatarRef, parcel, thumbnail }),
         }).catch(() => {})
       } catch {}
     }, 1000)
