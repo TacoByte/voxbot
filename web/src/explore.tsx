@@ -1,5 +1,7 @@
 import { Component, Fragment } from 'preact'
-import { useEffect, useState } from 'preact/hooks'
+import { useEffect, useRef, useState } from 'preact/hooks'
+import { avatarName } from '../../common/messages/avatar-ref'
+import { jitterCoord } from '../../common/helpers/utils'
 import { currentVersion } from '../../common/version'
 import { Event } from '../../common/messages/event'
 import Head from './components/head'
@@ -21,6 +23,47 @@ type RESummary = {
     address: string
     owner: string
   }[]
+}
+
+type LiveParcel = { id: number; name?: string; address: string }
+type LiveEntry = { room: string; parcel: LiveParcel; coord?: string; avatar: any; thumbnail: string }
+
+
+function LiveSection() {
+  const [streams, setStreams] = useState<Map<string, LiveEntry>>(new Map())
+  const ref = useRef<EventSource | null>(null)
+
+  useEffect(() => {
+    const es = new EventSource('/api/live')
+    ref.current = es
+    es.onmessage = (e) => {
+      const msg = JSON.parse(e.data)
+      setStreams((prev) => {
+        const next = new Map(prev)
+        if (msg.type === 'snapshot') msg.entries.forEach((s: LiveEntry) => next.set(s.room, s))
+        else if (msg.type === 'remove') next.delete(msg.parcel)
+        else next.set(msg.room, msg as LiveEntry)
+        return next
+      })
+    }
+    return () => es.close()
+  }, [])
+
+  if (streams.size === 0) return <p>no one is live right now</p>
+
+  return (
+    <ul class="live-streams">
+      {[...streams.values()].map((s) => (
+        <li key={s.room}>
+          <a href={s.coord ? `/play?coords=${jitterCoord(s.coord)}` : `/parcels/${s.parcel.id}`}>
+            <img src={s.thumbnail} width="128" height="72" alt="" />
+            <span>{s.parcel.name || s.parcel.address}</span>
+            <small>{avatarName(s.avatar)}</small>
+          </a>
+        </li>
+      ))}
+    </ul>
+  )
 }
 
 function FreshlyMinted() {
@@ -129,7 +172,7 @@ export default class Explore extends Component<any, Props> {
 
         <article>
           <h3>Live</h3>
-          <p>No one is live right now</p>
+          <LiveSection />
 
           <h3>Womps</h3>
           <WompsList numberToShow={20} collapsed={false} fetch="/womps.json" womps={this.props.womps ?? undefined} ttl={600} />
