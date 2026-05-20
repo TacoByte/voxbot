@@ -3,6 +3,7 @@ import { isBatterySaver, isMobile } from '../../common/helpers/detector'
 import { exitPointerLock } from '../../common/helpers/ui-helpers'
 import { YoutubeRecord } from '../../common/messages/feature'
 import { Room, RoomEvent, Track, createLocalScreenTracks, createLocalTracks } from 'livekit-client'
+import { app } from '../../web/src/state'
 import { CSS3DObject, CSS3DRenderer } from '../../vendor/CSS3DRenderer'
 import { Position, Rotation, Scale, Script } from '../../web/src/components/editor'
 import { fetchNoImageTexture, fetchTexture } from '../textures/textures'
@@ -77,6 +78,8 @@ export default class Youtube extends Feature2D<YoutubeRecord> {
   livekitRoom: Room | null = null
   broadcastRoom: Room | null = null
   broadcastPanel: HTMLDivElement | null = null
+  thumbCanvas: HTMLCanvasElement | null = null
+  thumbInterval: number | null = null
 
   get autoplay() {
     return !!this.description.autoplay
@@ -389,6 +392,42 @@ export default class Youtube extends Feature2D<YoutubeRecord> {
     this.mesh.material = mat
   }
 
+  startThumbCapture(videoEl: HTMLVideoElement) {
+    if (!this.thumbCanvas) {
+      this.thumbCanvas = document.createElement('canvas')
+      this.thumbCanvas.width = 256
+      this.thumbCanvas.height = 144
+    }
+    const canvas = this.thumbCanvas
+    const ctx = canvas.getContext('2d')!
+    const id = this.parcel.id
+    this.thumbInterval = setInterval(() => {
+      try {
+        ctx.drawImage(videoEl, 0, 0, 256, 144)
+        const thumbnail = canvas.toDataURL('image/jpeg', 0.2)
+        fetch(`/api/rooms/parcel-${id}/thumbnail`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ avatar: app.avatarRef, thumbnail }),
+        }).catch(() => {})
+      } catch {}
+    }, 1000)
+  }
+
+  stopThumbCapture(silent = false) {
+    if (this.thumbInterval) {
+      clearInterval(this.thumbInterval)
+      this.thumbInterval = null
+    }
+    if (!silent) {
+      fetch(`/api/rooms/parcel-${this.parcel.id}/thumbnail`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ thumbnail: null }),
+      }).catch(() => {})
+    }
+  }
+
   openBroadcastPanel() {
     if (this.broadcastPanel) {
       this.broadcastPanel.remove()
@@ -485,6 +524,7 @@ export default class Youtube extends Feature2D<YoutubeRecord> {
       if (this.broadcastRoom) {
         this.broadcastRoom.disconnect()
         this.broadcastRoom = null
+        this.stopThumbCapture()
         goBtn.textContent = 'go live'
         this.setBroadcastPreview()
         // remove the dot badge if present
@@ -522,7 +562,9 @@ export default class Youtube extends Feature2D<YoutubeRecord> {
 
         const videoTrack = tracks.find((t) => t.kind === Track.Kind.Video)
         if (videoTrack) {
-          this.attachVideoToMesh(videoTrack.attach() as HTMLVideoElement, true)
+          const el = videoTrack.attach() as HTMLVideoElement
+          this.attachVideoToMesh(el, true)
+          this.startThumbCapture(el)
         }
 
         goBtn.textContent = 'stop'
@@ -661,6 +703,7 @@ export default class Youtube extends Feature2D<YoutubeRecord> {
 
   dispose() {
     this._dispose()
+    this.stopThumbCapture(true)
     this.livekitRoom?.disconnect()
     this.livekitRoom = null
     this.broadcastRoom?.disconnect()
