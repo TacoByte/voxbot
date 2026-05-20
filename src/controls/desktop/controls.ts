@@ -69,6 +69,38 @@ export default class DesktopControls extends Controls {
     this.featureSelectorObservable = this.featureSelectorObservable.bind(this)
 
     this.addFeatureSelector()
+
+    // spawn in third person; enterThirdPerson needs window.persona, so retry until it's ready
+    const tryThird = () => {
+      if (this.persona) {
+        this.enterThirdPerson()
+      } else {
+        requestAnimationFrame(tryThird)
+      }
+    }
+    requestAnimationFrame(tryThird)
+
+    this.startSpawnGroundCheck()
+  }
+
+  // on spawn we want to drop out of fly mode if there's solid ground within 2m below the user.
+  // poll every 100ms; bail after 10s and assume the user is meant to be flying.
+  private startSpawnGroundCheck() {
+    const start = Date.now()
+    const id = setInterval(() => {
+      if (Date.now() - start > 10_000) {
+        clearInterval(id)
+        return
+      }
+      if (!this.persona) return
+      const origin = this.persona.position.add(this.worldOffset.position)
+      const ray = new BABYLON.Ray(origin, new BABYLON.Vector3(0, -1, 0), 2)
+      const hit = this.scene.pickWithRay(ray, (e) => e.checkCollisions, true)
+      if (hit?.hit) {
+        this.setFlying(false)
+        clearInterval(id)
+      }
+    }, 100)
   }
 
   /// POINTERLOCK

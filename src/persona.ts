@@ -66,7 +66,9 @@ export default class Persona {
           this.avatar?.disposeLocalAndRemote()
           this.avatar = avatar
           this.avatar.nametag = false
-          this.avatar.load()
+          await this.avatar.load()
+          // AvatarLoad may have fired before this finished and skipped loadCostume because !isLoaded(). Catch up now.
+          this.avatar.attachmentManager?.loadCostume()
         } else {
           avatar.disposeLocalAndRemote()
         }

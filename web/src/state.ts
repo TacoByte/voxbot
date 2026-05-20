@@ -119,7 +119,6 @@ export class Appstate extends State {
     return VOXELS_TEAM.includes(this.state.wallet?.toLowerCase() ?? '')
   }
 
-
   get hasMetamask(): boolean {
     return !!window.ethereum && window.ethereum?.isMetaMask
   }
@@ -155,7 +154,7 @@ export class Appstate extends State {
       }
       if (msg.type == 'reconnect') {
         this.loadAvatar()
-          ; (window as any).connector?.reconnect()
+        ;(window as any).connector?.reconnect()
       }
     }
   }
@@ -379,6 +378,10 @@ export class Appstate extends State {
 
     if (jwtKey) {
       await this.setKey(jwtKey)
+      // setKey only sets wallet/key; we still need to fetch name + costume + settings
+      if (this.signedIn) {
+        await this.loadAvatar()
+      }
     } else {
       // clean name if we dont have a JWT
       this.setState({ name: undefined })
