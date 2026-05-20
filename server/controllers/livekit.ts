@@ -16,44 +16,48 @@ export default async function LivekitController(db: Db, passport: PassportStatic
   const emptyTimeout = 10 * 60
   const maxParticipants = 69
 
-  // get rooms
   let rooms = await svc.listRooms()
 
   async function refresh() {
     rooms = await svc.listRooms()
   }
 
-  // Redis: pub for writes/publishes, sub for receiving fan-out
-  const pub = createClient({ url: process.env.REDIS_URL })
-  const sub = pub.duplicate()
-  await Promise.all([pub.connect(), sub.connect()])
-
   // SSE clients connected to this process
   const sseClients = new Set<any>()
 
-  sub.subscribe(CHANNEL, (msg) => {
-    const line = `data: ${msg}\n\n`
-    sseClients.forEach((r) => {
-      try {
-        r.write(line)
-      } catch {}
-    })
-  })
+  // Redis is optional - thumbnail/SSE features degrade gracefully if unavailable
+  let pub: ReturnType<typeof createClient> | null = null
 
-  // Prune entries that haven't sent a thumbnail in >12s (handles crashes)
-  setInterval(async () => {
-    const all = await pub.hGetAll(HASH)
-    const cutoff = Date.now() - 12000
-    for (const [key, val] of Object.entries(all)) {
-      try {
-        const entry = JSON.parse(val)
-        if (entry.ts < cutoff) {
-          await pub.hDel(HASH, key)
-          pub.publish(CHANNEL, JSON.stringify({ type: 'remove', parcel: key }))
+  ;(async () => {
+    try {
+      const client = createClient({ url: process.env.REDIS_URL })
+      const sub = client.duplicate()
+      await Promise.all([client.connect(), sub.connect()])
+      pub = client
+
+      sub.subscribe(CHANNEL, (msg) => {
+        const line = `data: ${msg}\n\n`
+        sseClients.forEach((r) => { try { r.write(line) } catch {} })
+      })
+
+      // Prune stale entries (broadcaster crashed without sending null)
+      setInterval(async () => {
+        const all = await client.hGetAll(HASH)
+        const cutoff = Date.now() - 12000
+        for (const [key, val] of Object.entries(all)) {
+          try {
+            const entry = JSON.parse(val)
+            if (entry.ts < cutoff) {
+              await client.hDel(HASH, key)
+              client.publish(CHANNEL, JSON.stringify({ type: 'remove', parcel: key }))
+            }
+          } catch {}
         }
-      } catch {}
+      }, 10000)
+    } catch (e) {
+      console.error('LiveKit: Redis unavailable, thumbnail/SSE features disabled', e)
     }
-  }, 10000)
+  })()
 
   app.get('/api/rooms', (req, res) => {
     res.json({ success, rooms })
@@ -61,63 +65,40 @@ export default async function LivekitController(db: Db, passport: PassportStatic
 
   app.get('/api/rooms/:name', async (req, res) => {
     const name = req.params.name.toString()
-
     if (!name.match(/^[a-z0-9-]{1,32}$/)) {
-      res.status(401).send({ error: 'Invalid room name' })
+      res.status(400).send({ error: 'Invalid room name' })
       return
     }
-
-    const room = rooms.find((r) => r.name == req.param.name)
-
+    const room = rooms.find((r) => r.name === name)
     if (!room) {
       res.status(404).send({ error: 'Room not found' })
       return
     }
-
     res.json({ success, room })
   })
 
-  // passport.authenticate('jwt', { session: false }),
   app.get('/api/rooms/:name/token', cache(false), async (req, res) => {
     const wallet = req.user ? (req.user as Express.User & { wallet: string }).wallet : `anon-${Math.random().toString(36).slice(2)}`
 
     const name = req.params.name.toString()
-
     if (!name.match(/^[a-z0-9-]{1,32}$/)) {
-      res.status(401).send({ error: 'Invalid room name' })
+      res.status(400).send({ error: 'Invalid room name' })
       return
     }
 
-    let room = rooms.find((r) => r.name == req.param.name)
-
+    let room = rooms.find((r) => r.name === name)
     if (!room) {
-      const opts = {
-        name,
-        emptyTimeout,
-        maxParticipants,
-      }
-      room = await svc.createRoom(opts)
+      room = await svc.createRoom({ name, emptyTimeout, maxParticipants })
       refresh()
     }
 
-    const identity = wallet
-
-    const at = new AccessToken(process.env.LIVEKIT_API_KEY, process.env.LIVEKIT_API_SECRET, {
-      identity,
-    })
-
-    at.addGrant({
-      roomJoin: true,
-      room: name,
-      canPublish: true,
-      canSubscribe: true,
-    })
-
-    const token = at.toJwt()
-    res.json({ success, room, token })
+    const at = new AccessToken(process.env.LIVEKIT_API_KEY, process.env.LIVEKIT_API_SECRET, { identity: wallet })
+    at.addGrant({ roomJoin: true, room: name, canPublish: true, canSubscribe: true })
+    res.json({ success, room, token: at.toJwt() })
   })
 
   app.post('/api/rooms/:name/thumbnail', async (req, res) => {
+    if (!pub) { res.json({ success }); return }
     const name = req.params.name.toString()
     const { avatar, thumbnail } = req.body ?? {}
 
@@ -139,17 +120,13 @@ export default async function LivekitController(db: Db, passport: PassportStatic
     res.setHeader('Connection', 'keep-alive')
     res.flushHeaders()
 
-    const all = await pub.hGetAll(HASH)
-    const entries = Object.values(all)
-      .map((v) => {
-        try {
-          return JSON.parse(v)
-        } catch {
-          return null
-        }
-      })
-      .filter(Boolean)
-    res.write(`data: ${JSON.stringify({ type: 'snapshot', entries })}\n\n`)
+    if (pub) {
+      const all = await pub.hGetAll(HASH)
+      const entries = Object.values(all).map((v) => { try { return JSON.parse(v) } catch { return null } }).filter(Boolean)
+      res.write(`data: ${JSON.stringify({ type: 'snapshot', entries })}\n\n`)
+    } else {
+      res.write(`data: ${JSON.stringify({ type: 'snapshot', entries: [] })}\n\n`)
+    }
 
     sseClients.add(res)
     req.on('close', () => sseClients.delete(res))
