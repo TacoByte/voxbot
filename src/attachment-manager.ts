@@ -124,7 +124,8 @@ export class AvatarAttachmentManager {
     if (!this.skeleton) {
       return
     }
-    const index = this.skeleton.getBoneIndexByName(`mixamorig:${name}`)
+    const boneName = this.skeleton.bones.find((b) => b.name.toLowerCase() === `mixamorig:${name}`.toLowerCase())?.name ?? name
+    const index = this.skeleton.getBoneIndexByName(boneName)
 
     if (index == -1) {
       console.log(`Bad bone name ${name}`)
