@@ -1,6 +1,7 @@
 import { decode as decodeAlias, DecodeError, Decoder, encode as encodeAlias, Encoder, ExtensionCodec } from '@msgpack/msgpack'
 import { parse, stringify } from 'uuid'
 import { compressQuaternion, decompressQuaternion, Quaternion } from './utils'
+import type { AvatarRef } from './avatar-ref'
 
 export { Emotes } from './constant'
 
@@ -8,6 +9,7 @@ export { Emotes } from './constant'
 export type AvatarIdentity = {
   name: string | null
   wallet: string | null
+  costumeId?: number
 }
 
 const extensionCodec = new ExtensionCodec()
@@ -184,10 +186,10 @@ export const MetricEncoder = encoderCreator<MetricMessage>()
 
 export type ChatMessage = {
   type: MessageType.chat
-  channel: string
-  name: string
-  uuid: string
+  id: string // uuidv7, server-generated
+  uuid: string // sender client uuid
   text: string
+  avatar?: AvatarRef
 }
 
 export const ChatEncoder = encoderCreator<ChatMessage>()
@@ -206,6 +208,7 @@ export type CreateAvatarMessage = {
   description: {
     name?: string
     wallet?: string
+    costumeId?: number
   }
 }
 export const CreateAvatarEncoder = encoderCreator<CreateAvatarMessage>()
@@ -253,7 +256,7 @@ export const EmoteEncoder = encoderCreator<AvatarEmoteMessage>()
 export type NewCostumeMessage = {
   type: MessageType.newCostume
   uuid: string
-  cacheKey: number
+  costumeId: number | null
 }
 
 export const NewCostumeEncoder = encoderCreator<NewCostumeMessage>()

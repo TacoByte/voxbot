@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'preact/hooks'
 import { isMobile } from '../../../common/helpers/detector'
 import { Emojis, replaceEmojiText, replaceEmoticonsAndEmojiText } from '../../../common/helpers/emojis'
 import { Emotes } from '../../../common/messages/constant'
+import { avatarName } from '../../../common/messages/avatar-ref'
 import { PanelType } from '../../../web/src/components/panel'
 import { app } from '../../../web/src/state'
 import Avatar from '../../avatar'
@@ -71,8 +72,9 @@ export class ChatOverlay extends Component<Props, State> {
 
   render() {
     const name = (m: ChatMessageRecord) => {
+      if (m.avatarRef) return avatarName(m.avatarRef)
       const avatar = m.avatar ? window.connector.findAvatar(m.avatar) : null
-      return avatar?.description?.name || avatar?.description?.wallet?.substring(0, 10) || m.name || 'anon'
+      return avatar?.name || 'anon'
     }
 
     return (

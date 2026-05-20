@@ -58,6 +58,7 @@ export interface RequestArguments {
 class State extends EventEmitter {
   state: StateObject
   stateLoadedCallbacks: Array<(state: StateObject) => void> = []
+  avatarRef: AvatarRef = 'anon'
 
   constructor() {
     super()
@@ -118,6 +119,7 @@ export class Appstate extends State {
     return VOXELS_TEAM.includes(this.state.wallet?.toLowerCase() ?? '')
   }
 
+
   get hasMetamask(): boolean {
     return !!window.ethereum && window.ethereum?.isMetaMask
   }
@@ -153,7 +155,7 @@ export class Appstate extends State {
       }
       if (msg.type == 'reconnect') {
         this.loadAvatar()
-        ;(window as any).connector?.reconnect()
+          ; (window as any).connector?.reconnect()
       }
     }
   }
@@ -197,6 +199,8 @@ export class Appstate extends State {
         console.debug('Signin, ', resultPing)
         return this.signout()
       }
+
+      await this.loadAvatar()
     } catch (e) {
       console.debug('Signin error, ', e)
       this.signout()
@@ -289,6 +293,10 @@ export class Appstate extends State {
     const moderator = (data.avatar && data.avatar.moderator) || false
     const costume = (data.avatar && data.avatar.costume) || {}
     const settings = (data.avatar && data.avatar.settings) || {}
+
+    if (data.avatar?.id) {
+      this.avatarRef = { id: data.avatar.id, name: data.avatar.name!, owner: data.avatar.owner, created_at: data.avatar.created_at! }
+    }
 
     this.setState({ name, moderator, costume, settings, loading: false })
     this.emit(AppEvent.AvatarLoad)

@@ -1,4 +1,5 @@
 import { v7 as uuid } from 'uuid'
+import type { AvatarRef } from '../common/messages/avatar-ref'
 import * as messages from '../common/messages'
 import { MessageType } from '../common/messages'
 import { PanelType } from '../web/src/components/panel'
@@ -57,7 +58,7 @@ const AVATAR_DISPOSE_DELAY_MS = 10_000
 
 export type ChatMessageRecord = Readonly<{
   avatar: Avatar['uuid'] | undefined
-  name?: string
+  avatarRef?: AvatarRef
   text: string
   timestamp: number
 }>
@@ -66,9 +67,6 @@ export const messageList = signal<ChatMessageRecord[]>([])
 
 /** Bumped when conga follow starts/stops so UI (e.g. chat hint) re-renders. */
 export const congaFollowUiRev = signal(0)
-
-const LOCAL_CHANNEL = 'local' as const
-const GLOBAL_CHANNEL = 'global' as const
 
 export default class Connector extends TypedEventTarget<{ avatar_joined: string }> {
   readonly onConnectionStateChanged: BABYLON.Observable<ConnectionState> = new BABYLON.Observable()
@@ -620,11 +618,11 @@ export default class Connector extends TypedEventTarget<{ avatar_joined: string 
     this.send(message)
   }
 
-  sendRefreshCostume(cacheKey: number) {
+  sendChangeCostume(costumeId: number) {
     const message: messages.NewCostumeMessage = {
       type: messages.MessageType.newCostume,
       uuid: this.persona.uuid,
-      cacheKey,
+      costumeId,
     }
 
     this.send(message)
@@ -683,8 +681,8 @@ export default class Connector extends TypedEventTarget<{ avatar_joined: string 
       case messages.MessageType.avatarChanged:
         this.onAvatarChanged(msg)
         break
+      case messages.MessageType.loginComplete:
       case messages.MessageType.point:
-        // to be nerfed
         break
       default: {
         // const _never: never = msg
@@ -715,17 +713,10 @@ export default class Connector extends TypedEventTarget<{ avatar_joined: string 
     return null
   }
 
-  onChat(message: messages.ChatMessage, messageTimestamp = Date.now(), deliverQuietly = false) {
-    // avatar might not exist if they are in a space, or have disconnected etc
+  onChat(message: messages.ChatMessage) {
     const avatar = this._avatarsByUuid.get(message.uuid)
-
-    if (!avatar) {
-      console.warn('Cannot find avatar')
-      return
-    }
-
-    avatar.addChat(message.text)
-    this.addChat(message.text, avatar)
+    avatar?.addChat(message.text)
+    this.addChat(message.text, avatar, message.avatar)
   }
 
   onEmoteMessage(message: messages.AvatarEmoteMessage) {
@@ -748,8 +739,7 @@ export default class Connector extends TypedEventTarget<{ avatar_joined: string 
       return
     }
 
-    // send the cacheKey we received to synchronize new loading (and not smash the server with random key)
-    avatar.attachmentManager?.refreshCostume(message.cacheKey)
+    avatar.attachmentManager?.changeCostume(message.costumeId ?? 0)
     avatar.recordSeen()
   }
 
@@ -775,7 +765,7 @@ export default class Connector extends TypedEventTarget<{ avatar_joined: string 
     // Show speech bubble?
     this.persona.avatar?.addChat(text)
 
-    this.addChat(text, this.persona.avatar)
+    this.addChat(text, this.persona.avatar, app.avatarRef ?? app.state.wallet ?? undefined)
 
     // For scripting purposes:
     // const parcel = this.currentParcel()
@@ -785,8 +775,7 @@ export default class Connector extends TypedEventTarget<{ avatar_joined: string 
 
     const message: messages.ChatMessage = {
       type: messages.MessageType.chat,
-      channel: LOCAL_CHANNEL,
-      name: this.persona.user.name,
+      id: '',
       uuid: this.persona.uuid,
       text,
     }
@@ -869,8 +858,7 @@ export default class Connector extends TypedEventTarget<{ avatar_joined: string 
         const location = parcel?.name || parcel?.address || 'the world'
         const announcement: messages.ChatMessage = {
           type: messages.MessageType.chat,
-          channel: GLOBAL_CHANNEL,
-          name: this.persona.user.name,
+          id: '',
           uuid: this.persona.uuid,
           text: entityEncode(`Started a conga line at ${location}. Use /conga ${this.persona.user.name} to join from anywhere, or tap Join. [[conga:${this.persona.uuid}]]`),
         }
@@ -879,10 +867,11 @@ export default class Connector extends TypedEventTarget<{ avatar_joined: string 
     }
   }
 
-  private addChat(message: string, avatar: Avatar | undefined) {
+  private addChat(message: string, avatar: Avatar | undefined, avatarRef?: AvatarRef) {
     const list = messageList.value.slice()
     list.push({
       avatar: avatar?.uuid,
+      avatarRef,
       text: message,
       timestamp: Date.now(),
     })
