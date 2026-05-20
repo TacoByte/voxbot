@@ -109,14 +109,16 @@ export default function EventsEdit(props: Props) {
             <small>Search for a voxels parcel, or paste a link from oncyber, substrata, somniumspace, hyperfy, resonite, overte, decentraland</small>
           </div>
           {error && <p>{error}</p>}
-          <button type="submit" disabled={saving || !name.trim() || !startsAt}>
-            {saving ? 'Saving...' : 'Save'}
-          </button>
+
+          <div class="f">
+            <button type="submit" disabled={saving || !name.trim() || !startsAt}>
+              {saving ? 'Saving...' : 'Save'}
+            </button>
+            or
+            <button onClick={onDelete}>Delete</button>
+          </div>
         </form>
       </article>
-      <aside>
-        <button onClick={onDelete}>Delete</button>
-      </aside>
     </section>
   )
 }

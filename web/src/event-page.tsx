@@ -115,6 +115,7 @@ export default class EventPage extends Component<Props, State> {
     const description = this.state.event.description
 
     const isMod = app.state?.moderator || this.helper.isOwner
+    const canEdit = this.helper.canEdit && (this.helper.isOwner || isMod) && this.state.event?.id
 
     return (
       <section class="columns nav">
@@ -129,6 +130,14 @@ export default class EventPage extends Component<Props, State> {
             <a class="buttonish" href={this.visitUrl}>
               Visit
             </a>
+
+            {canEdit && (
+              <>
+                <a class="buttonish" href={`/events/${this.state.event.id}/edit`}>
+                  Edit event
+                </a>
+              </>
+            )}
           </figcaption>
 
           <figure class="shortie">
@@ -162,24 +171,6 @@ export default class EventPage extends Component<Props, State> {
                 {this.helper.isLive ? 'Join' : 'Visit'}
               </a>
             </dd>
-
-            {!this.helper.isInPast && (
-              <div>
-                {this.helper.isOwner && <a href={`/events/${this.state.event.id}/edit`}>Edit event</a>}
-                {isMod && this.state.event?.id && (
-                  <button
-                    onClick={() => {
-                      if (!this.state.event?.id) return
-                      removeEvent(this.state.event?.id, () => {
-                        this.redirect('/')
-                      })
-                    }}
-                  >
-                    Remove event
-                  </button>
-                )}
-              </div>
-            )}
           </dl>
         </aside>
       </section>

@@ -79,6 +79,13 @@ img {
 
 // Button style
 
+button {
+  cursor: pointer;
+
+  &:hover {
+    background: #f3f3f3;
+  }
+}
 button.iconish {
   font-family: 'Press Start 2P', monospace;
   font-size: 10px;
@@ -101,6 +108,7 @@ a.buttonish {
   font-family: inherit;
   color: black;
   text-decoration: none;
+  padding: 0.2rem 0.5rem;
 
   &[disabled] {
     color: #0004;
@@ -499,7 +507,7 @@ table {
     // ...
   }
 
-  tr:first-child td {
+  tr:last-child td {
     border-bottom: none;
   }
 }
@@ -789,6 +797,10 @@ div.f {
   }
 
   button {
+    margin: 0 0.5rem;
+  }
+  button:first-child {
+    margin-left: 0;
   }
 
   input[type='text'],
