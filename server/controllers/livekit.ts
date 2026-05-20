@@ -8,12 +8,16 @@ import authParcel from '../auth-parcel'
 import Parcel from '../parcel'
 import { loadGuestPass } from './guest-passes'
 import { VoxelsUser } from '../user'
+import { orderLiveStrip } from '../../common/helpers/utils'
 
 const success = true
 const CHANNEL = 'live:updates'
 const HASH = 'live:thumbnails'
 
 export const livekitService = new RoomServiceClient('https://voxels-7pvk06qt.livekit.cloud', process.env.LIVEKIT_API_KEY, process.env.LIVEKIT_API_SECRET)
+function roomViewers(rooms: { name: string; numParticipants?: number }[], room: string): number {
+  return rooms.find((r) => r.name === room)?.numParticipants ?? 0
+}
 
 export default async function LivekitController(db: Db, passport: PassportStatic, app: Express) {
   const svc = livekitService
@@ -35,6 +39,39 @@ export default async function LivekitController(db: Db, passport: PassportStatic
     } catch (e) {
       console.error('LiveKit: listRooms failed', e)
     }
+  }
+
+  async function loadOrderedLiveEntries() {
+    await refresh()
+    if (!pub) return []
+    const all = await pub.hGetAll(HASH)
+    const entries = Object.values(all)
+      .map((v) => {
+        try {
+          return JSON.parse(v)
+        } catch {
+          return null
+        }
+      })
+      .filter(Boolean)
+      .map((entry: any) => ({
+        ...entry,
+        viewers: roomViewers(rooms, entry.room),
+      }))
+    return orderLiveStrip(entries)
+  }
+
+  function pushSnapshot() {
+    loadOrderedLiveEntries()
+      .then((entries) => {
+        const line = `data: ${JSON.stringify({ type: 'snapshot', entries })}\n\n`
+        sseClients.forEach((r) => {
+          try {
+            r.write(line)
+          } catch {}
+        })
+      })
+      .catch(console.error)
   }
 
   // SSE clients connected to this process
@@ -72,6 +109,8 @@ export default async function LivekitController(db: Db, passport: PassportStatic
             }
           } catch {}
         }
+        // Re-rank strip every prune tick: fresh viewer counts + new random discovery slots.
+        pushSnapshot()
       }, 10000)
     } catch (e) {
       console.error('LiveKit: Redis unavailable, thumbnail/SSE features disabled', e)
@@ -154,9 +193,11 @@ export default async function LivekitController(db: Db, passport: PassportStatic
       await pub.hDel(HASH, name)
       pub.publish(CHANNEL, JSON.stringify({ type: 'remove', parcel: name }))
     } else {
-      const entry = { room: name, parcel, coord, avatar, thumbnail, ts: Date.now() }
+      await refresh()
+      const viewers = roomViewers(rooms, name)
+      const entry = { room: name, parcel, coord, avatar, thumbnail, ts: Date.now(), viewers }
       await pub.hSet(HASH, name, JSON.stringify(entry))
-      pub.publish(CHANNEL, JSON.stringify({ type: 'update', room: name, parcel, coord, avatar, thumbnail }))
+      pub.publish(CHANNEL, JSON.stringify({ type: 'update', room: name, parcel, coord, avatar, thumbnail, viewers, ts: entry.ts }))
     }
 
     res.json({ success })
@@ -169,16 +210,7 @@ export default async function LivekitController(db: Db, passport: PassportStatic
     res.flushHeaders()
 
     if (pub) {
-      const all = await pub.hGetAll(HASH)
-      const entries = Object.values(all)
-        .map((v) => {
-          try {
-            return JSON.parse(v)
-          } catch {
-            return null
-          }
-        })
-        .filter(Boolean)
+      const entries = await loadOrderedLiveEntries()
       res.write(`data: ${JSON.stringify({ type: 'snapshot', entries })}\n\n`)
     } else {
       res.write(`data: ${JSON.stringify({ type: 'snapshot', entries: [] })}\n\n`)

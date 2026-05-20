@@ -1,7 +1,7 @@
 import { Component, Fragment } from 'preact'
 import { useEffect, useRef, useState } from 'preact/hooks'
 import { avatarName } from '../../common/messages/avatar-ref'
-import { jitterCoord } from '../../common/helpers/utils'
+import { jitterCoord, orderLiveStrip } from '../../common/helpers/utils'
 import { currentVersion } from '../../common/version'
 import { Event } from '../../common/messages/event'
 import Head from './components/head'
@@ -26,7 +26,7 @@ type RESummary = {
 }
 
 type LiveParcel = { id: number; name?: string; address: string }
-type LiveEntry = { room: string; parcel: LiveParcel; coord?: string; avatar: any; thumbnail: string }
+type LiveEntry = { room: string; parcel: LiveParcel; coord?: string; avatar: any; thumbnail: string; viewers?: number; ts?: number }
 
 function LiveSection() {
   const [streams, setStreams] = useState<Map<string, LiveEntry>>(new Map())
@@ -41,7 +41,7 @@ function LiveSection() {
         const next = new Map(prev)
         if (msg.type === 'snapshot') msg.entries.forEach((s: LiveEntry) => next.set(s.room, s))
         else if (msg.type === 'remove') next.delete(msg.parcel)
-        else next.set(msg.room, msg as LiveEntry)
+        else next.set(msg.room, { ...next.get(msg.room), ...msg } as LiveEntry)
         return next
       })
     }
@@ -50,12 +50,14 @@ function LiveSection() {
 
   if (streams.size === 0) return <p>no one is live right now</p>
 
+  const ordered = orderLiveStrip([...streams.values()])
+
   return (
     <ul class="live-streams">
-      {[...streams.values()].map((s) => (
+      {ordered.map((s) => (
         <li key={s.room}>
           <a href={s.coord ? `/play?coords=${jitterCoord(s.coord)}` : `/parcels/${s.parcel.id}`}>
-            <img src={s.thumbnail} width="128" height="72" alt="" />
+            <img loading="lazy" src={s.thumbnail} alt="" />
             <span>{s.parcel.name || s.parcel.address}</span>
             <small>{avatarName(s.avatar)}</small>
           </a>
@@ -132,7 +134,7 @@ function EventsList() {
           return (
             <tr key={e.id}>
               <td>
-                <a href={`/events/${e.id}`}>{e.name.length > 18 ? e.name.slice(0, 17) + '...' : e.name}</a>
+                <a href={`/events/${e.id}`}>{e.name}</a>
               </td>
               <td>{startsIn > 0 ? countdown(startsIn) : live ? 'live' : 'ended'}</td>
             </tr>
@@ -160,36 +162,41 @@ export default class Explore extends Component<any, Props> {
 
   render() {
     return (
-      <section class="columns">
-        <article>
-          <Head title="" url={'/'}>
-            <Fragment>
-              <link rel="prefetch" href={getClientPath(currentVersion)} />
-              <link rel="prefetch" href="/api/parcels/cached.json" />
-              <link rel="prefetch" href="/api/parcels/map.json" />
-            </Fragment>
-          </Head>
+      <Fragment>
+        <Head title="" url={'/'}>
+          <Fragment>
+            <link rel="prefetch" href={getClientPath(currentVersion)} />
+            <link rel="prefetch" href="/api/parcels/cached.json" />
+            <link rel="prefetch" href="/api/parcels/map.json" />
+          </Fragment>
+        </Head>
+
+        <section class="live-hero">
           <h3>Live</h3>
           <LiveSection />
+        </section>
 
-          <h3>Womps</h3>
-          <WompsList numberToShow={20} collapsed={false} fetch="/womps.json" womps={this.props.womps ?? undefined} ttl={600} />
-        </article>
+        <section class="columns">
+          <article>
+            <h3>Womps</h3>
+            <WompsList numberToShow={20} collapsed={false} fetch="/womps.json" womps={this.props.womps ?? undefined} ttl={600} />
+          </article>
 
-        <aside>
-          <h3>Events</h3>
-          <EventsList />
+          <aside>
+            <h3>Events</h3>
+            <EventsList />
 
-          <p>
-            <a class="buttonish" href="/events/new">
-              New Event
-            </a>
-          </p>
+            <p>
+              <a class="buttonish" href="/events/new">
+                New Event
+              </a>
+            </p>
 
-          <h3>Popular</h3>
-          <PopularParcels />
-        </aside>
-      </section>
+            <h3>Popular</h3>
+            <PopularParcels />
+          </aside>
+        </section>
+      </Fragment>
     )
   }
 }
