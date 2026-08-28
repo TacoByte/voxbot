@@ -45,6 +45,7 @@ export default class RobotMode {
   private floor: number
   private pose: Pose | null = null
   private colliders = new Map<string, Box[]>()
+  private robotRoot: BABYLON.TransformNode | null = null
   private robot: BABYLON.TransformNode[] = []
   private headMeshes: BABYLON.AbstractMesh[] = []
   private auto = false
@@ -57,8 +58,6 @@ export default class RobotMode {
   private facing = BABYLON.Vector3.Zero()
   private head = BABYLON.Vector3.Zero()
   private offset = BABYLON.Vector3.Zero()
-  private rotated = BABYLON.Vector3.Zero()
-  private rotation = BABYLON.Quaternion.Identity()
 
   constructor(
     private scene: BABYLON.Scene,
@@ -190,14 +189,15 @@ export default class RobotMode {
     this.auto = true
     this.marker.position.copyFrom(point).addInPlaceFromFloats(0, 0.05, 0)
     this.marker.setEnabled(true)
-    this.socket.send(JSON.stringify({ type: 'target', target: [point.x - this.origin.x, this.origin.z - point.z] }))
+    this.socket.send(JSON.stringify({ type: 'target', target: [this.origin.x - point.x, this.origin.z - point.z] }))
   }
 
   private sendInput() {
     if (this.socket?.readyState !== WebSocket.OPEN || performance.now() - this.sentAt < 50) return
     const forward = Number(this.held.has('KeyW') || this.held.has('ArrowUp')) - Number(this.held.has('KeyS') || this.held.has('ArrowDown'))
-    const side = Number(this.held.has('KeyD') || this.held.has('ArrowRight')) - Number(this.held.has('KeyA') || this.held.has('ArrowLeft'))
-    const walking = forward !== 0 || side !== 0
+    const side = Number(this.held.has('KeyA') || this.held.has('ArrowLeft')) - Number(this.held.has('KeyD') || this.held.has('ArrowRight'))
+    const turn = Number(this.held.has('KeyQ')) - Number(this.held.has('KeyE'))
+    const walking = forward !== 0 || side !== 0 || turn !== 0
     const moving = walking || this.jump
     if (moving) {
       this.auto = false
@@ -206,7 +206,7 @@ export default class RobotMode {
     if (this.auto) return
     const flying = (this.controls as any).flying as boolean
     const lift = flying ? Number(this.held.has('Space') || this.held.has('PageUp')) - Number(this.held.has('KeyV') || this.held.has('PageDown')) : 0
-    this.socket.send(JSON.stringify({ type: 'command', move: [forward, side * 0.5, 0], jump: this.jump, fly: flying, lift }))
+    this.socket.send(JSON.stringify({ type: 'command', move: [forward, side * 0.5, turn], jump: this.jump, fly: flying, lift }))
     this.jump = false
     this.sentAt = performance.now()
   }
@@ -250,7 +250,7 @@ export default class RobotMode {
   private step() {
     if (!this.pose) return
     const body = (this.controls as any).body
-    body.position.set(this.origin.x + this.pose.root[0], this.origin.y + this.pose.root[2] - 0.8, this.origin.z - this.pose.root[1])
+    body.position.set(this.origin.x - this.pose.root[0], this.origin.y + this.pose.root[2] - 0.8, this.origin.z - this.pose.root[1])
     body.velocity?.setAll(0)
     const camera = (this.controls as any).camera
     ;(this.controls as any).move.setAll(0)
@@ -261,7 +261,7 @@ export default class RobotMode {
     this.moveRobot(this.pose.bodies)
     this.sendInput()
     ;(camera as any).place()
-    if ((this.controls as any).firstPersonView) camera.position.copyFrom(this.headPoint(this.pose.bodies))
+    if ((this.controls as any).firstPersonView) camera.position.copyFrom(this.headPoint())
     else camera.position.y -= 0.75
     for (const mesh of this.headMeshes) mesh.setEnabled(!(this.controls as any).firstPersonView)
     if (!this.pose.auto) this.marker.setEnabled(false)
@@ -270,12 +270,10 @@ export default class RobotMode {
   private async makeRobot() {
     const loaded = await BABYLON.SceneLoader.ImportMeshAsync(null, '/models/', 'g1.glb', this.scene)
     for (const mesh of loaded.meshes) mesh.isPickable = false
+    this.robotRoot = loaded.meshes.find((mesh) => mesh.name === '__root__')!
+    this.robotRoot.position.set(this.origin.x, this.floor, this.origin.z)
     const nodes = (loaded as any).transformNodes as BABYLON.TransformNode[]
     this.robot = ROBOT_BODIES.map((name) => nodes.find((node) => node.name === `g1:${name}`)!)
-    for (const node of this.robot) {
-      node.setParent(null)
-      node.scaling.setAll(1)
-    }
     this.headMeshes = this.robot[15].getChildMeshes()
   }
 
@@ -283,18 +281,15 @@ export default class RobotMode {
     if (bodies.length !== this.robot.length) return
     for (let i = 0; i < bodies.length; i++) {
       const pose = bodies[i]
-      this.robot[i].position.set(this.origin.x + pose[0], this.floor + pose[2], this.origin.z - pose[1])
+      this.robot[i].position.set(pose[0], pose[2], -pose[1])
       const rotation = (this.robot[i].rotationQuaternion ||= BABYLON.Quaternion.Identity())
       rotation.set(pose[3], pose[4], pose[5], pose[6])
     }
   }
 
-  private headPoint(bodies: number[][]) {
-    const torso = bodies[15]
-    this.head.set(this.origin.x + torso[0], this.floor + torso[2], this.origin.z - torso[1])
+  private headPoint() {
     this.offset.set(0, 0.34, 0)
-    this.rotation.set(torso[3], torso[4], torso[5], torso[6])
-    this.offset.rotateByQuaternionToRef(this.rotation, this.rotated)
-    return this.head.addInPlace(this.rotated)
+    BABYLON.Vector3.TransformCoordinatesToRef(this.offset, this.robot[15].computeWorldMatrix(true), this.head)
+    return this.head
   }
 }

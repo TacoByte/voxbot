@@ -49,6 +49,7 @@ KD = np.array([
     0.907, 0.907, 0.907, 0.907, 0.907, 1.068, 1.068,
 ], dtype=np.float32)
 BASIS = np.array([[1, 0, 0], [0, 0, -1], [0, 1, 0]], dtype=np.float64)
+WORLD_BASIS = np.array([[-1, 0, 0], [0, 0, -1], [0, 1, 0]], dtype=np.float64)
 
 
 def rotate(q, vector):
@@ -207,9 +208,9 @@ class Robot:
         for group in self.colliders.values():
             for box in group:
                 center = np.array(box[:3], dtype=np.float64) - np.array([self.origin[0], self.floor, self.origin[2]])
-                center = BASIS @ center
+                center = WORLD_BASIS @ center
                 half = np.array([box[3], box[5], box[4]], dtype=np.float64)
-                rotation = BASIS @ quat_matrix(box[6:10]) @ BASIS.T
+                rotation = WORLD_BASIS @ quat_matrix(box[6:10]) @ WORLD_BASIS.T
                 boxes.extend(split_box(center, half, matrix_quat(rotation)))
         self.boxes = boxes[:MAX_BOXES]
         self.nearBoxes()
@@ -270,9 +271,9 @@ class Robot:
         boxes = []
         offset = np.array([self.origin[0], self.floor, self.origin[2]])
         for _, center, half, quat in self.active_boxes:
-            world = BASIS.T @ center + offset
+            world = WORLD_BASIS.T @ center + offset
             rotation = quat_matrix([quat[1], quat[2], quat[3], quat[0]])
-            converted = matrix_quat(BASIS.T @ rotation @ BASIS)
+            converted = matrix_quat(WORLD_BASIS.T @ rotation @ WORLD_BASIS)
             boxes.append([
                 *world.tolist(), half[0], half[2], half[1],
                 float(converted[1]), float(converted[2]), float(converted[3]), float(converted[0]),
