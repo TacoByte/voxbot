@@ -248,8 +248,8 @@ export default class RobotMode {
   private sendInput() {
     if (this.socket?.readyState !== WebSocket.OPEN || performance.now() - this.sentAt < 50) return
     const forward = Number(this.held.has('KeyW') || this.held.has('ArrowUp')) - Number(this.held.has('KeyS') || this.held.has('ArrowDown'))
-    const side = Number(this.held.has('KeyA') || this.held.has('ArrowLeft')) - Number(this.held.has('KeyD') || this.held.has('ArrowRight'))
-    const turn = Number(this.held.has('KeyQ')) - Number(this.held.has('KeyE'))
+    const side = Number(this.held.has('KeyQ')) - Number(this.held.has('KeyE'))
+    const turn = Number(this.held.has('KeyA') || this.held.has('ArrowLeft')) - Number(this.held.has('KeyD') || this.held.has('ArrowRight'))
     const walking = forward !== 0 || side !== 0 || turn !== 0
     const moving = walking || this.jump
     if (moving) {

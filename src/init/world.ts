@@ -36,7 +36,7 @@ export const createWorld = async function (scene: BABYLON.Scene, canvas: HTMLCan
 
   const connector = initConnector(scene, controls, grid)
 
-  startGhosts(scene, grid, controls, connector)
+  if (!new URLSearchParams(location.search).has('robot')) startGhosts(scene, grid, controls, connector)
   startYeet(scene, controls, canvas)
 
   await grid.loadFastbootFromHTML()
