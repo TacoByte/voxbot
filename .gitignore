@@ -53,6 +53,7 @@ robot/vendor/
 robot/artifacts/
 robot/__pycache__/
 dist/models/g1.glb
+dist/models/macroduck.glb
 db/import.sql
 world.db
 parcels.ndjson

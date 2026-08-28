@@ -6,38 +6,8 @@ import type Grid from './grid'
 type Box = [number, number, number, number, number, number, number, number, number, number]
 type Pose = { type: 'pose'; root: number[]; bodies: number[][]; yaw: number; fallen: boolean; target: number[]; auto: boolean; colliders?: Box[] }
 
-const ROBOT_BODIES = [
-  'pelvis',
-  'left_hip_pitch_link',
-  'left_hip_roll_link',
-  'left_hip_yaw_link',
-  'left_knee_link',
-  'left_ankle_pitch_link',
-  'left_ankle_roll_link',
-  'right_hip_pitch_link',
-  'right_hip_roll_link',
-  'right_hip_yaw_link',
-  'right_knee_link',
-  'right_ankle_pitch_link',
-  'right_ankle_roll_link',
-  'waist_yaw_link',
-  'waist_roll_link',
-  'torso_link',
-  'left_shoulder_pitch_link',
-  'left_shoulder_roll_link',
-  'left_shoulder_yaw_link',
-  'left_elbow_link',
-  'left_wrist_roll_link',
-  'left_wrist_pitch_link',
-  'left_wrist_yaw_link',
-  'right_shoulder_pitch_link',
-  'right_shoulder_roll_link',
-  'right_shoulder_yaw_link',
-  'right_elbow_link',
-  'right_wrist_roll_link',
-  'right_wrist_pitch_link',
-  'right_wrist_yaw_link',
-]
+const ROBOT_BODIES = ['trunk_base', 'yaw2roll', 'hip_l', 'upper_leg_left', 'leg', 'ankle_left', 'neck', 'neck_pitch', 'yaw_roll_motion', 'jaw_soft', 'bearing_roll', 'hip_l_2', 'upper_leg_right', 'leg_2', 'ankle_right']
+const ROBOT_SCALE = 8
 
 export default class RobotMode {
   private socket: WebSocket | null = null
@@ -69,7 +39,7 @@ export default class RobotMode {
     this.origin = body.position.clone()
     this.floor = this.origin.y - 1.65
     ;(window as any).robotMode = this
-    ;(controls as any).enterThirdPerson()
+    ;(controls as any).enterThirdPerson(4)
     this.marker = this.makeMarker()
     this.debugMesh = this.makeBoxes()
     void this.makeRobot()
@@ -208,7 +178,7 @@ export default class RobotMode {
     const error = walking ? Math.atan2(Math.sin(delta), Math.cos(delta)) : 0
     const flying = (this.controls as any).flying as boolean
     const lift = flying ? Number(this.held.has('Space') || this.held.has('PageUp')) - Number(this.held.has('KeyV') || this.held.has('PageDown')) : 0
-    this.socket.send(JSON.stringify({ type: 'command', move: [forward, side * 0.5, Math.max(-1, Math.min(1, error * 1.5))], jump: this.jump, fly: flying, lift }))
+    this.socket.send(JSON.stringify({ type: 'command', move: [forward, side, Math.max(-1, Math.min(1, error * 1.5))], jump: this.jump, fly: flying, lift }))
     this.jump = false
     this.sentAt = performance.now()
   }
@@ -252,7 +222,7 @@ export default class RobotMode {
   private step() {
     if (!this.pose) return
     const body = (this.controls as any).body
-    body.position.set(this.origin.x + this.pose.root[0], this.origin.y + this.pose.root[2] - 0.8, this.origin.z - this.pose.root[1])
+    body.position.set(this.origin.x + this.pose.root[0], this.origin.y + Math.max(this.pose.root[2] - 1, 0), this.origin.z - this.pose.root[1])
     body.velocity?.setAll(0)
     const camera = (this.controls as any).camera
     ;(this.controls as any).move.setAll(0)
@@ -264,21 +234,21 @@ export default class RobotMode {
     this.sendInput(camera)
     ;(camera as any).place()
     if ((this.controls as any).firstPersonView) camera.position.copyFrom(this.headPoint(this.pose.bodies))
-    else camera.position.y -= 0.75
+    else camera.position.y -= 0.65
     for (const mesh of this.headMeshes) mesh.setEnabled(!(this.controls as any).firstPersonView)
     if (!this.pose.auto) this.marker.setEnabled(false)
   }
 
   private async makeRobot() {
-    const loaded = await BABYLON.SceneLoader.ImportMeshAsync(null, '/models/', 'g1.glb', this.scene)
+    const loaded = await BABYLON.SceneLoader.ImportMeshAsync(null, '/models/', 'macroduck.glb', this.scene)
     for (const mesh of loaded.meshes) mesh.isPickable = false
     const nodes = (loaded as any).transformNodes as BABYLON.TransformNode[]
-    this.robot = ROBOT_BODIES.map((name) => nodes.find((node) => node.name === `g1:${name}`)!)
+    this.robot = ROBOT_BODIES.map((name) => nodes.find((node) => node.name === `macroduck:${name}`)!)
     for (const node of this.robot) {
       node.setParent(null)
-      node.scaling.setAll(1)
+      node.scaling.setAll(ROBOT_SCALE)
     }
-    this.headMeshes = this.robot[15].getChildMeshes()
+    this.headMeshes = this.robot[9].getChildMeshes()
   }
 
   private moveRobot(bodies: number[][]) {
@@ -292,10 +262,10 @@ export default class RobotMode {
   }
 
   private headPoint(bodies: number[][]) {
-    const torso = bodies[15]
-    this.head.set(this.origin.x + torso[0], this.floor + torso[2], this.origin.z - torso[1])
-    this.offset.set(0, 0.34, 0)
-    this.rotation.set(torso[3], torso[4], torso[5], torso[6])
+    const head = bodies[9]
+    this.head.set(this.origin.x + head[0], this.floor + head[2], this.origin.z - head[1])
+    this.offset.set(0.12, -0.59, 0)
+    this.rotation.set(head[3], head[4], head[5], head[6])
     this.offset.rotateByQuaternionToRef(this.rotation, this.rotated)
     return this.head.addInPlace(this.rotated)
   }
