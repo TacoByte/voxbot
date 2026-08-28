@@ -49,7 +49,14 @@ DUCK_DEFAULT = np.array([
     0.3491, 0.3491, 0, 0,
     0, 0.0873, 0.4579, 0.0049, -0.453,
 ], dtype=np.float32)
-G1_DEFAULT = np.array([
+VANILLA_DEFAULT = np.array([
+    -0.1, 0, 0, 0.3, -0.2, 0,
+    -0.1, 0, 0, 0.3, -0.2, 0,
+    0, 0, 0,
+    0.35, 0.18, 0, 0.87, 0, 0, 0,
+    0.35, -0.18, 0, 0.87, 0, 0, 0,
+], dtype=np.float32)
+HANDOFF_DEFAULT = np.array([
     -0.312, 0, 0, 0.669, -0.363, 0,
     -0.312, 0, 0, 0.669, -0.363, 0,
     0, 0, 0,
@@ -188,7 +195,7 @@ class Robot:
         self.root_height = 0.117 if self.duck else 0.310053 if self.toddler else 0.8
         self.cell = 0.5 * self.sim_scale
         self.box_slots = [(size * self.sim_scale, count) for size, count in BOX_COUNTS]
-        self.default = DUCK_DEFAULT if self.duck else TODDLER_DEFAULT if self.toddler else G1_DEFAULT
+        self.default = DUCK_DEFAULT if self.duck else TODDLER_DEFAULT if self.toddler else VANILLA_DEFAULT if self.g1_mode == "vanilla" else HANDOFF_DEFAULT
         if self.duck:
             model_path, policy_path = DUCK_MODEL, DUCK_POLICY
         elif self.toddler:
@@ -887,7 +894,7 @@ class Robot:
         proprio = np.concatenate([
             self.bodyVelocity(self.pelvis) * 0.25,
             [roll, pitch],
-            self.data.qpos[7:] - self.default,
+            self.data.qpos[7:] - HANDOFF_DEFAULT,
             self.data.qvel[6:] * HANDOFF_VEL_SCALE,
             self.handoff_last,
         ]).astype(np.float32)
@@ -901,7 +908,7 @@ class Robot:
         obs = np.concatenate([current, self.handoff_history.ravel()])[None]
         action = self.handoff_policy.run(None, {self.handoff_policy.get_inputs()[0].name: obs})[0][0]
         self.handoff_last[:] = action
-        return self.default + G1_SCALE * action
+        return HANDOFF_DEFAULT + G1_SCALE * action
 
     def g1Step(self):
         if np.linalg.norm(self.data.qpos[:3] - self.collision_pos) > 0.5:

@@ -7,6 +7,7 @@ type Box = [number, number, number, number, number, number, number, number, numb
 type Pose = { type: 'pose'; root: number[]; bodies: number[][]; yaw: number; fallen: boolean; target: number[]; auto: boolean; model?: G1Model; colliders?: Box[]; depth?: string; depthSize?: number[] }
 type RobotKind = 'g1' | 'duck' | 'toddler'
 type G1Model = 'vanilla' | 'hiking' | 'parkour'
+type CameraMode = 'third' | 'first' | 'free'
 type RobotInfo = { file: string; prefix: string; bodies: string[]; scale: number; head: number; headOffset: [number, number, number]; camera?: number; cameraOffset: number }
 
 const ROBOTS: Record<RobotKind, RobotInfo> = {
@@ -140,6 +141,12 @@ export default class RobotMode {
   private kind: RobotKind
   private info: RobotInfo
   private g1Model: G1Model
+  private cameraMode: CameraMode = 'third'
+  private freeFlying = false
+  private freeNoclip = false
+  private keys = new AbortController()
+  private renderObserver: any = null
+  private stopped = false
   private depthCanvas = document.createElement('canvas')
   private depthImage: ImageData
 
@@ -148,6 +155,7 @@ export default class RobotMode {
     private controls: Controls,
     private grid: Grid,
   ) {
+    ;(window as any).robotMode?.stop?.()
     const query = new URLSearchParams(location.search)
     const kind = query.get('robot')
     this.kind = kind === 'duck' || kind === 'toddler' ? kind : 'g1'
@@ -168,8 +176,8 @@ export default class RobotMode {
     this.marker = this.makeMarker()
     this.debugMesh = this.makeBoxes()
     void this.makeRobot()
-    document.addEventListener('keydown', (event) => this.keyDown(event), true)
-    document.addEventListener('keyup', (event) => this.keyUp(event), true)
+    document.addEventListener('keydown', (event) => this.keyDown(event), { capture: true, signal: this.keys.signal })
+    document.addEventListener('keyup', (event) => this.keyUp(event), { capture: true, signal: this.keys.signal })
     for (const parcel of grid.parcels.values()) this.parcelAdd(parcel)
     for (const mesh of scene.meshes) if ((mesh as any).robotCollider) this.voxAdd(mesh.name, mesh)
     const terrain = (window as any).environment?.terrain
@@ -179,7 +187,25 @@ export default class RobotMode {
     const oceanHalf = oceanFloor?.mesh.getBoundingInfo().boundingBox.extendSize.x
     for (const mesh of oceanFloor?.getInstances() || []) this.oceanAdd(mesh.name.slice('ocean_floor_i_'.length).replace('_', '-'), mesh.position, oceanHalf)
     this.connect()
-    scene.onBeforeRenderObservable.add(() => this.step())
+    this.renderObserver = scene.onBeforeRenderObservable.add(() => this.step())
+  }
+
+  stop() {
+    this.stopped = true
+    this.keys.abort()
+    if (this.renderObserver) this.scene.onBeforeRenderObservable.remove(this.renderObserver)
+    this.renderObserver = null
+    const socket = this.socket
+    this.socket = null
+    socket?.close()
+    if (this.cameraMode === 'free') {
+      ;(this.controls as any).setFlying(this.freeFlying)
+      ;(this.controls as any).setNoclip(this.freeNoclip)
+    }
+    this.depthCanvas.remove()
+    this.marker.dispose()
+    this.debugMesh.dispose()
+    this.robotRoot?.dispose()
   }
 
   parcelAdd(parcel: any) {
@@ -267,6 +293,7 @@ export default class RobotMode {
   }
 
   private connect() {
+    if (this.stopped) return
     if (this.socket?.readyState === WebSocket.OPEN || this.socket?.readyState === WebSocket.CONNECTING) return
     const socket = new WebSocket('ws://127.0.0.1:8765')
     this.socket = socket
@@ -300,7 +327,7 @@ export default class RobotMode {
   }
 
   private keyDown(event: KeyboardEvent) {
-    if (this.kind === 'g1' && !event.repeat && (event.code === 'ShiftLeft' || event.code === 'ShiftRight')) {
+    if (this.kind === 'g1' && this.cameraMode !== 'free' && !event.repeat && (event.code === 'ShiftLeft' || event.code === 'ShiftRight')) {
       event.preventDefault()
       event.stopImmediatePropagation()
       this.held.add(event.code)
@@ -342,7 +369,7 @@ export default class RobotMode {
     if (!event.repeat && (event.code === 'KeyC' || event.code === 'KeyF')) {
       event.preventDefault()
       event.stopImmediatePropagation()
-      if (event.code === 'KeyC') (this.controls as any).togglePerspective()
+      if (event.code === 'KeyC') this.cycleCamera()
       else (this.controls as any).toggleFlying()
       return
     }
@@ -366,7 +393,7 @@ export default class RobotMode {
 
   private keyUp(event: KeyboardEvent) {
     this.held.delete(event.code)
-    if (this.kind !== 'g1' || (event.code !== 'ShiftLeft' && event.code !== 'ShiftRight')) return
+    if (this.kind !== 'g1' || this.cameraMode === 'free' || (event.code !== 'ShiftLeft' && event.code !== 'ShiftRight')) return
     event.preventDefault()
     event.stopImmediatePropagation()
     if (!this.held.has('ShiftLeft') && !this.held.has('ShiftRight')) this.setModel('vanilla')
@@ -379,11 +406,34 @@ export default class RobotMode {
     console.info(`g1 model: ${model}`)
   }
 
+  private cycleCamera() {
+    const controls = this.controls as any
+    if (this.cameraMode === 'third') {
+      this.cameraMode = 'first'
+      controls.enterFirstPerson()
+    } else if (this.cameraMode === 'first') {
+      this.cameraMode = 'free'
+      this.freeFlying = controls.flying
+      this.freeNoclip = controls.body.noclip
+      controls.body.position.copyFrom(controls.camera.position)
+      controls.setFlying(true)
+      controls.setNoclip(true)
+      this.setModel('vanilla')
+    } else {
+      this.cameraMode = 'third'
+      controls.setFlying(this.freeFlying)
+      controls.setNoclip(this.freeNoclip)
+      controls.enterThirdPerson()
+    }
+    console.info(`robot camera: ${this.cameraMode}`)
+  }
+
   private sendInput() {
     if (this.socket?.readyState !== WebSocket.OPEN || performance.now() - this.sentAt < 50) return
-    const forward = Number(this.held.has('KeyW') || this.held.has('ArrowUp')) - Number(this.held.has('KeyS') || this.held.has('ArrowDown'))
-    const side = this.kind === 'duck' ? 0 : Number(this.held.has('KeyQ')) - Number(this.held.has('KeyE'))
-    const turn = Number(this.held.has('KeyA') || this.held.has('ArrowLeft')) - Number(this.held.has('KeyD') || this.held.has('ArrowRight'))
+    const attached = this.cameraMode !== 'free'
+    const forward = attached ? Number(this.held.has('KeyW') || this.held.has('ArrowUp')) - Number(this.held.has('KeyS') || this.held.has('ArrowDown')) : 0
+    const side = attached && this.kind !== 'duck' ? Number(this.held.has('KeyQ')) - Number(this.held.has('KeyE')) : 0
+    const turn = attached ? Number(this.held.has('KeyA') || this.held.has('ArrowLeft')) - Number(this.held.has('KeyD') || this.held.has('ArrowRight')) : 0
     const walking = forward !== 0 || side !== 0 || turn !== 0
     const moving = walking || this.jump
     if (moving) {
@@ -391,10 +441,10 @@ export default class RobotMode {
       this.marker.setEnabled(false)
     }
     if (this.auto) return
-    const flying = (this.controls as any).flying as boolean
+    const flying = attached && ((this.controls as any).flying as boolean)
     const lift = flying ? Number(this.held.has('Space') || this.held.has('PageUp')) - Number(this.held.has('KeyV') || this.held.has('PageDown')) : 0
     const move = this.kind === 'duck' ? [forward, turn, 0] : [forward, side * 0.5, turn]
-    this.socket.send(JSON.stringify({ type: 'command', move, jump: this.jump, fly: flying, lift }))
+    this.socket.send(JSON.stringify({ type: 'command', move, jump: attached && this.jump, fly: flying, lift }))
     this.jump = false
     this.sentAt = performance.now()
   }
@@ -439,27 +489,33 @@ export default class RobotMode {
     if (!this.pose) return
     const body = (this.controls as any).body
     const height = this.kind === 'duck' ? Math.max(this.pose.root[2] - 1, 0) : this.pose.root[2] - (this.kind === 'toddler' ? 0.620106 : 0.8)
-    body.position.set(this.origin.x - this.pose.root[0], this.origin.y + height, this.origin.z - this.pose.root[1])
+    const free = this.cameraMode === 'free'
+    if (!free) body.position.set(this.origin.x - this.pose.root[0], this.origin.y + height, this.origin.z - this.pose.root[1])
     this.islandStep(body.position)
-    body.velocity?.setAll(0)
+    if (!free) body.velocity?.setAll(0)
     const camera = (this.controls as any).camera
-    ;(this.controls as any).move.setAll(0)
+    if (!free) (this.controls as any).move.setAll(0)
+    else (this.controls as any).move.y += Number(this.held.has('Space') || this.held.has('PageUp')) - Number(this.held.has('KeyV') || this.held.has('PageDown'))
     this.facing.set(0, this.pose.yaw + Math.PI / 2, 0)
-    ;(this.controls as any).persona.update(body.position, this.facing, this.controls)
+    if (!free) (this.controls as any).persona.update(body.position, this.facing, this.controls)
     const avatar = (this.controls as any).persona.avatar
     avatar?.avatarMesh?.setEnabled(false)
     this.moveRobot(this.pose.bodies)
     this.sendInput()
     ;(camera as any).place()
-    const firstPerson = (this.controls as any).firstPersonView
+    const firstPerson = this.cameraMode === 'first'
     this.depthCanvas.hidden = this.kind !== 'g1' || this.g1Model === 'vanilla' || !firstPerson
     if (firstPerson) camera.position.copyFrom(this.headPoint())
-    else camera.position.y -= this.info.cameraOffset
+    else if (!free) camera.position.y -= this.info.cameraOffset
     for (const mesh of this.headMeshes) mesh.setEnabled(!firstPerson)
   }
 
   private async makeRobot() {
     const loaded = await BABYLON.SceneLoader.ImportMeshAsync(null, '/models/', this.info.file, this.scene)
+    if (this.stopped) {
+      loaded.meshes[0]?.dispose()
+      return
+    }
     for (const mesh of loaded.meshes) mesh.isPickable = false
     this.robotRoot = loaded.meshes.find((mesh) => mesh.name === '__root__')!
     this.robotRoot.position.set(this.origin.x, this.floor, this.origin.z)
