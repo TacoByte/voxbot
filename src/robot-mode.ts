@@ -5,39 +5,61 @@ import type Grid from './grid'
 
 type Box = [number, number, number, number, number, number, number, number, number, number]
 type Pose = { type: 'pose'; root: number[]; bodies: number[][]; yaw: number; fallen: boolean; target: number[]; auto: boolean; colliders?: Box[] }
+type RobotKind = 'g1' | 'duck'
+type RobotInfo = { file: string; prefix: string; bodies: string[]; scale: number; head: number; headOffset: [number, number, number]; camera?: number; cameraOffset: number }
 
-const ROBOT_BODIES = [
-  'pelvis',
-  'left_hip_pitch_link',
-  'left_hip_roll_link',
-  'left_hip_yaw_link',
-  'left_knee_link',
-  'left_ankle_pitch_link',
-  'left_ankle_roll_link',
-  'right_hip_pitch_link',
-  'right_hip_roll_link',
-  'right_hip_yaw_link',
-  'right_knee_link',
-  'right_ankle_pitch_link',
-  'right_ankle_roll_link',
-  'waist_yaw_link',
-  'waist_roll_link',
-  'torso_link',
-  'left_shoulder_pitch_link',
-  'left_shoulder_roll_link',
-  'left_shoulder_yaw_link',
-  'left_elbow_link',
-  'left_wrist_roll_link',
-  'left_wrist_pitch_link',
-  'left_wrist_yaw_link',
-  'right_shoulder_pitch_link',
-  'right_shoulder_roll_link',
-  'right_shoulder_yaw_link',
-  'right_elbow_link',
-  'right_wrist_roll_link',
-  'right_wrist_pitch_link',
-  'right_wrist_yaw_link',
-]
+const ROBOTS: Record<RobotKind, RobotInfo> = {
+  g1: {
+    file: 'g1.glb',
+    prefix: 'g1',
+    bodies: [
+      'pelvis',
+      'left_hip_pitch_link',
+      'left_hip_roll_link',
+      'left_hip_yaw_link',
+      'left_knee_link',
+      'left_ankle_pitch_link',
+      'left_ankle_roll_link',
+      'right_hip_pitch_link',
+      'right_hip_roll_link',
+      'right_hip_yaw_link',
+      'right_knee_link',
+      'right_ankle_pitch_link',
+      'right_ankle_roll_link',
+      'waist_yaw_link',
+      'waist_roll_link',
+      'torso_link',
+      'left_shoulder_pitch_link',
+      'left_shoulder_roll_link',
+      'left_shoulder_yaw_link',
+      'left_elbow_link',
+      'left_wrist_roll_link',
+      'left_wrist_pitch_link',
+      'left_wrist_yaw_link',
+      'right_shoulder_pitch_link',
+      'right_shoulder_roll_link',
+      'right_shoulder_yaw_link',
+      'right_elbow_link',
+      'right_wrist_roll_link',
+      'right_wrist_pitch_link',
+      'right_wrist_yaw_link',
+    ],
+    scale: 1,
+    head: 15,
+    headOffset: [0, 0.34, 0],
+    cameraOffset: 0.75,
+  },
+  duck: {
+    file: 'macroduck.glb',
+    prefix: 'macroduck',
+    bodies: ['trunk_base', 'yaw2roll', 'hip_l', 'upper_leg_left', 'leg', 'ankle_left', 'neck', 'neck_pitch', 'yaw_roll_motion', 'jaw_soft', 'bearing_roll', 'hip_l_2', 'upper_leg_right', 'leg_2', 'ankle_right'],
+    scale: 8,
+    head: 9,
+    headOffset: [0.12 / 8, -0.59 / 8, 0],
+    camera: 4,
+    cameraOffset: 0.65,
+  },
+}
 
 export default class RobotMode {
   private socket: WebSocket | null = null
@@ -59,17 +81,22 @@ export default class RobotMode {
   private facing = BABYLON.Vector3.Zero()
   private head = BABYLON.Vector3.Zero()
   private offset = BABYLON.Vector3.Zero()
+  private kind: RobotKind
+  private info: RobotInfo
 
   constructor(
     private scene: BABYLON.Scene,
     private controls: Controls,
     private grid: Grid,
   ) {
+    this.kind = new URLSearchParams(location.search).get('robot') === 'duck' ? 'duck' : 'g1'
+    this.info = ROBOTS[this.kind]
     const body = (controls as any).body
     this.origin = body.position.clone()
     this.floor = this.origin.y - 1.65
     ;(window as any).robotMode = this
-    ;(controls as any).enterThirdPerson()
+    if (this.info.camera) (controls as any).enterThirdPerson(this.info.camera)
+    else (controls as any).enterThirdPerson()
     this.marker = this.makeMarker()
     this.debugMesh = this.makeBoxes()
     void this.makeRobot()
@@ -176,7 +203,7 @@ export default class RobotMode {
     const socket = new WebSocket('ws://127.0.0.1:8765')
     this.socket = socket
     socket.onopen = () => {
-      socket.send(JSON.stringify({ type: 'hello', origin: this.origin.asArray(), floor: this.floor }))
+      socket.send(JSON.stringify({ type: 'hello', robot: this.kind, origin: this.origin.asArray(), floor: this.floor }))
       for (const [id, boxes] of this.colliders) socket.send(JSON.stringify({ type: 'collider', id, boxes }))
     }
     socket.onmessage = (event) => {
@@ -204,6 +231,14 @@ export default class RobotMode {
   }
 
   private keyDown(event: KeyboardEvent) {
+    if (!event.repeat && event.code === 'KeyB') {
+      event.preventDefault()
+      event.stopImmediatePropagation()
+      const query = new URLSearchParams(location.search)
+      query.set('robot', this.kind === 'g1' ? 'duck' : 'g1')
+      location.search = query.toString()
+      return
+    }
     if (!event.repeat && event.code === 'KeyH') {
       event.preventDefault()
       event.stopImmediatePropagation()
@@ -218,6 +253,14 @@ export default class RobotMode {
       this.auto = false
       this.marker.setEnabled(false)
       if (this.socket?.readyState === WebSocket.OPEN) this.socket.send(JSON.stringify({ type: 'respawn' }))
+      return
+    }
+    if (this.kind === 'duck' && !event.repeat && event.code === 'KeyX') {
+      event.preventDefault()
+      event.stopImmediatePropagation()
+      this.auto = false
+      this.marker.setEnabled(false)
+      if (this.socket?.readyState === WebSocket.OPEN) this.socket.send(JSON.stringify({ type: 'roulade' }))
       return
     }
     if (!event.repeat && (event.code === 'KeyC' || event.code === 'KeyF')) {
@@ -248,7 +291,7 @@ export default class RobotMode {
   private sendInput() {
     if (this.socket?.readyState !== WebSocket.OPEN || performance.now() - this.sentAt < 50) return
     const forward = Number(this.held.has('KeyW') || this.held.has('ArrowUp')) - Number(this.held.has('KeyS') || this.held.has('ArrowDown'))
-    const side = Number(this.held.has('KeyQ')) - Number(this.held.has('KeyE'))
+    const side = this.kind === 'g1' ? Number(this.held.has('KeyQ')) - Number(this.held.has('KeyE')) : 0
     const turn = Number(this.held.has('KeyA') || this.held.has('ArrowLeft')) - Number(this.held.has('KeyD') || this.held.has('ArrowRight'))
     const walking = forward !== 0 || side !== 0 || turn !== 0
     const moving = walking || this.jump
@@ -259,7 +302,8 @@ export default class RobotMode {
     if (this.auto) return
     const flying = (this.controls as any).flying as boolean
     const lift = flying ? Number(this.held.has('Space') || this.held.has('PageUp')) - Number(this.held.has('KeyV') || this.held.has('PageDown')) : 0
-    this.socket.send(JSON.stringify({ type: 'command', move: [forward, side * 0.5, turn], jump: this.jump, fly: flying, lift }))
+    const move = this.kind === 'g1' ? [forward, side * 0.5, turn] : [forward, turn, 0]
+    this.socket.send(JSON.stringify({ type: 'command', move, jump: this.jump, fly: flying, lift }))
     this.jump = false
     this.sentAt = performance.now()
   }
@@ -303,7 +347,8 @@ export default class RobotMode {
   private step() {
     if (!this.pose) return
     const body = (this.controls as any).body
-    body.position.set(this.origin.x - this.pose.root[0], this.origin.y + this.pose.root[2] - 0.8, this.origin.z - this.pose.root[1])
+    const height = this.kind === 'duck' ? Math.max(this.pose.root[2] - 1, 0) : this.pose.root[2] - 0.8
+    body.position.set(this.origin.x - this.pose.root[0], this.origin.y + height, this.origin.z - this.pose.root[1])
     this.islandStep(body.position)
     body.velocity?.setAll(0)
     const camera = (this.controls as any).camera
@@ -316,18 +361,24 @@ export default class RobotMode {
     this.sendInput()
     ;(camera as any).place()
     if ((this.controls as any).firstPersonView) camera.position.copyFrom(this.headPoint())
-    else camera.position.y -= 0.75
+    else camera.position.y -= this.info.cameraOffset
     for (const mesh of this.headMeshes) mesh.setEnabled(!(this.controls as any).firstPersonView)
   }
 
   private async makeRobot() {
-    const loaded = await BABYLON.SceneLoader.ImportMeshAsync(null, '/models/', 'g1.glb', this.scene)
+    const loaded = await BABYLON.SceneLoader.ImportMeshAsync(null, '/models/', this.info.file, this.scene)
     for (const mesh of loaded.meshes) mesh.isPickable = false
     this.robotRoot = loaded.meshes.find((mesh) => mesh.name === '__root__')!
     this.robotRoot.position.set(this.origin.x, this.floor, this.origin.z)
     const nodes = (loaded as any).transformNodes as BABYLON.TransformNode[]
-    this.robot = ROBOT_BODIES.map((name) => nodes.find((node) => node.name === `g1:${name}`)!)
-    this.headMeshes = this.robot[15].getChildMeshes()
+    this.robot = this.info.bodies.map((name) => nodes.find((node) => node.name === `${this.info.prefix}:${name}`)!)
+    if (this.info.scale !== 1) {
+      for (const node of this.robot) {
+        node.setParent(this.robotRoot)
+        node.scaling.setAll(this.info.scale)
+      }
+    }
+    this.headMeshes = this.robot[this.info.head].getChildMeshes()
   }
 
   private moveRobot(bodies: number[][]) {
@@ -341,8 +392,8 @@ export default class RobotMode {
   }
 
   private headPoint() {
-    this.offset.set(0, 0.34, 0)
-    BABYLON.Vector3.TransformCoordinatesToRef(this.offset, this.robot[15].computeWorldMatrix(true), this.head)
+    this.offset.set(...this.info.headOffset)
+    BABYLON.Vector3.TransformCoordinatesToRef(this.offset, this.robot[this.info.head].computeWorldMatrix(true), this.head)
     return this.head
   }
 }

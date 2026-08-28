@@ -13,35 +13,45 @@ import websockets
 
 ROOT = Path(__file__).resolve().parent
 UNITREE = ROOT / "vendor" / "unitree_rl_mjlab"
-MODEL = UNITREE / "src" / "assets" / "robots" / "unitree_g1" / "xmls" / "scene_g1.xml"
-POLICY = UNITREE / "deploy" / "robots" / "g1" / "config" / "policy" / "velocity" / "v0" / "exported" / "policy.onnx"
+MICRODUCK = ROOT / "vendor" / "microduck_rl"
+RUNTIME = ROOT / "vendor" / "microduck"
+G1_MODEL = UNITREE / "src" / "assets" / "robots" / "unitree_g1" / "xmls" / "scene_g1.xml"
+G1_POLICY = UNITREE / "deploy" / "robots" / "g1" / "config" / "policy" / "velocity" / "v0" / "exported" / "policy.onnx"
+DUCK_MODEL = MICRODUCK / "src" / "mjlab_microduck" / "robot" / "microduck" / "scene.xml"
+DUCK_POLICY = RUNTIME / "policies" / "alpha_walking.onnx"
+DUCK_RECOVERY = RUNTIME / "policies" / "alpha_stand.onnx"
+DUCK_ROULADE = RUNTIME / "policies" / "roulade.onnx"
 MAX_BOXES = 20000
 ACTIVE_BOXES = 1500
-CELL = 0.5
-BOX_SLOTS = [(0.25, 900), (0.5, 300), (1, 150), (2, 75), (4, 45), (8, 22), (16, 8)]
+BOX_COUNTS = ((0.25, 900), (0.5, 300), (1, 150), (2, 75), (4, 45), (8, 22), (16, 8))
 
-DEFAULT = np.array([
+DUCK_DEFAULT = np.array([
+    0, -0.0873, -0.4579, -0.0049, 0.453,
+    0.3491, 0.3491, 0, 0,
+    0, 0.0873, 0.4579, 0.0049, -0.453,
+], dtype=np.float32)
+G1_DEFAULT = np.array([
     -0.1, 0, 0, 0.3, -0.2, 0,
     -0.1, 0, 0, 0.3, -0.2, 0,
     0, 0, 0,
     0.35, 0.18, 0, 0.87, 0, 0, 0,
     0.35, -0.18, 0, 0.87, 0, 0, 0,
 ], dtype=np.float32)
-SCALE = np.array([
+G1_SCALE = np.array([
     0.548, 0.351, 0.548, 0.351, 0.439, 0.439,
     0.548, 0.351, 0.548, 0.351, 0.439, 0.439,
     0.548, 0.439, 0.439,
     0.439, 0.439, 0.439, 0.439, 0.439, 0.075, 0.075,
     0.439, 0.439, 0.439, 0.439, 0.439, 0.075, 0.075,
 ], dtype=np.float32)
-KP = np.array([
+G1_KP = np.array([
     40.179, 99.098, 40.179, 99.098, 28.501, 28.501,
     40.179, 99.098, 40.179, 99.098, 28.501, 28.501,
     40.179, 28.501, 28.501,
     14.251, 14.251, 14.251, 14.251, 14.251, 16.778, 16.778,
     14.251, 14.251, 14.251, 14.251, 14.251, 16.778, 16.778,
 ], dtype=np.float32)
-KD = np.array([
+G1_KD = np.array([
     2.558, 6.309, 2.558, 6.309, 1.814, 1.814,
     2.558, 6.309, 2.558, 6.309, 1.814, 1.814,
     2.558, 1.814, 1.814,
@@ -72,8 +82,7 @@ def matrix_quat(matrix):
     return quat
 
 
-def split_box(center, half, quat):
-    limit = BOX_SLOTS[-1][0]
+def split_box(center, half, quat, limit):
     counts = np.maximum(np.ceil(half / limit).astype(int), 1)
     if np.all(counts == 1):
         return [(center, half, quat)]
@@ -89,16 +98,29 @@ def split_box(center, half, quat):
 
 
 class Robot:
-    def __init__(self):
-        if not MODEL.exists() or not POLICY.exists():
+    def __init__(self, kind):
+        self.kind = kind
+        self.duck = kind == "duck"
+        self.game_scale = 8.0 if self.duck else 1.0
+        self.sim_scale = 1 / self.game_scale
+        self.root_height = 0.117 if self.duck else 0.8
+        self.cell = 0.5 * self.sim_scale
+        self.box_slots = [(size * self.sim_scale, count) for size, count in BOX_COUNTS]
+        self.default = DUCK_DEFAULT if self.duck else G1_DEFAULT
+        model_path = DUCK_MODEL if self.duck else G1_MODEL
+        policy_path = DUCK_POLICY if self.duck else G1_POLICY
+        required = [model_path, policy_path]
+        if self.duck:
+            required.extend([DUCK_RECOVERY, DUCK_ROULADE])
+        if not all(path.exists() for path in required):
             raise SystemExit("Run robot/setup.sh first")
-        spec = mujoco.MjSpec.from_file(str(MODEL))
+        spec = mujoco.MjSpec.from_file(str(model_path))
         self.robot_count = len(spec.bodies) - 1
         spec.memory = 128 * 1024 * 1024
         island_body = spec.worldbody.add_body(name="voxbot-island-body", mocap=True, pos=[0, 0, -100])
         island_body.add_geom(name="voxbot-island", type=mujoco.mjtGeom.mjGEOM_BOX, size=[256, 256, 32], contype=2, conaffinity=1)
         slot_sizes = []
-        for limit, count in BOX_SLOTS:
+        for limit, count in self.box_slots:
             for _ in range(count):
                 index = len(slot_sizes)
                 body = spec.worldbody.add_body(name=f"voxbot-body-{index}", mocap=True, pos=[0, 0, -100])
@@ -111,6 +133,8 @@ class Robot:
                 )
                 slot_sizes.append(limit)
         self.model = spec.compile()
+        if self.duck:
+            self.model.opt.timestep = 0.005
         self.model.opt.enableflags |= int(mujoco.mjtEnableBit.mjENBL_MULTICCD)
         self.floor_geom = self.model.geom("floor").id
         self.floor_contact = (self.model.geom_contype[self.floor_geom], self.model.geom_conaffinity[self.floor_geom])
@@ -120,8 +144,16 @@ class Robot:
         self.geom_ids = np.array([self.model.geom(f"voxbot-{index}").id for index in range(ACTIVE_BOXES)])
         self.mocap_ids = self.model.body_mocapid[self.model.geom_bodyid[self.geom_ids]]
         self.slot_sizes = np.array(slot_sizes)
-        self.slot_groups = [np.where(self.slot_sizes == limit)[0].tolist() for limit, _ in BOX_SLOTS]
-        self.policy = ort.InferenceSession(str(POLICY), providers=["CPUExecutionProvider"])
+        self.slot_groups = [np.where(self.slot_sizes == limit)[0].tolist() for limit, _ in self.box_slots]
+        self.policy = ort.InferenceSession(str(policy_path), providers=["CPUExecutionProvider"])
+        self.policy_input = self.policy.get_inputs()[0].name
+        self.recovery_policy = ort.InferenceSession(str(DUCK_RECOVERY), providers=["CPUExecutionProvider"]) if self.duck else None
+        self.roulade_policy = ort.InferenceSession(str(DUCK_ROULADE), providers=["CPUExecutionProvider"]) if self.duck else None
+        if self.duck:
+            self.joint_qpos = np.array([self.model.jnt_qposadr[self.model.actuator_trnid[index, 0]] for index in range(self.model.nu)])
+            self.joint_qvel = np.array([self.model.jnt_dofadr[self.model.actuator_trnid[index, 0]] for index in range(self.model.nu)])
+            self.imu = self.model.sensor("imu_ang_vel").id
+            self.trunk = self.model.body("trunk_base").id
         self.client = None
         self.origin = np.zeros(3)
         self.floor = 0.0
@@ -138,8 +170,8 @@ class Robot:
         self.debug = False
         self.debug_dirty = False
         self.collision_pos = np.array([float("inf"), float("inf"), float("inf")])
-        self.last = np.zeros(29, dtype=np.float32)
-        self.target_q = DEFAULT.copy()
+        self.last = np.zeros(14 if self.duck else 29, dtype=np.float32)
+        self.target_q = self.default.copy()
         self.phase = 0.0
         self.path = []
         self.target = np.array([4.0, 0.0])
@@ -153,23 +185,40 @@ class Robot:
         self.best = float("inf")
         self.progress_at = 0.0
         self.fallen_at = None
-        self.safe = np.zeros(7 + 29)
-        self.safe[2] = 0.8
+        self.fall_steps = 0
+        self.recovery = None
+        self.recovery_steps = 0
+        self.upright_steps = 0
+        self.roulade_steps = 0
+        self.safe = np.zeros(self.model.nq)
+        self.safe[2] = self.root_height
         self.safe[3] = 1
-        self.safe[7:] = DEFAULT
+        if self.duck:
+            self.safe[self.joint_qpos] = self.default
+        else:
+            self.safe[7:] = self.default
         self.reset(self.safe)
 
     def reset(self, pose=None):
         mujoco.mj_resetData(self.model, self.data)
         self.data.qpos[:] = self.safe if pose is None else pose
-        self.data.qpos[2] = max(self.data.qpos[2], self.ground + 0.8)
+        self.data.qpos[2] = self.ground + self.root_height if self.duck else max(self.data.qpos[2], self.ground + self.root_height)
         self.data.qpos[3:7] = [1, 0, 0, 0]
-        self.data.qpos[7:] = DEFAULT
+        if self.duck:
+            self.data.qpos[self.joint_qpos] = self.default
+            self.data.ctrl[:] = self.default
+        else:
+            self.data.qpos[7:] = self.default
         self.data.qvel[:] = 0
         self.last[:] = 0
-        self.target_q[:] = DEFAULT
-        self.fallen_at = None
+        self.target_q[:] = self.default
         self.jump_until = 0.0
+        self.fallen_at = None
+        self.fall_steps = 0
+        self.recovery = None
+        self.recovery_steps = 0
+        self.upright_steps = 0
+        self.roulade_steps = 0
         self.placeBoxes()
         if self.island_box:
             center, _, quat = self.island_box
@@ -208,7 +257,10 @@ class Robot:
             self.auto = False
             self.path = []
         elif kind == "target":
-            self.set_target(np.array(message["target"], dtype=np.float64))
+            self.set_target(np.array(message["target"], dtype=np.float64) * self.sim_scale)
+        elif kind == "roulade" and self.duck and not self.fly and self.recovery is None:
+            self.roulade_steps = 50
+            print("macroduck rolling")
         elif kind == "debug":
             self.debug = bool(message.get("enabled"))
             self.debug_dirty = self.debug
@@ -224,14 +276,14 @@ class Robot:
         for name, group in self.colliders.items():
             for box in group:
                 center = np.array(box[:3], dtype=np.float64) - np.array([self.origin[0], self.floor, self.origin[2]])
-                center = WORLD_BASIS @ center
-                half = np.array([box[3], box[5], box[4]], dtype=np.float64)
+                center = WORLD_BASIS @ center * self.sim_scale
+                half = np.array([box[3], box[5], box[4]], dtype=np.float64) * self.sim_scale
                 rotation = WORLD_BASIS @ quat_matrix(box[6:10]) @ WORLD_BASIS.T
                 converted = (center, half, matrix_quat(rotation))
                 if name.startswith("island-") or name.startswith("ocean-"):
                     islands.append(converted)
                 else:
-                    boxes.extend(split_box(*converted))
+                    boxes.extend(split_box(*converted, self.box_slots[-1][0]))
         position = self.data.qpos[:2]
         islands = [(np.sum(np.maximum(np.abs(center[:2] - position) - half[:2], 0) ** 2), center, half, quat) for center, half, quat in islands]
         island = min(islands, default=None, key=lambda item: (item[0], -(item[1][2] + item[2][2])))
@@ -250,7 +302,7 @@ class Robot:
             self.island_box = None
             self.data.mocap_pos[self.island_mocap] = [0, 0, -100]
             self.model.geom_contype[self.floor_geom], self.model.geom_conaffinity[self.floor_geom] = self.floor_contact
-        if abs(ground - self.ground) < 0.5:
+        if abs(ground - self.ground) < 0.5 * self.sim_scale:
             self.data.qpos[2] += ground - self.ground
         self.ground = ground
         self.boxes = boxes[:MAX_BOXES]
@@ -268,12 +320,12 @@ class Robot:
         self.active_boxes = []
         placed = []
         position = self.data.qpos[:3]
-        robot_half = np.array([0.45, 0.45, 0.9])
-        physical = [box for box in self.boxes if box[0][2] + box[1][2] > 0.05 or box[1][2] > 0.5]
+        robot_half = np.array([0.45, 0.45, 0.9]) * self.sim_scale
+        physical = [box for box in self.boxes if box[0][2] + box[1][2] > 0.05 * self.sim_scale or box[1][2] > 0.5 * self.sim_scale]
         candidates = []
         for box in physical:
             distance = np.sum(np.maximum(np.abs(box[0] - position) - box[1] - robot_half, 0) ** 2)
-            group = next(index for index, (limit, _) in enumerate(BOX_SLOTS) if max(box[1]) <= limit)
+            group = next(index for index, (limit, _) in enumerate(self.box_slots) if max(box[1]) <= limit)
             candidates.append((distance, group, box))
         candidates.sort(key=lambda candidate: candidate[0])
 
@@ -286,13 +338,13 @@ class Robot:
             placed.append((center, half, quat))
 
         waiting = []
-        for group in reversed(range(len(BOX_SLOTS))):
+        for group in reversed(range(len(self.box_slots))):
             own = [candidate for candidate in candidates if candidate[1] == group]
             for candidate in own[:len(available[group])]:
                 place_box(candidate, group)
             waiting.extend(own[len(self.slot_groups[group]):])
         for candidate in sorted(waiting, key=lambda item: item[0]):
-            group = next((index for index in range(candidate[1], len(BOX_SLOTS)) if available[index]), None)
+            group = next((index for index in range(candidate[1], len(self.box_slots)) if available[index]), None)
             if group is None:
                 continue
             place_box(candidate, group)
@@ -312,11 +364,11 @@ class Robot:
         boxes = []
         offset = np.array([self.origin[0], self.floor, self.origin[2]])
         for _, center, half, quat in self.active_boxes:
-            world = WORLD_BASIS.T @ center + offset
+            world = WORLD_BASIS.T @ (center * self.game_scale) + offset
             rotation = quat_matrix([quat[1], quat[2], quat[3], quat[0]])
             converted = matrix_quat(WORLD_BASIS.T @ rotation @ WORLD_BASIS)
             boxes.append([
-                *world.tolist(), half[0], half[2], half[1],
+                *world.tolist(), half[0] * self.game_scale, half[2] * self.game_scale, half[1] * self.game_scale,
                 float(converted[1]), float(converted[2]), float(converted[3]), float(converted[0]),
             ])
         return boxes
@@ -326,17 +378,18 @@ class Robot:
         for center, half, _ in self.boxes:
             bottom = center[2] - half[2]
             top = center[2] + half[2]
-            if top <= 0.65 or bottom >= 1.3:
+            if top <= 0.65 * self.sim_scale or bottom >= 1.3 * self.sim_scale:
                 continue
-            x0 = math.floor((center[0] - half[0] - 0.22) / CELL)
-            x1 = math.ceil((center[0] + half[0] + 0.22) / CELL)
-            y0 = math.floor((center[1] - half[1] - 0.22) / CELL)
-            y1 = math.ceil((center[1] + half[1] + 0.22) / CELL)
+            radius = 0.22 * self.sim_scale
+            x0 = math.floor((center[0] - half[0] - radius) / self.cell)
+            x1 = math.ceil((center[0] + half[0] + radius) / self.cell)
+            y0 = math.floor((center[1] - half[1] - radius) / self.cell)
+            y1 = math.ceil((center[1] + half[1] + radius) / self.cell)
             for x in range(x0, x1 + 1):
                 for y in range(y0, y1 + 1):
                     blocked.add((x, y))
         self.blocked = blocked
-        if self.auto and any(tuple(np.floor(point / CELL).astype(int)) in blocked for point in self.path):
+        if self.auto and any(tuple(np.floor(point / self.cell).astype(int)) in blocked for point in self.path):
             self.set_target(self.target)
 
     def astar(self, start, goal):
@@ -365,7 +418,7 @@ class Robot:
         path = []
         current = goal
         while current != start:
-            path.append(np.array([(current[0] + 0.5) * CELL, (current[1] + 0.5) * CELL]))
+            path.append(np.array([(current[0] + 0.5) * self.cell, (current[1] + 0.5) * self.cell]))
             current = came[current]
         path.reverse()
         return path
@@ -374,17 +427,18 @@ class Robot:
         position = self.data.qpos[:2]
         delta = target - position
         distance = np.linalg.norm(delta)
-        segment = target if distance <= 10 else position + delta / distance * 10
-        start = tuple(np.floor(position / CELL).astype(int))
-        goal = tuple(np.floor(segment / CELL).astype(int))
+        reach = 10 * self.sim_scale
+        segment = target if distance <= reach else position + delta / distance * reach
+        start = tuple(np.floor(position / self.cell).astype(int))
+        goal = tuple(np.floor(segment / self.cell).astype(int))
         self.path = self.astar(start, goal)
-        if not self.path and distance > 0.65:
+        if not self.path and distance > 0.65 * self.sim_scale:
             self.path = [segment]
         self.target = target
         self.auto = bool(self.path)
         self.best = float("inf")
         self.progress_at = self.data.time
-        print(f"target: {self.target.round(2)} waypoints: {len(self.path)}")
+        print(f"{self.kind} target: {(self.target * self.game_scale).round(2)} waypoints: {len(self.path)}")
 
     def command(self):
         position = self.data.qpos[:2]
@@ -394,10 +448,10 @@ class Robot:
             if time.monotonic() - self.command_at > 0.25:
                 self.manual[:] = 0
             return self.manual.copy(), yaw
-        while self.path and np.linalg.norm(self.path[0] - position) < 0.65:
+        while self.path and np.linalg.norm(self.path[0] - position) < 0.65 * self.sim_scale:
             self.path.pop(0)
         if not self.path:
-            if np.linalg.norm(self.target - position) >= 0.65:
+            if np.linalg.norm(self.target - position) >= 0.65 * self.sim_scale:
                 self.set_target(self.target)
                 return np.zeros(3, dtype=np.float32), yaw
             self.auto = False
@@ -407,16 +461,19 @@ class Robot:
         desired = math.atan2(delta[1], delta[0])
         error = (desired - yaw + math.pi) % (2 * math.pi) - math.pi
         distance = np.linalg.norm(self.target - position)
-        if distance < self.best - 0.15:
+        if distance < self.best - 0.15 * self.sim_scale:
             self.best = distance
             self.progress_at = self.data.time
         if self.data.time - self.progress_at > 4:
             self.set_target(self.target)
             return np.zeros(3, dtype=np.float32), yaw
-        forward = 1.0 if abs(error) < 0.7 else 0.12
+        forward = 1.0 if abs(error) < 0.8 else 0.1
         return np.array([forward, 0, np.clip(error * 1.5, -1, 1)], dtype=np.float32), yaw
 
     def step(self):
+        return self.duckStep() if self.duck else self.g1Step()
+
+    def g1Step(self):
         if np.linalg.norm(self.data.qpos[:3] - self.collision_pos) > 0.5:
             self.nearBoxes()
         self.model.opt.gravity[2] = 0 if self.fly else -9.81
@@ -432,17 +489,17 @@ class Robot:
         if self.fallen_at is None:
             obs = np.concatenate([
                 self.data.sensor("imu_gyro").data.copy(), projected, command, gait,
-                self.data.qpos[7:] - DEFAULT, self.data.qvel[6:], self.last,
+                self.data.qpos[7:] - self.default, self.data.qvel[6:], self.last,
             ]).astype(np.float32)
-            self.last = self.policy.run(None, {"obs": obs[None]})[0][0]
-            self.target_q = DEFAULT + SCALE * self.last
+            self.last = self.policy.run(None, {self.policy_input: obs[None]})[0][0]
+            self.target_q = self.default + G1_SCALE * self.last
         for _ in range(round(0.02 / self.model.opt.timestep)):
             if self.fly:
                 self.data.qvel[2] = self.lift * 1.8
             elif self.data.time < self.jump_until:
                 self.data.qvel[3:5] *= 0.5
             if self.fallen_at is None:
-                self.data.ctrl[:] = KP * (self.target_q - self.data.qpos[7:]) - KD * self.data.qvel[6:]
+                self.data.ctrl[:] = G1_KP * (self.target_q - self.data.qpos[7:]) - G1_KD * self.data.qvel[6:]
             else:
                 self.data.ctrl[:] = np.clip(-0.2 * self.data.qvel[6:], -5, 5)
             mujoco.mj_step(self.model, self.data)
@@ -452,21 +509,94 @@ class Robot:
             self.safe[:] = self.data.qpos
         if fallen and self.fallen_at is None:
             self.fallen_at = self.data.time
-            print("robot fell")
+            print("g1 fell")
         if self.fallen_at is not None and self.data.time - self.fallen_at > 1.5:
-            print("robot respawned")
+            print("g1 respawned")
             self.reset()
             if self.auto:
                 self.set_target(self.target)
             fallen = False
+        return self.poseData(yaw, fallen)
 
+    def duckStep(self):
+        if np.linalg.norm(self.data.qpos[:3] - self.collision_pos) > 0.5 * self.sim_scale:
+            self.nearBoxes()
+        self.model.opt.gravity[2] = 0 if self.fly else -9.81
+        command, yaw = self.command()
+        self.jump = False
+        rolling = self.roulade_steps > 0
+        quat = self.data.xquat[self.trunk].copy()
+        projected = rotate(np.array([quat[0], -quat[1], -quat[2], -quat[3]]), np.array([0, 0, -1.0]))
+        policy_command = np.zeros(13, dtype=np.float32)
+        if self.recovery is None and not rolling:
+            policy_command[:3] = [command[0] * 0.4, 0, np.clip(command[2] + command[1], -1, 1)]
+        sensor_at = self.model.sensor_adr[self.imu]
+        obs = np.concatenate([
+            self.data.sensordata[sensor_at : sensor_at + 3], projected,
+            self.data.qpos[self.joint_qpos] - self.default, self.data.qvel[self.joint_qvel], self.last,
+            policy_command,
+        ]).astype(np.float32)
+        if self.recovery != "settle":
+            session = self.recovery_policy if self.recovery == "recover" else self.roulade_policy if rolling else self.policy
+            self.last = session.run(None, {self.policy_input: obs[None]})[0][0]
+            self.data.ctrl[:] = self.default + self.last
+        for _ in range(round(0.02 / self.model.opt.timestep)):
+            if self.fly:
+                self.data.qvel[2] = self.lift * 1.8 * self.sim_scale
+            mujoco.mj_step(self.model, self.data)
+
+        if rolling:
+            self.roulade_steps -= 1
+            if self.roulade_steps == 0:
+                print("macroduck rolled")
+
+        quat = self.data.xquat[self.trunk].copy()
+        projected = rotate(np.array([quat[0], -quat[1], -quat[2], -quat[3]]), np.array([0, 0, -1.0]))
+        fallen = not rolling and (projected[2] > -0.5 or self.data.qpos[2] - self.ground < 0.06)
+        if self.recovery is None and not rolling and not fallen and np.linalg.norm(self.data.qvel[:2]) < 0.5:
+            self.safe[:] = self.data.qpos
+        if self.recovery == "settle":
+            self.recovery_steps += 1
+            if self.recovery_steps >= 15:
+                self.recovery = "recover"
+                self.recovery_steps = 0
+                self.last[:] = 0
+        elif self.recovery == "recover":
+            self.recovery_steps += 1
+            self.upright_steps = self.upright_steps + 1 if projected[2] < -0.85 else 0
+            if self.upright_steps >= 50:
+                self.recovery = None
+                self.fallen_at = None
+                self.last[:] = 0
+                print("macroduck recovered")
+            elif self.recovery_steps >= 300:
+                print("macroduck respawned")
+                target = self.target.copy()
+                auto = self.auto
+                self.reset()
+                if auto:
+                    self.set_target(target)
+                fallen = False
+        elif fallen:
+            self.fall_steps += 1
+            if self.fall_steps >= 10:
+                self.fall_steps = 0
+                self.recovery = "settle"
+                self.recovery_steps = 0
+                self.fallen_at = self.data.time
+                print("macroduck fell")
+        else:
+            self.fall_steps = 0
+        return self.poseData(yaw, fallen)
+
+    def poseData(self, yaw, fallen):
         pose = {
             "type": "pose",
-            "root": self.data.qpos[:3].tolist(),
+            "root": (self.data.qpos[:3] * self.game_scale).tolist(),
             "bodies": self.body_poses(),
             "yaw": float(yaw),
             "fallen": bool(fallen),
-            "target": self.target.tolist(),
+            "target": (self.target * self.game_scale).tolist(),
             "auto": self.auto,
         }
         if self.debug_dirty:
@@ -481,37 +611,48 @@ class Robot:
             rotation = quat_matrix([quat[1], quat[2], quat[3], quat[0]])
             converted = matrix_quat(BASIS.T @ rotation @ BASIS)
             poses.append([
-                *self.data.xpos[body].tolist(),
+                *(self.data.xpos[body] * self.game_scale).tolist(),
                 float(converted[1]), float(converted[2]), float(converted[3]), float(converted[0]),
             ])
         return poses
 
-robot = Robot()
+robots = {"g1": Robot("g1"), "duck": Robot("duck")}
+active = robots["g1"]
 
 
 async def connect(socket):
-    robot.client = socket
-    print("game connected")
+    global active
+    selected = None
     try:
         async for raw in socket:
-            robot.message(json.loads(raw))
+            message = json.loads(raw)
+            if message.get("type") == "hello":
+                selected = robots.get(message.get("robot"), robots["g1"])
+                active = selected
+                selected.client = socket
+                print(f"{selected.kind} connected")
+            if selected:
+                selected.message(message)
+    except websockets.ConnectionClosed:
+        pass
     finally:
-        if robot.client is socket:
-            robot.client = None
-        print("game disconnected")
+        if selected and selected.client is socket:
+            selected.client = None
+            print(f"{selected.kind} disconnected")
 
 
 async def simulate():
     while True:
         started = asyncio.get_running_loop().time()
-        if robot.collision_dirty and time.monotonic() - robot.collision_at > 0.5:
-            robot.collision_dirty = False
-            robot.collide()
-        if robot.client:
+        selected = active
+        if selected.collision_dirty and time.monotonic() - selected.collision_at > 0.5:
+            selected.collision_dirty = False
+            selected.collide()
+        if selected.client:
             try:
-                await robot.client.send(json.dumps(robot.step()))
+                await selected.client.send(json.dumps(selected.step()))
             except websockets.ConnectionClosed:
-                robot.client = None
+                selected.client = None
         elapsed = asyncio.get_running_loop().time() - started
         await asyncio.sleep(max(0, 0.02 - elapsed))
 
