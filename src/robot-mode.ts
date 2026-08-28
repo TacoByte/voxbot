@@ -193,7 +193,7 @@ export default class RobotMode {
     this.socket.send(JSON.stringify({ type: 'target', target: [point.x - this.origin.x, this.origin.z - point.z] }))
   }
 
-  private sendInput(camera: BABYLON.FreeCamera) {
+  private sendInput() {
     if (this.socket?.readyState !== WebSocket.OPEN || performance.now() - this.sentAt < 50) return
     const forward = Number(this.held.has('KeyW') || this.held.has('ArrowUp')) - Number(this.held.has('KeyS') || this.held.has('ArrowDown'))
     const side = Number(this.held.has('KeyD') || this.held.has('ArrowRight')) - Number(this.held.has('KeyA') || this.held.has('ArrowLeft'))
@@ -204,11 +204,9 @@ export default class RobotMode {
       this.marker.setEnabled(false)
     }
     if (this.auto) return
-    const delta = camera.rotation.y - Math.PI / 2 - this.pose!.yaw
-    const error = walking ? Math.atan2(Math.sin(delta), Math.cos(delta)) : 0
     const flying = (this.controls as any).flying as boolean
     const lift = flying ? Number(this.held.has('Space') || this.held.has('PageUp')) - Number(this.held.has('KeyV') || this.held.has('PageDown')) : 0
-    this.socket.send(JSON.stringify({ type: 'command', move: [forward, side * 0.5, Math.max(-1, Math.min(1, error * 1.5))], jump: this.jump, fly: flying, lift }))
+    this.socket.send(JSON.stringify({ type: 'command', move: [forward, side * 0.5, 0], jump: this.jump, fly: flying, lift }))
     this.jump = false
     this.sentAt = performance.now()
   }
@@ -261,7 +259,7 @@ export default class RobotMode {
     const avatar = (this.controls as any).persona.avatar
     avatar?.avatarMesh?.setEnabled(false)
     this.moveRobot(this.pose.bodies)
-    this.sendInput(camera)
+    this.sendInput()
     ;(camera as any).place()
     if ((this.controls as any).firstPersonView) camera.position.copyFrom(this.headPoint(this.pose.bodies))
     else camera.position.y -= 0.75
