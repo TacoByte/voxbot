@@ -834,6 +834,7 @@ export default class Parcel extends TypedEventTarget<ParcelEventMap> {
   }
 
   unload() {
+    ;(window as any).robotMode?.parcelDrop(this)
     this.loaded = false
     this.loading = false
 
@@ -1359,6 +1360,7 @@ export default class Parcel extends TypedEventTarget<ParcelEventMap> {
       this.registerPhysics()
     }
     this.isColliderEnabled = () => this.physicsRegistered
+    ;(window as any).robotMode?.parcelAdd(this)
     this.dispatchEvent(createEvent('MeshLoaded', opaque))
   }
 

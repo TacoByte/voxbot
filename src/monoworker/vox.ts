@@ -75,6 +75,7 @@ export async function loadVox({ renderJob, flipX, megavox, wantCollider, timeout
               ? {
                   colliderPositions: data.colliderPositions,
                   colliderIndices: data.colliderIndices,
+                  colliderBoxes: data.colliderBoxes,
                 }
               : {}),
           })

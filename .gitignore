@@ -48,6 +48,11 @@ scripting/meta.json
 /art
 *.rdb
 dump.rdb
+robot/.venv/
+robot/vendor/
+robot/artifacts/
+robot/__pycache__/
+dist/models/g1.glb
 db/import.sql
 world.db
 parcels.ndjson

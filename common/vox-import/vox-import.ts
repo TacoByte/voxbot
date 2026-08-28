@@ -146,6 +146,8 @@ export class VoxImporter {
         d.colors = colors
         d.applyToMesh(mesh)
 
+        if ('colliderBoxes' in data) (mesh as any).robotCollider = data.colliderBoxes
+
         mesh.refreshBoundingInfo()
 
         resolve(mesh)
@@ -163,7 +165,7 @@ export class VoxImporter {
         flipX: options && 'invertX' in options ? !!options.invertX : true,
         megavox: options && !!options.megavox,
         sizeHint,
-        wantCollider: false,
+        wantCollider: !!options.wantCollider,
         timeoutMs: VoxImporter.JOB_TIMEOUT_MS,
         colorMap: options.colorMap,
       }

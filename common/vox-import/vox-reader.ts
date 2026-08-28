@@ -1,4 +1,5 @@
 import ndarray from 'ndarray'
+import { mergeBoxes } from '../voxels/boxes'
 
 const VoxReader = require('@sh-dave/format-vox').VoxReader
 const createAOMesh = require('ao-mesher')
@@ -15,6 +16,7 @@ type VoxDataWithoutCollider = {
 type VoxDataColliderInfo = {
   colliderPositions: number[]
   colliderIndices: number[]
+  colliderBoxes: number[]
 }
 type VoxDataWithCollider = VoxDataWithoutCollider & VoxDataColliderInfo
 
@@ -304,5 +306,26 @@ const makeCollider = (fx: any, fy: any, fz: any, field: ndarray.NdArray<Uint16Ar
     }
   }
 
-  return { colliderPositions, colliderIndices }
+  const colliderBoxes = voxelBoxes(fx, fy, fz, field)
+  return { colliderPositions, colliderIndices, colliderBoxes }
+}
+
+const voxelBoxes = (fx: any, fy: any, fz: any, field: ndarray.NdArray<Uint16Array>): number[] => {
+  const filled = new Set<string>()
+  const [sx, sy, sz] = field.shape
+  for (let x = 0; x < sx; x++) for (let y = 0; y < sy; y++) for (let z = 0; z < sz; z++) if (field.get(x, y, z)) filled.add(`${x},${y},${z}`)
+
+  const merged = mergeBoxes(filled)
+  const boxes: number[] = []
+  for (let i = 0; i < merged.length; i += 6) {
+    const [x, y, z, dx, dy, dz] = merged.slice(i, i + 6)
+    const x0 = fx(x)
+    const x1 = fx(x + dx)
+    const y0 = fz(z)
+    const y1 = fz(z + dz)
+    const z0 = -fy(y)
+    const z1 = -fy(y + dy)
+    boxes.push((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2, Math.abs(x1 - x0) / 2, Math.abs(y1 - y0) / 2, Math.abs(z1 - z0) / 2)
+  }
+  return boxes
 }

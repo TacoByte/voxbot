@@ -56,6 +56,7 @@ import MainLoop from './main-loop'
 import { createScene } from './init/scene'
 import { createEnvironment } from './init/environment'
 import { createWorld } from './init/world'
+import RobotMode from './robot-mode'
 import { sceneConfigFromURL, SceneConfig } from './scene-config'
 import type { Environment } from './enviroments/environment'
 import { PostProcesses } from './graphic/post-processes'
@@ -309,6 +310,7 @@ async function main() {
 
   // now we can set up and create all those things that loads stuff, like the connector, the pump (tm) and parcel loaders, audio etc
   const { grid, connector } = await createWorld(scene, canvas, controls, environment)
+  if (new URLSearchParams(window.location.search).has('robot')) new RobotMode(scene, controls, grid)
   // and here we start all the main stuff, start the renderloop, the pump, web-workers and mess with some random
   // fixes for browsers
 

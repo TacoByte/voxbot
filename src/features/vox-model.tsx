@@ -68,6 +68,7 @@ export default class VoxModel<Description extends VoxModelRecord | MegavoxRecord
 
     //@todo: fix type mesh
     this.mesh = root.mesh.createInstance(this.uniqueEntityName('instance')) as unknown as MeshExtended
+    ;(this.mesh as any).robotCollider = (root.mesh as any).robotCollider
     this.afterGenerate()
   }
 
@@ -95,6 +96,7 @@ export default class VoxModel<Description extends VoxModelRecord | MegavoxRecord
   }
 
   private applyImportedMesh(imported: BABYLON.Mesh) {
+    const robotCollider = (imported as any).robotCollider
     if (!(this.mesh instanceof BABYLON.Mesh)) {
       this.mesh = imported
     } else {
@@ -103,6 +105,7 @@ export default class VoxModel<Description extends VoxModelRecord | MegavoxRecord
       imported.material = null
       imported.dispose()
     }
+    ;(this.mesh as any).robotCollider = robotCollider
     this.mesh.isPickable = true
     this.mesh.name = this.uniqueEntityName('mesh')
     this.mesh.id = this.mesh.name
@@ -166,7 +169,7 @@ export default class VoxModel<Description extends VoxModelRecord | MegavoxRecord
 
   // Override this in subclasses (e.g., Megavox) to reuse VoxModel.generate()
   protected _voxImportParams(): VoxImportOptions {
-    return { signal: this.abortController.signal }
+    return { signal: this.abortController.signal, wantCollider: !!this.description.collidable }
   }
 
   private refreshErrorMessage() {
@@ -205,6 +208,12 @@ export default class VoxModel<Description extends VoxModelRecord | MegavoxRecord
     this.addScriptTriggers()
     this.addEvents()
     this.addAnimation()
+    if (this.description.collidable) (window as any).robotMode?.voxAdd(this.uuid, this.mesh)
+  }
+
+  override dispose() {
+    ;(window as any).robotMode?.voxDrop(this.uuid)
+    super.dispose()
   }
 }
 
