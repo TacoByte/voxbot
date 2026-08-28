@@ -19,6 +19,7 @@ POLICY = RUNTIME / "policies" / "alpha_walking.onnx"
 RECOVERY = RUNTIME / "policies" / "alpha_stand.onnx"
 GAME_SCALE = 8.0
 SIM_SCALE = 1 / GAME_SCALE
+ROOT_HEIGHT = 0.117
 MAX_BOXES = 20000
 ACTIVE_BOXES = 1500
 CELL = 0.5 * SIM_SCALE
@@ -30,6 +31,7 @@ DEFAULT = np.array([
     0, 0.0873, 0.4579, 0.0049, -0.453,
 ], dtype=np.float32)
 BASIS = np.array([[1, 0, 0], [0, 0, -1], [0, 1, 0]], dtype=np.float64)
+WORLD_BASIS = np.array([[-1, 0, 0], [0, 0, -1], [0, 1, 0]], dtype=np.float64)
 
 
 def rotate(q, vector):
@@ -75,6 +77,8 @@ class Robot:
         spec = mujoco.MjSpec.from_file(str(MODEL))
         self.robot_count = len(spec.bodies) - 1
         spec.memory = 128 * 1024 * 1024
+        island_body = spec.worldbody.add_body(name="voxbot-island-body", mocap=True, pos=[0, 0, -100])
+        island_body.add_geom(name="voxbot-island", type=mujoco.mjtGeom.mjGEOM_BOX, size=[256, 256, 32], contype=2, conaffinity=1)
         slot_sizes = []
         for limit, count in BOX_SLOTS:
             for _ in range(count):
@@ -91,6 +95,10 @@ class Robot:
         self.model = spec.compile()
         self.model.opt.timestep = 0.005
         self.model.opt.enableflags |= int(mujoco.mjtEnableBit.mjENBL_MULTICCD)
+        self.floor_geom = self.model.geom("floor").id
+        self.floor_contact = (self.model.geom_contype[self.floor_geom], self.model.geom_conaffinity[self.floor_geom])
+        self.island_geom = self.model.geom("voxbot-island").id
+        self.island_mocap = self.model.body_mocapid[self.model.geom_bodyid[self.island_geom]]
         self.data = mujoco.MjData(self.model)
         self.geom_ids = np.array([self.model.geom(f"voxbot-{index}").id for index in range(ACTIVE_BOXES)])
         self.mocap_ids = self.model.body_mocapid[self.model.geom_bodyid[self.geom_ids]]
@@ -106,10 +114,12 @@ class Robot:
         self.client = None
         self.origin = np.zeros(3)
         self.floor = 0.0
+        self.ground = 0.0
         self.colliders = {}
         self.collision_dirty = False
         self.collision_at = 0.0
         self.boxes = []
+        self.island_box = None
         self.blocked = set()
         self.active_count = 0
         self.report_count = 0
@@ -134,7 +144,7 @@ class Robot:
         self.recovery_steps = 0
         self.upright_steps = 0
         self.safe = np.zeros(self.model.nq)
-        self.safe[2] = 0.125
+        self.safe[2] = ROOT_HEIGHT
         self.safe[3] = 1
         self.safe[self.joint_qpos] = DEFAULT
         self.reset(self.safe)
@@ -142,7 +152,7 @@ class Robot:
     def reset(self, pose=None):
         mujoco.mj_resetData(self.model, self.data)
         self.data.qpos[:] = self.safe if pose is None else pose
-        self.data.qpos[2] = 0.125
+        self.data.qpos[2] = self.ground + ROOT_HEIGHT
         self.data.qpos[3:7] = [1, 0, 0, 0]
         self.data.qpos[self.joint_qpos] = DEFAULT
         self.data.qvel[:] = 0
@@ -154,13 +164,20 @@ class Robot:
         self.recovery_steps = 0
         self.upright_steps = 0
         self.placeBoxes()
+        if self.island_box:
+            center, _, quat = self.island_box
+            self.data.mocap_pos[self.island_mocap] = center
+            self.data.mocap_quat[self.island_mocap] = quat
         mujoco.mj_forward(self.model, self.data)
 
     def message(self, message):
         kind = message.get("type")
         if kind == "hello":
+            self.model.geom_contype[self.floor_geom], self.model.geom_conaffinity[self.floor_geom] = self.floor_contact
             self.origin = np.array(message["origin"], dtype=np.float64)
             self.floor = float(message["floor"])
+            self.ground = 0.0
+            self.island_box = None
             self.colliders.clear()
             self.collision_dirty = True
             self.collision_at = time.monotonic()
@@ -196,13 +213,39 @@ class Robot:
 
     def collide(self):
         boxes = []
-        for group in self.colliders.values():
+        islands = []
+        for name, group in self.colliders.items():
             for box in group:
                 center = np.array(box[:3], dtype=np.float64) - np.array([self.origin[0], self.floor, self.origin[2]])
-                center = BASIS @ center * SIM_SCALE
+                center = WORLD_BASIS @ center * SIM_SCALE
                 half = np.array([box[3], box[5], box[4]], dtype=np.float64) * SIM_SCALE
-                rotation = BASIS @ quat_matrix(box[6:10]) @ BASIS.T
-                boxes.extend(split_box(center, half, matrix_quat(rotation)))
+                rotation = WORLD_BASIS @ quat_matrix(box[6:10]) @ WORLD_BASIS.T
+                converted = (center, half, matrix_quat(rotation))
+                if name.startswith("island-") or name.startswith("ocean-"):
+                    islands.append(converted)
+                else:
+                    boxes.extend(split_box(*converted))
+        position = self.data.qpos[:2]
+        islands = [(np.sum(np.maximum(np.abs(center[:2] - position) - half[:2], 0) ** 2), center, half, quat) for center, half, quat in islands]
+        island = min(islands, default=None, key=lambda item: (item[0], -(item[1][2] + item[2][2])))
+        if island and island[0] == 0:
+            _, center, half, quat = island
+            ground = center[2] + half[2]
+            self.model.geom_size[self.island_geom] = np.maximum(half, 0.005)
+            self.model.geom_rbound[self.island_geom] = np.linalg.norm(half)
+            self.data.mocap_pos[self.island_mocap] = center
+            self.data.mocap_quat[self.island_mocap] = quat
+            self.island_box = (center, half, quat)
+            self.model.geom_contype[self.floor_geom] = 0
+            self.model.geom_conaffinity[self.floor_geom] = 0
+        else:
+            ground = 0.0
+            self.island_box = None
+            self.data.mocap_pos[self.island_mocap] = [0, 0, -100]
+            self.model.geom_contype[self.floor_geom], self.model.geom_conaffinity[self.floor_geom] = self.floor_contact
+        if abs(ground - self.ground) < 0.5 * SIM_SCALE:
+            self.data.qpos[2] += ground - self.ground
+        self.ground = ground
         self.boxes = boxes[:MAX_BOXES]
         self.nearBoxes()
         count = len(self.boxes)
@@ -219,7 +262,7 @@ class Robot:
         placed = []
         position = self.data.qpos[:3]
         robot_half = np.array([0.45, 0.45, 0.9]) * SIM_SCALE
-        physical = [box for box in self.boxes if box[0][2] + box[1][2] > 0.05 * SIM_SCALE]
+        physical = [box for box in self.boxes if box[0][2] + box[1][2] > 0.05 * SIM_SCALE or box[1][2] > 0.5 * SIM_SCALE]
         candidates = []
         for box in physical:
             distance = np.sum(np.maximum(np.abs(box[0] - position) - box[1] - robot_half, 0) ** 2)
@@ -262,9 +305,9 @@ class Robot:
         boxes = []
         offset = np.array([self.origin[0], self.floor, self.origin[2]])
         for _, center, half, quat in self.active_boxes:
-            world = BASIS.T @ (center * GAME_SCALE) + offset
+            world = WORLD_BASIS.T @ (center * GAME_SCALE) + offset
             rotation = quat_matrix([quat[1], quat[2], quat[3], quat[0]])
-            converted = matrix_quat(BASIS.T @ rotation @ BASIS)
+            converted = matrix_quat(WORLD_BASIS.T @ rotation @ WORLD_BASIS)
             boxes.append([
                 *world.tolist(), half[0] * GAME_SCALE, half[2] * GAME_SCALE, half[1] * GAME_SCALE,
                 float(converted[1]), float(converted[2]), float(converted[3]), float(converted[0]),
@@ -396,7 +439,7 @@ class Robot:
 
         quat = self.data.xquat[self.trunk].copy()
         projected = rotate(np.array([quat[0], -quat[1], -quat[2], -quat[3]]), np.array([0, 0, -1.0]))
-        fallen = projected[2] > -0.5 or self.data.qpos[2] < 0.06
+        fallen = projected[2] > -0.5 or self.data.qpos[2] - self.ground < 0.06
         if self.recovery is None and not fallen and np.linalg.norm(self.data.qvel[:2]) < 0.5:
             self.safe[:] = self.data.qpos
         if self.recovery == "settle":

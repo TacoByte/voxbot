@@ -15,6 +15,8 @@ export default class RobotMode {
   private floor: number
   private pose: Pose | null = null
   private colliders = new Map<string, Box[]>()
+  private island = ''
+  private robotRoot: BABYLON.TransformNode | null = null
   private robot: BABYLON.TransformNode[] = []
   private headMeshes: BABYLON.AbstractMesh[] = []
   private auto = false
@@ -27,8 +29,6 @@ export default class RobotMode {
   private facing = BABYLON.Vector3.Zero()
   private head = BABYLON.Vector3.Zero()
   private offset = BABYLON.Vector3.Zero()
-  private rotated = BABYLON.Vector3.Zero()
-  private rotation = BABYLON.Quaternion.Identity()
 
   constructor(
     private scene: BABYLON.Scene,
@@ -47,6 +47,12 @@ export default class RobotMode {
     document.addEventListener('keyup', (event) => this.held.delete(event.code), true)
     for (const parcel of grid.parcels.values()) this.parcelAdd(parcel)
     for (const mesh of scene.meshes) if ((mesh as any).robotCollider) this.voxAdd(mesh.name, mesh)
+    const terrain = (window as any).environment?.terrain
+    for (const island of terrain?.islands?.islands || []) this.cliffAdd(island)
+    this.islandStep(this.origin)
+    const oceanFloor = terrain?.oceanFloor
+    const oceanHalf = oceanFloor?.mesh.getBoundingInfo().boundingBox.extendSize.x
+    for (const mesh of oceanFloor?.getInstances() || []) this.oceanAdd(mesh.name.slice('ocean_floor_i_'.length).replace('_', '-'), mesh.position, oceanHalf)
     this.connect()
     scene.onBeforeRenderObservable.add(() => this.step())
   }
@@ -68,6 +74,52 @@ export default class RobotMode {
 
   parcelDrop(parcel: any) {
     this.drop(`parcel-${parcel.id}`)
+  }
+
+  islandAdd(id: string, mesh: BABYLON.AbstractMesh) {
+    mesh.computeWorldMatrix(true)
+    const bounds = mesh.getBoundingInfo().boundingBox
+    const center = bounds.centerWorld
+    const half = bounds.extendSizeWorld
+    this.send(`island-${id}`, [[center.x, center.y, center.z, half.x, half.y, half.z, 0, 0, 0, 1]])
+  }
+
+  cliffAdd(island: any) {
+    island.mesh.computeWorldMatrix(true)
+    const bounds = island.mesh.getBoundingInfo().boundingBox
+    const top = bounds.maximumWorld.y
+    const bottom = bounds.minimumWorld.y
+    const boxes: Box[] = []
+    for (const ring of island.desc.geometry.coordinates) {
+      for (let i = 0; i < ring.length; i++) {
+        const a = ring[i]
+        const b = ring[(i + 1) % ring.length]
+        const dx = (b[0] - a[0]) * 100
+        const dz = (b[1] - a[1]) * 100
+        const length = Math.hypot(dx, dz)
+        if (!length) continue
+        const rotation = BABYLON.Quaternion.RotationYawPitchRoll(Math.atan2(-dz, dx), 0, 0)
+        boxes.push([(a[0] + b[0]) * 50, (top + bottom) / 2, (a[1] + b[1]) * 50, length / 2, (top - bottom) / 2, 0.05, rotation.x, rotation.y, rotation.z, rotation.w])
+      }
+    }
+    this.send(`cliff-${island.desc.id}`, boxes)
+  }
+
+  islandStep(position: BABYLON.Vector3) {
+    const island = (window as any).environment?.terrain?.islands?.getIsland(new BABYLON.Vector2(position.x, position.z))
+    const id = island ? String(island.desc.id) : ''
+    if (id === this.island) return
+    this.island = id
+    if (island) this.islandAdd('ground', island.mesh)
+    else this.drop('island-ground')
+  }
+
+  oceanAdd(id: string, position: BABYLON.Vector3, half: number) {
+    this.send(`ocean-${id}`, [[position.x, position.y - 0.5, position.z, half, 0.5, half, 0, 0, 0, 1]])
+  }
+
+  oceanDrop(id: string) {
+    this.drop(`ocean-${id}`)
   }
 
   voxAdd(id: string, mesh: BABYLON.AbstractMesh) {
@@ -160,13 +212,13 @@ export default class RobotMode {
     this.auto = true
     this.marker.position.copyFrom(point).addInPlaceFromFloats(0, 0.05, 0)
     this.marker.setEnabled(true)
-    this.socket.send(JSON.stringify({ type: 'target', target: [point.x - this.origin.x, this.origin.z - point.z] }))
+    this.socket.send(JSON.stringify({ type: 'target', target: [this.origin.x - point.x, this.origin.z - point.z] }))
   }
 
   private sendInput() {
     if (this.socket?.readyState !== WebSocket.OPEN || performance.now() - this.sentAt < 50) return
     const forward = Number(this.held.has('KeyW') || this.held.has('ArrowUp')) - Number(this.held.has('KeyS') || this.held.has('ArrowDown'))
-    const side = Number(this.held.has('KeyD') || this.held.has('ArrowRight')) - Number(this.held.has('KeyA') || this.held.has('ArrowLeft'))
+    const side = Number(this.held.has('KeyA') || this.held.has('ArrowLeft')) - Number(this.held.has('KeyD') || this.held.has('ArrowRight'))
     const walking = forward !== 0 || side !== 0
     const moving = walking || this.jump
     if (moving) {
@@ -220,7 +272,8 @@ export default class RobotMode {
   private step() {
     if (!this.pose) return
     const body = (this.controls as any).body
-    body.position.set(this.origin.x + this.pose.root[0], this.origin.y + Math.max(this.pose.root[2] - 1, 0), this.origin.z - this.pose.root[1])
+    body.position.set(this.origin.x - this.pose.root[0], this.origin.y + Math.max(this.pose.root[2] - 1, 0), this.origin.z - this.pose.root[1])
+    this.islandStep(body.position)
     body.velocity?.setAll(0)
     const camera = (this.controls as any).camera
     ;(this.controls as any).move.setAll(0)
@@ -231,19 +284,20 @@ export default class RobotMode {
     this.moveRobot(this.pose.bodies)
     this.sendInput()
     ;(camera as any).place()
-    if ((this.controls as any).firstPersonView) camera.position.copyFrom(this.headPoint(this.pose.bodies))
+    if ((this.controls as any).firstPersonView) camera.position.copyFrom(this.headPoint())
     else camera.position.y -= 0.65
     for (const mesh of this.headMeshes) mesh.setEnabled(!(this.controls as any).firstPersonView)
-    if (!this.pose.auto) this.marker.setEnabled(false)
   }
 
   private async makeRobot() {
     const loaded = await BABYLON.SceneLoader.ImportMeshAsync(null, '/models/', 'macroduck.glb', this.scene)
     for (const mesh of loaded.meshes) mesh.isPickable = false
+    this.robotRoot = loaded.meshes.find((mesh) => mesh.name === '__root__')!
+    this.robotRoot.position.set(this.origin.x, this.floor, this.origin.z)
     const nodes = (loaded as any).transformNodes as BABYLON.TransformNode[]
     this.robot = ROBOT_BODIES.map((name) => nodes.find((node) => node.name === `macroduck:${name}`)!)
     for (const node of this.robot) {
-      node.setParent(null)
+      node.setParent(this.robotRoot)
       node.scaling.setAll(ROBOT_SCALE)
     }
     this.headMeshes = this.robot[9].getChildMeshes()
@@ -253,18 +307,15 @@ export default class RobotMode {
     if (bodies.length !== this.robot.length) return
     for (let i = 0; i < bodies.length; i++) {
       const pose = bodies[i]
-      this.robot[i].position.set(this.origin.x + pose[0], this.floor + pose[2], this.origin.z - pose[1])
+      this.robot[i].position.set(pose[0], pose[2], -pose[1])
       const rotation = (this.robot[i].rotationQuaternion ||= BABYLON.Quaternion.Identity())
       rotation.set(pose[3], pose[4], pose[5], pose[6])
     }
   }
 
-  private headPoint(bodies: number[][]) {
-    const head = bodies[9]
-    this.head.set(this.origin.x + head[0], this.floor + head[2], this.origin.z - head[1])
-    this.offset.set(0.12, -0.59, 0)
-    this.rotation.set(head[3], head[4], head[5], head[6])
-    this.offset.rotateByQuaternionToRef(this.rotation, this.rotated)
-    return this.head.addInPlace(this.rotated)
+  private headPoint() {
+    this.offset.set(0.12 / ROBOT_SCALE, -0.59 / ROBOT_SCALE, 0)
+    BABYLON.Vector3.TransformCoordinatesToRef(this.offset, this.robot[9].computeWorldMatrix(true), this.head)
+    return this.head
   }
 }
