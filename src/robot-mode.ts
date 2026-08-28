@@ -4,8 +4,9 @@ import type Controls from './controls/controls'
 import type Grid from './grid'
 
 type Box = [number, number, number, number, number, number, number, number, number, number]
-type Pose = { type: 'pose'; root: number[]; bodies: number[][]; yaw: number; fallen: boolean; target: number[]; auto: boolean; colliders?: Box[] }
-type RobotKind = 'g1' | 'duck'
+type Pose = { type: 'pose'; root: number[]; bodies: number[][]; yaw: number; fallen: boolean; target: number[]; auto: boolean; model?: G1Model; colliders?: Box[]; depth?: string; depthSize?: number[] }
+type RobotKind = 'g1' | 'duck' | 'toddler'
+type G1Model = 'vanilla' | 'hiking' | 'parkour'
 type RobotInfo = { file: string; prefix: string; bodies: string[]; scale: number; head: number; headOffset: [number, number, number]; camera?: number; cameraOffset: number }
 
 const ROBOTS: Record<RobotKind, RobotInfo> = {
@@ -59,6 +60,61 @@ const ROBOTS: Record<RobotKind, RobotInfo> = {
     camera: 4,
     cameraOffset: 0.65,
   },
+  toddler: {
+    file: 'toddler.glb',
+    prefix: 'toddler',
+    bodies: [
+      'torso',
+      'neck_yaw_gear_drive',
+      'neck_yaw_link',
+      'head',
+      'neck_pitch_plate',
+      'neck_rod',
+      'neck_rod_2',
+      'waist_gears',
+      'pelvis_link',
+      'waist_gear_drive',
+      'waist_gear_drive_2',
+      'left_hip_pitch_link',
+      'left_hip_roll_link',
+      'left_hip_yaw_link',
+      'left_hip_yaw_gear_drive',
+      'left_knee_link',
+      'left_ankle_pitch_link',
+      'left_ankle_roll_link',
+      'right_hip_pitch_link',
+      'right_hip_roll_link',
+      'right_hip_yaw_link',
+      'right_hip_yaw_gear_drive',
+      'right_knee_link',
+      'right_ankle_pitch_link',
+      'right_ankle_roll_link',
+      'left_shoulder_pitch_link',
+      'left_shoulder_roll_link',
+      'left_shoulder_gear_drive',
+      'left_shoulder_yaw_link',
+      'left_elbow_roll_link',
+      'left_elbow_gear_drive',
+      'left_elbow_yaw_link',
+      'left_wrist_pitch_link',
+      'left_wrist_gear_drive',
+      'left_hand',
+      'right_shoulder_pitch_link',
+      'right_shoulder_roll_link',
+      'right_shoulder_gear_drive',
+      'right_shoulder_yaw_link',
+      'right_elbow_roll_link',
+      'right_elbow_gear_drive',
+      'right_elbow_yaw_link',
+      'right_wrist_pitch_link',
+      'right_wrist_gear_drive',
+      'right_hand',
+    ],
+    scale: 2,
+    head: 3,
+    headOffset: [0, 0, 0],
+    cameraOffset: 1.05,
+  },
 }
 
 export default class RobotMode {
@@ -83,14 +139,26 @@ export default class RobotMode {
   private offset = BABYLON.Vector3.Zero()
   private kind: RobotKind
   private info: RobotInfo
+  private g1Model: G1Model
+  private depthCanvas = document.createElement('canvas')
+  private depthImage: ImageData
 
   constructor(
     private scene: BABYLON.Scene,
     private controls: Controls,
     private grid: Grid,
   ) {
-    this.kind = new URLSearchParams(location.search).get('robot') === 'duck' ? 'duck' : 'g1'
+    const query = new URLSearchParams(location.search)
+    const kind = query.get('robot')
+    this.kind = kind === 'duck' || kind === 'toddler' ? kind : 'g1'
+    this.g1Model = 'vanilla'
     this.info = ROBOTS[this.kind]
+    this.depthCanvas.width = 32
+    this.depthCanvas.height = 18
+    this.depthCanvas.hidden = true
+    Object.assign(this.depthCanvas.style, { position: 'fixed', inset: '0', width: '100vw', height: '100vh', zIndex: '100', imageRendering: 'pixelated', pointerEvents: 'none' })
+    document.body.append(this.depthCanvas)
+    this.depthImage = this.depthCanvas.getContext('2d')!.createImageData(32, 18)
     const body = (controls as any).body
     this.origin = body.position.clone()
     this.floor = this.origin.y - 1.65
@@ -101,7 +169,7 @@ export default class RobotMode {
     this.debugMesh = this.makeBoxes()
     void this.makeRobot()
     document.addEventListener('keydown', (event) => this.keyDown(event), true)
-    document.addEventListener('keyup', (event) => this.held.delete(event.code), true)
+    document.addEventListener('keyup', (event) => this.keyUp(event), true)
     for (const parcel of grid.parcels.values()) this.parcelAdd(parcel)
     for (const mesh of scene.meshes) if ((mesh as any).robotCollider) this.voxAdd(mesh.name, mesh)
     const terrain = (window as any).environment?.terrain
@@ -203,13 +271,14 @@ export default class RobotMode {
     const socket = new WebSocket('ws://127.0.0.1:8765')
     this.socket = socket
     socket.onopen = () => {
-      socket.send(JSON.stringify({ type: 'hello', robot: this.kind, origin: this.origin.asArray(), floor: this.floor }))
+      socket.send(JSON.stringify({ type: 'hello', robot: this.kind, model: this.g1Model, origin: this.origin.asArray(), floor: this.floor }))
       for (const [id, boxes] of this.colliders) socket.send(JSON.stringify({ type: 'collider', id, boxes }))
     }
     socket.onmessage = (event) => {
       const pose = JSON.parse(event.data)
       if (pose.type === 'pose') {
         this.pose = pose
+        if (pose.depth) this.drawDepth(pose.depth, pose.depthSize || [32, 18])
         if (pose.colliders) this.showBoxes(pose.colliders)
       }
     }
@@ -231,11 +300,18 @@ export default class RobotMode {
   }
 
   private keyDown(event: KeyboardEvent) {
+    if (this.kind === 'g1' && !event.repeat && (event.code === 'ShiftLeft' || event.code === 'ShiftRight')) {
+      event.preventDefault()
+      event.stopImmediatePropagation()
+      this.held.add(event.code)
+      this.setModel('parkour')
+      return
+    }
     if (!event.repeat && event.code === 'KeyB') {
       event.preventDefault()
       event.stopImmediatePropagation()
       const query = new URLSearchParams(location.search)
-      query.set('robot', this.kind === 'g1' ? 'duck' : 'g1')
+      query.set('robot', this.kind === 'g1' ? 'duck' : this.kind === 'duck' ? 'toddler' : 'g1')
       location.search = query.toString()
       return
     }
@@ -288,10 +364,25 @@ export default class RobotMode {
     this.socket.send(JSON.stringify({ type: 'target', target: [this.origin.x - point.x, this.origin.z - point.z] }))
   }
 
+  private keyUp(event: KeyboardEvent) {
+    this.held.delete(event.code)
+    if (this.kind !== 'g1' || (event.code !== 'ShiftLeft' && event.code !== 'ShiftRight')) return
+    event.preventDefault()
+    event.stopImmediatePropagation()
+    if (!this.held.has('ShiftLeft') && !this.held.has('ShiftRight')) this.setModel('vanilla')
+  }
+
+  private setModel(model: G1Model) {
+    if (this.g1Model === model) return
+    this.g1Model = model
+    if (this.socket?.readyState === WebSocket.OPEN) this.socket.send(JSON.stringify({ type: 'model', model }))
+    console.info(`g1 model: ${model}`)
+  }
+
   private sendInput() {
     if (this.socket?.readyState !== WebSocket.OPEN || performance.now() - this.sentAt < 50) return
     const forward = Number(this.held.has('KeyW') || this.held.has('ArrowUp')) - Number(this.held.has('KeyS') || this.held.has('ArrowDown'))
-    const side = this.kind === 'g1' ? Number(this.held.has('KeyQ')) - Number(this.held.has('KeyE')) : 0
+    const side = this.kind === 'duck' ? 0 : Number(this.held.has('KeyQ')) - Number(this.held.has('KeyE'))
     const turn = Number(this.held.has('KeyA') || this.held.has('ArrowLeft')) - Number(this.held.has('KeyD') || this.held.has('ArrowRight'))
     const walking = forward !== 0 || side !== 0 || turn !== 0
     const moving = walking || this.jump
@@ -302,7 +393,7 @@ export default class RobotMode {
     if (this.auto) return
     const flying = (this.controls as any).flying as boolean
     const lift = flying ? Number(this.held.has('Space') || this.held.has('PageUp')) - Number(this.held.has('KeyV') || this.held.has('PageDown')) : 0
-    const move = this.kind === 'g1' ? [forward, side * 0.5, turn] : [forward, turn, 0]
+    const move = this.kind === 'duck' ? [forward, turn, 0] : [forward, side * 0.5, turn]
     this.socket.send(JSON.stringify({ type: 'command', move, jump: this.jump, fly: flying, lift }))
     this.jump = false
     this.sentAt = performance.now()
@@ -347,7 +438,7 @@ export default class RobotMode {
   private step() {
     if (!this.pose) return
     const body = (this.controls as any).body
-    const height = this.kind === 'duck' ? Math.max(this.pose.root[2] - 1, 0) : this.pose.root[2] - 0.8
+    const height = this.kind === 'duck' ? Math.max(this.pose.root[2] - 1, 0) : this.pose.root[2] - (this.kind === 'toddler' ? 0.620106 : 0.8)
     body.position.set(this.origin.x - this.pose.root[0], this.origin.y + height, this.origin.z - this.pose.root[1])
     this.islandStep(body.position)
     body.velocity?.setAll(0)
@@ -360,9 +451,11 @@ export default class RobotMode {
     this.moveRobot(this.pose.bodies)
     this.sendInput()
     ;(camera as any).place()
-    if ((this.controls as any).firstPersonView) camera.position.copyFrom(this.headPoint())
+    const firstPerson = (this.controls as any).firstPersonView
+    this.depthCanvas.hidden = this.kind !== 'g1' || this.g1Model === 'vanilla' || !firstPerson
+    if (firstPerson) camera.position.copyFrom(this.headPoint())
     else camera.position.y -= this.info.cameraOffset
-    for (const mesh of this.headMeshes) mesh.setEnabled(!(this.controls as any).firstPersonView)
+    for (const mesh of this.headMeshes) mesh.setEnabled(!firstPerson)
   }
 
   private async makeRobot() {
@@ -395,5 +488,23 @@ export default class RobotMode {
     this.offset.set(...this.info.headOffset)
     BABYLON.Vector3.TransformCoordinatesToRef(this.offset, this.robot[this.info.head].computeWorldMatrix(true), this.head)
     return this.head
+  }
+
+  private drawDepth(depth: string, size: number[]) {
+    if (this.depthCanvas.width !== size[0] || this.depthCanvas.height !== size[1]) {
+      this.depthCanvas.width = size[0]
+      this.depthCanvas.height = size[1]
+      this.depthImage = this.depthCanvas.getContext('2d')!.createImageData(size[0], size[1])
+    }
+    const bytes = atob(depth)
+    const pixels = this.depthImage.data
+    for (let i = 0; i < bytes.length; i++) {
+      const value = bytes.charCodeAt(i)
+      pixels[i * 4] = value
+      pixels[i * 4 + 1] = value
+      pixels[i * 4 + 2] = value
+      pixels[i * 4 + 3] = 255
+    }
+    this.depthCanvas.getContext('2d')!.putImageData(this.depthImage, 0, 0)
   }
 }
