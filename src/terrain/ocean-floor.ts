@@ -39,6 +39,7 @@ export default class OceanFloor implements ChunkObserver {
     i.position.z = this.size * y + this.halfSize
     const hy = 0.5
     addCuboid(`ocean-floor-${x}-${y}`, { x: this.halfSize, y: hy, z: this.halfSize }, { x: i.position.x, y: i.position.y - hy, z: i.position.z })
+    ;(window as any).robotMode?.oceanAdd(`${x}-${y}`, i.position, this.halfSize)
     return i
   }
 
@@ -59,6 +60,7 @@ export default class OceanFloor implements ChunkObserver {
     const instance = this.instances.get(key)
     if (instance) {
       removeCollider(`ocean-floor-${chunk.gridX}-${chunk.gridZ}`)
+      ;(window as any).robotMode?.oceanDrop(`${chunk.gridX}-${chunk.gridZ}`)
       instance.dispose()
       this.instances.delete(key)
     }

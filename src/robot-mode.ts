@@ -45,6 +45,7 @@ export default class RobotMode {
   private floor: number
   private pose: Pose | null = null
   private colliders = new Map<string, Box[]>()
+  private island = ''
   private robotRoot: BABYLON.TransformNode | null = null
   private robot: BABYLON.TransformNode[] = []
   private headMeshes: BABYLON.AbstractMesh[] = []
@@ -76,6 +77,12 @@ export default class RobotMode {
     document.addEventListener('keyup', (event) => this.held.delete(event.code), true)
     for (const parcel of grid.parcels.values()) this.parcelAdd(parcel)
     for (const mesh of scene.meshes) if ((mesh as any).robotCollider) this.voxAdd(mesh.name, mesh)
+    const terrain = (window as any).environment?.terrain
+    for (const island of terrain?.islands?.islands || []) this.cliffAdd(island)
+    this.islandStep(this.origin)
+    const oceanFloor = terrain?.oceanFloor
+    const oceanHalf = oceanFloor?.mesh.getBoundingInfo().boundingBox.extendSize.x
+    for (const mesh of oceanFloor?.getInstances() || []) this.oceanAdd(mesh.name.slice('ocean_floor_i_'.length).replace('_', '-'), mesh.position, oceanHalf)
     this.connect()
     scene.onBeforeRenderObservable.add(() => this.step())
   }
@@ -97,6 +104,52 @@ export default class RobotMode {
 
   parcelDrop(parcel: any) {
     this.drop(`parcel-${parcel.id}`)
+  }
+
+  islandAdd(id: string, mesh: BABYLON.AbstractMesh) {
+    mesh.computeWorldMatrix(true)
+    const bounds = mesh.getBoundingInfo().boundingBox
+    const center = bounds.centerWorld
+    const half = bounds.extendSizeWorld
+    this.send(`island-${id}`, [[center.x, center.y, center.z, half.x, half.y, half.z, 0, 0, 0, 1]])
+  }
+
+  cliffAdd(island: any) {
+    island.mesh.computeWorldMatrix(true)
+    const bounds = island.mesh.getBoundingInfo().boundingBox
+    const top = bounds.maximumWorld.y
+    const bottom = bounds.minimumWorld.y
+    const boxes: Box[] = []
+    for (const ring of island.desc.geometry.coordinates) {
+      for (let i = 0; i < ring.length; i++) {
+        const a = ring[i]
+        const b = ring[(i + 1) % ring.length]
+        const dx = (b[0] - a[0]) * 100
+        const dz = (b[1] - a[1]) * 100
+        const length = Math.hypot(dx, dz)
+        if (!length) continue
+        const rotation = BABYLON.Quaternion.RotationYawPitchRoll(Math.atan2(-dz, dx), 0, 0)
+        boxes.push([(a[0] + b[0]) * 50, (top + bottom) / 2, (a[1] + b[1]) * 50, length / 2, (top - bottom) / 2, 0.05, rotation.x, rotation.y, rotation.z, rotation.w])
+      }
+    }
+    this.send(`cliff-${island.desc.id}`, boxes)
+  }
+
+  islandStep(position: BABYLON.Vector3) {
+    const island = (window as any).environment?.terrain?.islands?.getIsland(new BABYLON.Vector2(position.x, position.z))
+    const id = island ? String(island.desc.id) : ''
+    if (id === this.island) return
+    this.island = id
+    if (island) this.islandAdd('ground', island.mesh)
+    else this.drop('island-ground')
+  }
+
+  oceanAdd(id: string, position: BABYLON.Vector3, half: number) {
+    this.send(`ocean-${id}`, [[position.x, position.y - 0.5, position.z, half, 0.5, half, 0, 0, 0, 1]])
+  }
+
+  oceanDrop(id: string) {
+    this.drop(`ocean-${id}`)
   }
 
   voxAdd(id: string, mesh: BABYLON.AbstractMesh) {
@@ -251,6 +304,7 @@ export default class RobotMode {
     if (!this.pose) return
     const body = (this.controls as any).body
     body.position.set(this.origin.x - this.pose.root[0], this.origin.y + this.pose.root[2] - 0.8, this.origin.z - this.pose.root[1])
+    this.islandStep(body.position)
     body.velocity?.setAll(0)
     const camera = (this.controls as any).camera
     ;(this.controls as any).move.setAll(0)
@@ -264,7 +318,6 @@ export default class RobotMode {
     if ((this.controls as any).firstPersonView) camera.position.copyFrom(this.headPoint())
     else camera.position.y -= 0.75
     for (const mesh of this.headMeshes) mesh.setEnabled(!(this.controls as any).firstPersonView)
-    if (!this.pose.auto) this.marker.setEnabled(false)
   }
 
   private async makeRobot() {

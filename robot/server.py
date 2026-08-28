@@ -95,6 +95,8 @@ class Robot:
         spec = mujoco.MjSpec.from_file(str(MODEL))
         self.robot_count = len(spec.bodies) - 1
         spec.memory = 128 * 1024 * 1024
+        island_body = spec.worldbody.add_body(name="voxbot-island-body", mocap=True, pos=[0, 0, -100])
+        island_body.add_geom(name="voxbot-island", type=mujoco.mjtGeom.mjGEOM_BOX, size=[256, 256, 32], contype=2, conaffinity=1)
         slot_sizes = []
         for limit, count in BOX_SLOTS:
             for _ in range(count):
@@ -110,6 +112,10 @@ class Robot:
                 slot_sizes.append(limit)
         self.model = spec.compile()
         self.model.opt.enableflags |= int(mujoco.mjtEnableBit.mjENBL_MULTICCD)
+        self.floor_geom = self.model.geom("floor").id
+        self.floor_contact = (self.model.geom_contype[self.floor_geom], self.model.geom_conaffinity[self.floor_geom])
+        self.island_geom = self.model.geom("voxbot-island").id
+        self.island_mocap = self.model.body_mocapid[self.model.geom_bodyid[self.island_geom]]
         self.data = mujoco.MjData(self.model)
         self.geom_ids = np.array([self.model.geom(f"voxbot-{index}").id for index in range(ACTIVE_BOXES)])
         self.mocap_ids = self.model.body_mocapid[self.model.geom_bodyid[self.geom_ids]]
@@ -119,10 +125,12 @@ class Robot:
         self.client = None
         self.origin = np.zeros(3)
         self.floor = 0.0
+        self.ground = 0.0
         self.colliders = {}
         self.collision_dirty = False
         self.collision_at = 0.0
         self.boxes = []
+        self.island_box = None
         self.blocked = set()
         self.active_count = 0
         self.report_count = 0
@@ -154,7 +162,7 @@ class Robot:
     def reset(self, pose=None):
         mujoco.mj_resetData(self.model, self.data)
         self.data.qpos[:] = self.safe if pose is None else pose
-        self.data.qpos[2] = max(self.data.qpos[2], 0.8)
+        self.data.qpos[2] = max(self.data.qpos[2], self.ground + 0.8)
         self.data.qpos[3:7] = [1, 0, 0, 0]
         self.data.qpos[7:] = DEFAULT
         self.data.qvel[:] = 0
@@ -163,13 +171,20 @@ class Robot:
         self.fallen_at = None
         self.jump_until = 0.0
         self.placeBoxes()
+        if self.island_box:
+            center, _, quat = self.island_box
+            self.data.mocap_pos[self.island_mocap] = center
+            self.data.mocap_quat[self.island_mocap] = quat
         mujoco.mj_forward(self.model, self.data)
 
     def message(self, message):
         kind = message.get("type")
         if kind == "hello":
+            self.model.geom_contype[self.floor_geom], self.model.geom_conaffinity[self.floor_geom] = self.floor_contact
             self.origin = np.array(message["origin"], dtype=np.float64)
             self.floor = float(message["floor"])
+            self.ground = 0.0
+            self.island_box = None
             self.colliders.clear()
             self.collision_dirty = True
             self.collision_at = time.monotonic()
@@ -205,13 +220,39 @@ class Robot:
 
     def collide(self):
         boxes = []
-        for group in self.colliders.values():
+        islands = []
+        for name, group in self.colliders.items():
             for box in group:
                 center = np.array(box[:3], dtype=np.float64) - np.array([self.origin[0], self.floor, self.origin[2]])
                 center = WORLD_BASIS @ center
                 half = np.array([box[3], box[5], box[4]], dtype=np.float64)
                 rotation = WORLD_BASIS @ quat_matrix(box[6:10]) @ WORLD_BASIS.T
-                boxes.extend(split_box(center, half, matrix_quat(rotation)))
+                converted = (center, half, matrix_quat(rotation))
+                if name.startswith("island-") or name.startswith("ocean-"):
+                    islands.append(converted)
+                else:
+                    boxes.extend(split_box(*converted))
+        position = self.data.qpos[:2]
+        islands = [(np.sum(np.maximum(np.abs(center[:2] - position) - half[:2], 0) ** 2), center, half, quat) for center, half, quat in islands]
+        island = min(islands, default=None, key=lambda item: (item[0], -(item[1][2] + item[2][2])))
+        if island and island[0] == 0:
+            _, center, half, quat = island
+            ground = center[2] + half[2]
+            self.model.geom_size[self.island_geom] = np.maximum(half, 0.005)
+            self.model.geom_rbound[self.island_geom] = np.linalg.norm(half)
+            self.data.mocap_pos[self.island_mocap] = center
+            self.data.mocap_quat[self.island_mocap] = quat
+            self.island_box = (center, half, quat)
+            self.model.geom_contype[self.floor_geom] = 0
+            self.model.geom_conaffinity[self.floor_geom] = 0
+        else:
+            ground = 0.0
+            self.island_box = None
+            self.data.mocap_pos[self.island_mocap] = [0, 0, -100]
+            self.model.geom_contype[self.floor_geom], self.model.geom_conaffinity[self.floor_geom] = self.floor_contact
+        if abs(ground - self.ground) < 0.5:
+            self.data.qpos[2] += ground - self.ground
+        self.ground = ground
         self.boxes = boxes[:MAX_BOXES]
         self.nearBoxes()
         count = len(self.boxes)
@@ -228,7 +269,7 @@ class Robot:
         placed = []
         position = self.data.qpos[:3]
         robot_half = np.array([0.45, 0.45, 0.9])
-        physical = [box for box in self.boxes if box[0][2] + box[1][2] > 0.05]
+        physical = [box for box in self.boxes if box[0][2] + box[1][2] > 0.05 or box[1][2] > 0.5]
         candidates = []
         for box in physical:
             distance = np.sum(np.maximum(np.abs(box[0] - position) - box[1] - robot_half, 0) ** 2)
@@ -382,7 +423,7 @@ class Robot:
         command, yaw = self.command()
         quat = self.data.qpos[3:7].copy()
         projected = rotate(np.array([quat[0], -quat[1], -quat[2], -quat[3]]), np.array([0, 0, -1.0]))
-        if self.jump and not self.fly and self.fallen_at is None and projected[2] < -0.8 and self.data.qpos[2] < 1.0:
+        if self.jump and not self.fly and self.fallen_at is None and projected[2] < -0.8 and self.data.qpos[2] - self.ground < 1.0:
             self.data.qvel[2] = max(self.data.qvel[2], 1.8)
             self.jump_until = self.data.time + 0.45
         self.jump = False
@@ -406,7 +447,7 @@ class Robot:
                 self.data.ctrl[:] = np.clip(-0.2 * self.data.qvel[6:], -5, 5)
             mujoco.mj_step(self.model, self.data)
 
-        fallen = projected[2] > -0.4 or self.data.qpos[2] < 0.35
+        fallen = projected[2] > -0.4 or self.data.qpos[2] - self.ground < 0.35
         if not fallen and np.linalg.norm(self.data.qvel[:2]) < 2:
             self.safe[:] = self.data.qpos
         if fallen and self.fallen_at is None:
