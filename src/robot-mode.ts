@@ -208,7 +208,7 @@ export default class RobotMode {
     const error = walking ? Math.atan2(Math.sin(delta), Math.cos(delta)) : 0
     const flying = (this.controls as any).flying as boolean
     const lift = flying ? Number(this.held.has('Space') || this.held.has('PageUp')) - Number(this.held.has('KeyV') || this.held.has('PageDown')) : 0
-    this.socket.send(JSON.stringify({ type: 'command', move: [forward * 0.8, side * 0.5, Math.max(-1, Math.min(1, error * 1.5))], jump: this.jump, fly: flying, lift }))
+    this.socket.send(JSON.stringify({ type: 'command', move: [forward, side * 0.5, Math.max(-1, Math.min(1, error * 1.5))], jump: this.jump, fly: flying, lift }))
     this.jump = false
     this.sentAt = performance.now()
   }
@@ -264,6 +264,7 @@ export default class RobotMode {
     this.sendInput(camera)
     ;(camera as any).place()
     if ((this.controls as any).firstPersonView) camera.position.copyFrom(this.headPoint(this.pose.bodies))
+    else camera.position.y -= 0.75
     for (const mesh of this.headMeshes) mesh.setEnabled(!(this.controls as any).firstPersonView)
     if (!this.pose.auto) this.marker.setEnabled(false)
   }

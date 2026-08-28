@@ -2,7 +2,6 @@ import asyncio
 import heapq
 import json
 import math
-import random
 import time
 from pathlib import Path
 
@@ -145,7 +144,6 @@ class Robot:
         self.best = float("inf")
         self.progress_at = 0.0
         self.fallen_at = None
-        self.next_stumble = 15.0
         self.safe = np.zeros(7 + 29)
         self.safe[2] = 0.8
         self.safe[3] = 1
@@ -176,7 +174,6 @@ class Robot:
             self.collision_at = time.monotonic()
             self.safe[:2] = 0
             self.reset()
-            self.next_stumble = self.data.time + 8
             self.auto = False
         elif kind == "collider":
             self.colliders[message["id"]] = message["boxes"]
@@ -374,17 +371,12 @@ class Robot:
         if self.data.time - self.progress_at > 4:
             self.set_target(self.target)
             return np.zeros(3, dtype=np.float32), yaw
-        forward = 0.65 if abs(error) < 0.7 else 0.12
+        forward = 1.0 if abs(error) < 0.7 else 0.12
         return np.array([forward, 0, np.clip(error * 1.5, -1, 1)], dtype=np.float32), yaw
 
     def step(self):
         if np.linalg.norm(self.data.qpos[:3] - self.collision_pos) > 0.5:
             self.nearBoxes()
-        if self.data.time > self.next_stumble and self.fallen_at is None:
-            self.data.qvel[1] += random.choice((-4.0, 4.0))
-            self.data.qvel[3] += random.choice((-5.0, 5.0))
-            self.next_stumble = self.data.time + random.uniform(22, 32)
-            print("robot stumbled")
         self.model.opt.gravity[2] = 0 if self.fly else -9.81
         command, yaw = self.command()
         quat = self.data.qpos[3:7].copy()
