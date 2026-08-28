@@ -421,7 +421,7 @@ class Robot:
         projected = rotate(np.array([quat[0], -quat[1], -quat[2], -quat[3]]), np.array([0, 0, -1.0]))
         policy_command = np.zeros(13, dtype=np.float32)
         if self.recovery is None:
-            policy_command[:3] = [command[0] * 0.3, 0, np.clip(command[2] + command[1], -1, 1)]
+            policy_command[:3] = [command[0] * 0.4, 0, np.clip(command[2] + command[1], -1, 1)]
         sensor_at = self.model.sensor_adr[self.imu]
         obs = np.concatenate([
             self.data.sensordata[sensor_at : sensor_at + 3], projected,
