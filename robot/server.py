@@ -17,6 +17,7 @@ RUNTIME = ROOT / "vendor" / "microduck"
 MODEL = MICRODUCK / "src" / "mjlab_microduck" / "robot" / "microduck" / "scene.xml"
 POLICY = RUNTIME / "policies" / "alpha_walking.onnx"
 RECOVERY = RUNTIME / "policies" / "alpha_stand.onnx"
+ROULADE = RUNTIME / "policies" / "roulade.onnx"
 GAME_SCALE = 8.0
 SIM_SCALE = 1 / GAME_SCALE
 ROOT_HEIGHT = 0.117
@@ -72,7 +73,7 @@ def split_box(center, half, quat):
 
 class Robot:
     def __init__(self):
-        if not MODEL.exists() or not POLICY.exists() or not RECOVERY.exists():
+        if not MODEL.exists() or not POLICY.exists() or not RECOVERY.exists() or not ROULADE.exists():
             raise SystemExit("Run robot/setup.sh first")
         spec = mujoco.MjSpec.from_file(str(MODEL))
         self.robot_count = len(spec.bodies) - 1
@@ -106,6 +107,7 @@ class Robot:
         self.slot_groups = [np.where(self.slot_sizes == limit)[0].tolist() for limit, _ in BOX_SLOTS]
         self.policy = ort.InferenceSession(str(POLICY), providers=["CPUExecutionProvider"])
         self.recovery_policy = ort.InferenceSession(str(RECOVERY), providers=["CPUExecutionProvider"])
+        self.roulade_policy = ort.InferenceSession(str(ROULADE), providers=["CPUExecutionProvider"])
         self.policy_input = self.policy.get_inputs()[0].name
         self.joint_qpos = np.array([self.model.jnt_qposadr[self.model.actuator_trnid[index, 0]] for index in range(self.model.nu)])
         self.joint_qvel = np.array([self.model.jnt_dofadr[self.model.actuator_trnid[index, 0]] for index in range(self.model.nu)])
@@ -143,6 +145,7 @@ class Robot:
         self.recovery = None
         self.recovery_steps = 0
         self.upright_steps = 0
+        self.roulade_steps = 0
         self.safe = np.zeros(self.model.nq)
         self.safe[2] = ROOT_HEIGHT
         self.safe[3] = 1
@@ -163,6 +166,7 @@ class Robot:
         self.recovery = None
         self.recovery_steps = 0
         self.upright_steps = 0
+        self.roulade_steps = 0
         self.placeBoxes()
         if self.island_box:
             center, _, quat = self.island_box
@@ -202,6 +206,9 @@ class Robot:
             self.path = []
         elif kind == "target":
             self.set_target(np.array(message["target"], dtype=np.float64) * SIM_SCALE)
+        elif kind == "roulade" and not self.fly and self.recovery is None:
+            self.roulade_steps = 50
+            print("macroduck rolling")
         elif kind == "debug":
             self.debug = bool(message.get("enabled"))
             self.debug_dirty = self.debug
@@ -417,10 +424,11 @@ class Robot:
         self.model.opt.gravity[2] = 0 if self.fly else -9.81
         command, yaw = self.command()
         self.jump = False
+        rolling = self.roulade_steps > 0
         quat = self.data.xquat[self.trunk].copy()
         projected = rotate(np.array([quat[0], -quat[1], -quat[2], -quat[3]]), np.array([0, 0, -1.0]))
         policy_command = np.zeros(13, dtype=np.float32)
-        if self.recovery is None:
+        if self.recovery is None and not rolling:
             policy_command[:3] = [command[0] * 0.4, 0, np.clip(command[2] + command[1], -1, 1)]
         sensor_at = self.model.sensor_adr[self.imu]
         obs = np.concatenate([
@@ -429,7 +437,7 @@ class Robot:
             policy_command,
         ]).astype(np.float32)
         if self.recovery != "settle":
-            session = self.recovery_policy if self.recovery == "recover" else self.policy
+            session = self.recovery_policy if self.recovery == "recover" else self.roulade_policy if rolling else self.policy
             self.last = session.run(None, {self.policy_input: obs[None]})[0][0]
             self.data.ctrl[:] = DEFAULT + self.last
         for _ in range(round(0.02 / self.model.opt.timestep)):
@@ -437,10 +445,15 @@ class Robot:
                 self.data.qvel[2] = self.lift * 1.8 * SIM_SCALE
             mujoco.mj_step(self.model, self.data)
 
+        if rolling:
+            self.roulade_steps -= 1
+            if self.roulade_steps == 0:
+                print("macroduck rolled")
+
         quat = self.data.xquat[self.trunk].copy()
         projected = rotate(np.array([quat[0], -quat[1], -quat[2], -quat[3]]), np.array([0, 0, -1.0]))
-        fallen = projected[2] > -0.5 or self.data.qpos[2] - self.ground < 0.06
-        if self.recovery is None and not fallen and np.linalg.norm(self.data.qvel[:2]) < 0.5:
+        fallen = not rolling and (projected[2] > -0.5 or self.data.qpos[2] - self.ground < 0.06)
+        if self.recovery is None and not rolling and not fallen and np.linalg.norm(self.data.qvel[:2]) < 0.5:
             self.safe[:] = self.data.qpos
         if self.recovery == "settle":
             self.recovery_steps += 1

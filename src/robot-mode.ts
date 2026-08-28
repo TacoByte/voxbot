@@ -190,6 +190,14 @@ export default class RobotMode {
       if (this.socket?.readyState === WebSocket.OPEN) this.socket.send(JSON.stringify({ type: 'respawn' }))
       return
     }
+    if (!event.repeat && event.code === 'KeyX') {
+      event.preventDefault()
+      event.stopImmediatePropagation()
+      this.auto = false
+      this.marker.setEnabled(false)
+      if (this.socket?.readyState === WebSocket.OPEN) this.socket.send(JSON.stringify({ type: 'roulade' }))
+      return
+    }
     if (!event.repeat && (event.code === 'KeyC' || event.code === 'KeyF')) {
       event.preventDefault()
       event.stopImmediatePropagation()
